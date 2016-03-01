@@ -1,41 +1,36 @@
 package com.karasiq.nanoboard.encoding
 
+import java.time._
+import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder, TextStyle}
+import java.time.temporal.ChronoField
+import java.util.Locale
+
+import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.Hex
 
-import scala.annotation.tailrec
-
-case class NanoboardMessage(answerTo: String, text: String) {
-  def payload: String = answerTo + text
-  def hash: String = Hex.encodeHexString(DataCipher.sha256.digest(payload.getBytes("UTF-8")))
+case class NanoboardMessage(parent: String, text: String) {
+  def payload: String = parent + text
+  def hash: String = Hex.encodeHexString(DataCipher.sha256.digest(payload.getBytes("UTF-8"))).take(32)
 }
 
-object NanoboardMessage {
-  def parseMessages(payload: String): Vector[NanoboardMessage] = {
-    val sizes = {
-      val sizes = payload.grouped(6)
-        .map(bs ⇒ Integer.parseInt(bs, 16))
+object NanoboardMessage extends DefaultNanoboardMessageFormat {
+  private val clientVersion = ConfigFactory.load().getString("nanoboard.client-version")
 
-      val count = if (sizes.nonEmpty) sizes.next() else 0
-      sizes.take(count).toVector
-    }
+  private val timestampFormat = new DateTimeFormatterBuilder()
+    .appendValue(ChronoField.DAY_OF_MONTH)
+    .appendLiteral('/')
+    .appendText(ChronoField.MONTH_OF_YEAR, TextStyle.SHORT)
+    .appendLiteral('/')
+    .appendValue(ChronoField.YEAR)
+    .appendLiteral(", ")
+    .append(DateTimeFormatter.ISO_LOCAL_TIME)
+    .appendLiteral(" (")
+    .appendZoneOrOffsetId()
+    .appendLiteral(")")
+    .toFormatter(Locale.ENGLISH)
 
-    @tailrec
-    def parse(str: String, sizes: Vector[Int], messages: Vector[NanoboardMessage] = Vector.empty): Vector[NanoboardMessage] = {
-      if (sizes.isEmpty) {
-        messages
-      } else {
-        val (data, rest) = str.splitAt(sizes.head)
-        val (hash, message) = data.splitAt(32)
-        parse(rest, sizes.tail, messages :+ NanoboardMessage(hash, message))
-      }
-    }
-
-    parse(payload.drop((sizes.length + 1) * 6), sizes)
-  }
-
-  def writeMessages(messages: Seq[NanoboardMessage]): String = {
-    val payloads = messages.map(_.payload)
-    val sizes = Vector(payloads.length) ++ payloads.map(_.length)
-    (sizes.map(size ⇒ f"$size%06x") ++ payloads).mkString
+  def newMessage(parent: String, text: String): NanoboardMessage = {
+    val header = s"[g]${timestampFormat.format(ZonedDateTime.now())}, client: $clientVersion[/g]"
+    NanoboardMessage(parent, s"$header\n$text")
   }
 }

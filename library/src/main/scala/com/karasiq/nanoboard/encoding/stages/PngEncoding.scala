@@ -1,34 +1,41 @@
-package com.karasiq.nanoboard.encoding
+package com.karasiq.nanoboard.encoding.stages
 
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util
 import javax.imageio.ImageIO
 
 import akka.util.ByteString
+import com.karasiq.nanoboard.encoding.DataEncodingStage
 
-class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataEncodingStage {
+object PngEncoding {
+  def apply(sourceImage: ByteString ⇒ BufferedImage): PngEncoding = {
+    new PngEncoding(sourceImage)
+  }
+
+  val decoder = apply(_ ⇒ null)
+}
+
+final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataEncodingStage {
+  implicit val byteOrder = ByteOrder.LITTLE_ENDIAN
+
   @inline
   private def asInt(bytes: ByteString): Int = {
-    val buffer = if (bytes.length < 4) ByteString(Array.fill[Byte](4 - bytes.length)(0)) ++ bytes else bytes
-    buffer.toByteBuffer.getInt
+    bytes.padTo(4, 0.toByte).toByteBuffer.order(byteOrder).getInt
   }
 
   @inline
   private def asBytes(int: Int): ByteString = {
-    val buffer = ByteBuffer.allocate(4)
-    buffer.putInt(int)
-    buffer.flip()
-    ByteString(buffer)
+    ByteString.newBuilder
+      .putInt(int)
+      .result()
   }
 
-  @inline
-  private def readBytes(bytes: Array[Int], dataLength: Int, index: Int = 0): ByteString = {
-    val bitsInBytes = 8
-    val bitCount = dataLength * bitsInBytes
-    val offset = index * bitsInBytes
+  private def readBytes(bytes: Array[Int], dataLength: Int, index: Int): ByteString = {
+    val bitCount = dataLength * 8
+    val offset = index * 8
     val result = new util.BitSet(bitCount)
     for (i ← 0 until bitCount) {
       if (bytes(offset + i) % 2 == 1) result.set(i)
@@ -63,12 +70,12 @@ class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataEncodin
     val img = sourceImage(data)
     assert(img.ne(null), "Container image not found")
     val bytes: Array[Int] = asRgbBytes(img)
-    val bitSet = util.BitSet.valueOf((asBytes(data.length).reverse ++ data).toArray)
-    for (i ← bytes.indices) {
-      if (i < bitSet.length()) {
-        val evenByte = bytes(i) - (bytes(i) % 2)
-        bytes(i) = evenByte + (if (bitSet.get(i)) 1 else 0)
-      }
+    val bitSet = util.BitSet.valueOf((asBytes(data.length) ++ data).toArray)
+    val requiredSize: Int = bitSet.length()
+    assert(bytes.length >= requiredSize, s"Image is too small, $requiredSize bits required")
+    for (i ← bytes.indices.takeWhile(_ <= requiredSize)) {
+      val evenByte = bytes(i) - (bytes(i) % 2)
+      bytes(i) = evenByte + (if (bitSet.get(i)) 1 else 0)
     }
     val rgb = asRgbColors(bytes)
     img.setRGB(0, 0, img.getWidth, img.getHeight, rgb, 0, img.getWidth)
@@ -84,7 +91,7 @@ class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataEncodin
     val img = ImageIO.read(inputStream)
     inputStream.close()
     val bytes: Array[Int] = asRgbBytes(img)
-    val length = readBytes(bytes, 4)
-    readBytes(bytes, asInt(length.reverse), 4)
+    val length: Int = asInt(readBytes(bytes, 4, 0))
+    readBytes(bytes, length, 4)
   }
 }

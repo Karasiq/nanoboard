@@ -50,7 +50,11 @@ lazy val backendSettings = Seq(
   libraryDependencies ++= Seq(
     "com.github.karasiq" %% "mapdbutils" % "1.1.1",
     "org.mapdb" % "mapdb" % "2.0-beta12",
-    "me.chrons" %% "boopickle" % "1.1.2"
+    "me.chrons" %% "boopickle" % "1.1.2",
+    "com.typesafe.slick" %% "slick" % "3.1.1",
+    "com.h2database" % "h2" % "1.4.191",
+    "org.slf4j" % "slf4j-nop" % "1.6.4",
+    "org.scalatest" %% "scalatest" % "2.2.4" % "test"
   ),
   mainClass in Compile := Some("com.karasiq.nanoboard.server.Main"),
   scalaJsBundlerCompile in Compile <<= (scalaJsBundlerCompile in Compile).dependsOn(fullOptJS in Compile in frontend),
