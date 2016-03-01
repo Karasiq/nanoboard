@@ -9,7 +9,7 @@ import javax.imageio.ImageIO
 
 import akka.util.ByteString
 
-class PngEncoding(sourceImage: () ⇒ BufferedImage) extends DataEncodingStage {
+class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataEncodingStage {
   @inline
   private def asInt(bytes: ByteString): Int = {
     val buffer = if (bytes.length < 4) ByteString(Array.fill[Byte](4 - bytes.length)(0)) ++ bytes else bytes
@@ -60,7 +60,7 @@ class PngEncoding(sourceImage: () ⇒ BufferedImage) extends DataEncodingStage {
   }
 
   override def encode(data: ByteString): ByteString = {
-    val img = sourceImage()
+    val img = sourceImage(data)
     assert(img.ne(null), "Container image not found")
     val bytes: Array[Int] = asRgbBytes(img)
     val bitSet = util.BitSet.valueOf((asBytes(data.length).reverse ++ data).toArray)
