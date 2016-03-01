@@ -2,14 +2,14 @@ package com.karasiq.nanoboard.encoding
 
 import java.awt.Color
 import java.awt.image.BufferedImage
-import java.io.{InputStream, OutputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.ByteBuffer
 import java.util
 import javax.imageio.ImageIO
 
 import akka.util.ByteString
 
-object PngEncoding extends DataEncoding {
+class PngEncoding(sourceImage: () ⇒ BufferedImage) extends DataEncodingStage {
   @inline
   private def asInt(bytes: ByteString): Int = {
     val buffer = if (bytes.length < 4) ByteString(Array.fill[Byte](4 - bytes.length)(0)) ++ bytes else bytes
@@ -50,13 +50,6 @@ object PngEncoding extends DataEncoding {
     bytes
   }
 
-  def decode(input: InputStream): ByteString = {
-    val img = ImageIO.read(input)
-    val bytes: Array[Int] = asRgbBytes(img)
-    val length = readBytes(bytes, 4)
-    readBytes(bytes, asInt(length.reverse), 4)
-  }
-
   @inline
   private def asRgbColors(arr: Array[Int]): Array[Int] = {
     val result = new Array[Int](arr.length / 3)
@@ -66,8 +59,9 @@ object PngEncoding extends DataEncoding {
     result
   }
 
-  def encode(input: InputStream, data: ByteString, output: OutputStream): Unit = {
-    val img = ImageIO.read(input)
+  override def encode(data: ByteString): ByteString = {
+    val img = sourceImage()
+    assert(img.ne(null), "Container image not found")
     val bytes: Array[Int] = asRgbBytes(img)
     val bitSet = util.BitSet.valueOf((asBytes(data.length).reverse ++ data).toArray)
     for (i ← bytes.indices) {
@@ -78,6 +72,19 @@ object PngEncoding extends DataEncoding {
     }
     val rgb = asRgbColors(bytes)
     img.setRGB(0, 0, img.getWidth, img.getHeight, rgb, 0, img.getWidth)
-    ImageIO.write(img, "png", output)
+    val outputStream = new ByteArrayOutputStream()
+    ImageIO.write(img, "png", outputStream)
+    val result = ByteString(outputStream.toByteArray)
+    outputStream.close()
+    result
+  }
+
+  override def decode(data: ByteString): ByteString = {
+    val inputStream = new ByteArrayInputStream(data.toArray)
+    val img = ImageIO.read(inputStream)
+    inputStream.close()
+    val bytes: Array[Int] = asRgbBytes(img)
+    val length = readBytes(bytes, 4)
+    readBytes(bytes, asInt(length.reverse), 4)
   }
 }
