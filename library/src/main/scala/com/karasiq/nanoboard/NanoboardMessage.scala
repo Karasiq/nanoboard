@@ -1,10 +1,11 @@
-package com.karasiq.nanoboard.encoding
+package com.karasiq.nanoboard
 
 import java.time._
 import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder, TextStyle}
 import java.time.temporal.ChronoField
 import java.util.Locale
 
+import com.karasiq.nanoboard.encoding.{DataCipher, DefaultNanoboardMessageFormat}
 import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.Hex
 

@@ -2,7 +2,7 @@ package com.karasiq.nanoboard.server
 
 import java.time.Instant
 
-import com.karasiq.nanoboard.encoding.NanoboardMessage
+import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 import slick.driver.H2Driver.api._
 
 import scala.concurrent.ExecutionContext
@@ -29,7 +29,35 @@ package object model {
 
   val deletedPosts = TableQuery[DeletedPost]
 
+  class PendingPost(tag: Tag) extends Table[String](tag, "pending_posts") {
+    def hash = column[String]("hash", O.SqlType("char(32)"), O.PrimaryKey)
+    def post = foreignKey("post_fk", hash, posts)(_.hash, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def * = hash
+  }
+
+  val pendingPosts = TableQuery[PendingPost]
+
+  class Place(tag: Tag) extends Table[String](tag, "places") {
+    def url = column[String]("place_url", O.PrimaryKey)
+    def * = url
+  }
+
+  val places = TableQuery[Place]
+
+  class Category(tag: Tag) extends Table[NanoboardCategory](tag, "categories") {
+    def hash = column[String]("category_hash", O.SqlType("char(32)"), O.PrimaryKey)
+    def name = column[String]("category_name")
+    def * = (hash, name) <> (NanoboardCategory.tupled, NanoboardCategory.unapply)
+  }
+
+  val categories = TableQuery[Category]
+
   object Post {
+    def addReply(m: NanoboardMessage) = DBIO.seq(insertMessage(m), pendingPosts.forceInsertQuery {
+      val exists = (for (p <- pendingPosts if p.hash === m.hash) yield ()).exists
+      for (message <- Query(m.hash) if !exists) yield message
+    }, deletedPosts.filter(_.hash === m.hash).delete)
+
     def insertMessage(m: NanoboardMessage) = posts.forceInsertQuery {
       val deleted = (for (p <- deletedPosts if p.hash === m.hash) yield ()).exists
       val exists = (for (p <- posts if p.hash === m.hash) yield ()).exists
@@ -42,12 +70,17 @@ package object model {
     }
 
     def answers(hash: String)(implicit ec: ExecutionContext) = {
-      val query = posts
-        .filter(_.parent === hash)
-        .sortBy(_.firstSeen)
-        .map(_.message)
+      val query = posts.filter(_.parent === hash).sortBy(_.firstSeen).map(p ⇒ p.hash → p.message)
 
-      query.result.map(_.map(NanoboardMessage(hash, _)))
+      val withAnswerCount = query.map {
+        case (mh, message) ⇒
+          (message, posts.filter(_.parent === mh).length)
+      }
+
+      withAnswerCount.result.map(_.map {
+        case (text, answers) ⇒
+          NanoboardMessage(hash, text) → answers
+      })
     }
 
     def find(hash: String)(implicit ec: ExecutionContext) = {
@@ -60,6 +93,34 @@ package object model {
         posts.filter(_.hash === hash).delete,
         deletedPosts += hash
       )
+    }
+  }
+
+  object Place {
+    def list() = {
+      places.result
+    }
+
+    def add(url: String) = {
+      places.insertOrUpdate(url)
+    }
+
+    def delete(url: String) = {
+      places.filter(_.url === url).delete
+    }
+  }
+
+  object Category {
+    def list() = {
+      categories.result
+    }
+
+    def add(hash: String, name: String) = {
+      categories.insertOrUpdate(NanoboardCategory(hash, name))
+    }
+
+    def delete(hash: String) = {
+      categories.filter(_.hash === hash).delete
     }
   }
 }

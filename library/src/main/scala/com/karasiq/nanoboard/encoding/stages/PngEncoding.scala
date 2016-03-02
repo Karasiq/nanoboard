@@ -15,6 +15,7 @@ object PngEncoding {
     new PngEncoding(sourceImage)
   }
 
+  // Would fail on encode request
   val decoder = apply(_ ⇒ null)
 }
 
@@ -36,6 +37,7 @@ final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataE
   private def readBytes(bytes: Array[Int], dataLength: Int, index: Int): ByteString = {
     val bitCount = dataLength * 8
     val offset = index * 8
+    assert(bytes.length >= offset + bitCount - 1, "Invalid data length")
     val result = new util.BitSet(bitCount)
     for (i ← 0 until bitCount) {
       if (bytes(offset + i) % 2 == 1) result.set(i)
@@ -66,17 +68,24 @@ final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataE
     result
   }
 
+  private def writeBytes(bytes: Array[Int], data: ByteString, byteIndex: Int): Unit = {
+    val bitOffset = byteIndex * 8
+    val bitSet = util.BitSet.valueOf(data.toArray)
+    for (i ← 0 to bitSet.length()) {
+      val index: Int = bitOffset + i
+      val evenByte = bytes(index) - (bytes(index) % 2)
+      bytes(index) = evenByte + (if (bitSet.get(i)) 1 else 0)
+    }
+  }
+
   override def encode(data: ByteString): ByteString = {
     val img = sourceImage(data)
     assert(img.ne(null), "Container image not found")
     val bytes: Array[Int] = asRgbBytes(img)
-    val bitSet = util.BitSet.valueOf((asBytes(data.length) ++ data).toArray)
-    val requiredSize: Int = bitSet.length()
+    val requiredSize: Int = (4 + data.length) * 8
     assert(bytes.length >= requiredSize, s"Image is too small, $requiredSize bits required")
-    for (i ← bytes.indices.takeWhile(_ <= requiredSize)) {
-      val evenByte = bytes(i) - (bytes(i) % 2)
-      bytes(i) = evenByte + (if (bitSet.get(i)) 1 else 0)
-    }
+    writeBytes(bytes, asBytes(data.length), 0)
+    writeBytes(bytes, data, 4)
     val rgb = asRgbColors(bytes)
     img.setRGB(0, 0, img.getWidth, img.getHeight, rgb, 0, img.getWidth)
     val outputStream = new ByteArrayOutputStream()
@@ -90,6 +99,7 @@ final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataE
     val inputStream = new ByteArrayInputStream(data.toArray)
     val img = ImageIO.read(inputStream)
     inputStream.close()
+    assert(img.ne(null), "Cannot decode image")
     val bytes: Array[Int] = asRgbBytes(img)
     val length: Int = asInt(readBytes(bytes, 4, 0))
     readBytes(bytes, length, 4)

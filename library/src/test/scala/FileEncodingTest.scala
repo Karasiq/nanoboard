@@ -2,9 +2,10 @@ import java.io.InputStream
 import javax.imageio.ImageIO
 
 import akka.util.ByteString
+import com.karasiq.nanoboard.NanoboardMessage
+import com.karasiq.nanoboard.encoding.DataEncodingStage
 import com.karasiq.nanoboard.encoding.DataEncodingStage._
 import com.karasiq.nanoboard.encoding.stages.{GzipCompression, PngEncoding, SalsaCipher}
-import com.karasiq.nanoboard.encoding.{DataEncodingStage, NanoboardMessage}
 import org.apache.commons.io.IOUtils
 import org.scalatest.{FlatSpec, Matchers}
 

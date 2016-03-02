@@ -1,5 +1,7 @@
 package com.karasiq.nanoboard.encoding
 
+import com.karasiq.nanoboard.NanoboardMessage
+
 import scala.annotation.tailrec
 
 trait NanoboardMessageFormat {

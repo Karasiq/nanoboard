@@ -4,7 +4,7 @@ import java.security.MessageDigest
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 
-private[encoding] object DataCipher {
+private[nanoboard] object DataCipher {
   val provider = new BouncyCastleProvider
 
   @inline
