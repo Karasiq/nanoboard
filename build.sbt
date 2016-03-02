@@ -51,7 +51,7 @@ lazy val backendSettings = Seq(
   libraryDependencies ++= Seq(
     "com.github.karasiq" %% "mapdbutils" % "1.1.1",
     "org.mapdb" % "mapdb" % "2.0-beta12",
-    "me.chrons" %% "boopickle" % "1.1.2",
+    "com.lihaoyi" %% "upickle" % "0.3.8",
     "com.typesafe.slick" %% "slick" % "3.1.1",
     "com.h2database" % "h2" % "1.4.191",
     "org.slf4j" % "slf4j-nop" % "1.6.4",
@@ -102,7 +102,7 @@ lazy val frontendSettings = Seq(
   name := "nanoboard-frontend",
   libraryDependencies ++= Seq(
     "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.2",
-    "me.chrons" %%% "boopickle" % "1.1.2"
+    "com.lihaoyi" %%% "upickle" % "0.3.8"
   )
 )
 

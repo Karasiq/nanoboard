@@ -49,7 +49,9 @@ class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: 
   def imagesFromPage(url: String): Source[String, akka.NotUsed] = {
     Source.fromFuture(http.singleRequest(HttpRequest(uri = url)))
       .flatMapConcat(_.entity.dataBytes.fold(ByteString.empty)(_ ++ _))
-      .flatMapConcat(data ⇒ imagesFromPage(Jsoup.parse(data.utf8String, url)))
+      .map(data ⇒ imagesFromPage(Jsoup.parse(data.utf8String, url)))
+      .recover { case _ ⇒ Source.empty }
+      .flatMapConcat(identity)
   }
 
   protected def imagesFromPage(page: Document): Source[String, akka.NotUsed] = {

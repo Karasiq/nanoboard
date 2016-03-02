@@ -111,8 +111,14 @@ package object model {
   }
 
   object Category {
-    def list() = {
-      categories.result
+    def list()(implicit ec: ExecutionContext) = {
+      val query = categories.map { c ⇒
+        (c.hash, c.name, posts.filter(_.parent === c.hash).length)
+      }
+      query.result.map(_.map {
+        case (hash, name, answers) ⇒
+          NanoboardCategory(hash, name) → answers
+      })
     }
 
     def add(hash: String, name: String) = {

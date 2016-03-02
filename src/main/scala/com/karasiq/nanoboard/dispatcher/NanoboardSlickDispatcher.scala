@@ -7,7 +7,7 @@ import slick.driver.H2Driver.api._
 import scala.concurrent.{ExecutionContext, Future}
 
 final class NanoboardSlickDispatcher(db: Database)(implicit ec: ExecutionContext) extends NanoboardDispatcher {
-  override def categories(): Future[Seq[NanoboardCategory]] = {
+  override def categories(): Future[Seq[(NanoboardCategory, Int)]] = {
     db.run(Category.list())
   }
 
