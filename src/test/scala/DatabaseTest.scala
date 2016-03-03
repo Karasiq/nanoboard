@@ -23,7 +23,7 @@ class DatabaseTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     val result = Await.result(db.run(query), Duration.Inf)
     result shouldBe testMessage
 
-    val answers = Await.result(db.run(Post.answers("8b8cfb7574741838450e286909e8fd1f")), Duration.Inf)
+    val answers = Await.result(db.run(Post.thread("8b8cfb7574741838450e286909e8fd1f")), Duration.Inf)
     answers.toVector shouldBe Vector(testMessage → 0)
   }
 

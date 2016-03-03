@@ -69,18 +69,20 @@ package object model {
       DBIO.sequence(messages.map(insertMessage))
     }
 
-    def answers(hash: String)(implicit ec: ExecutionContext) = {
-      val query = posts.filter(_.parent === hash).sortBy(_.firstSeen).map(p ⇒ p.hash → p.message)
+    def thread(hash: String)(implicit ec: ExecutionContext) = {
+      val query = posts.filter(_.parent === hash).sortBy(_.firstSeen.desc)
 
-      val withAnswerCount = query.map {
-        case (mh, message) ⇒
-          (message, posts.filter(_.parent === mh).length)
+      def withAnswerCount(query: Query[Post, DBPost, Seq]) = query.map { post ⇒
+        (post, posts.filter(_.parent === post.hash).length)
       }
 
-      withAnswerCount.result.map(_.map {
-        case (text, answers) ⇒
-          NanoboardMessage(hash, text) → answers
-      })
+      for {
+        originalPost ← withAnswerCount(posts.filter(_.hash === hash)).result
+        answers ← withAnswerCount(query).result
+      } yield (originalPost ++ answers).map {
+        case (post, answersCount) ⇒
+          NanoboardMessage(post.parent, post.message) → answersCount
+      }
     }
 
     def find(hash: String)(implicit ec: ExecutionContext) = {

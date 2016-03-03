@@ -12,7 +12,7 @@ final class NanoboardSlickDispatcher(db: Database)(implicit ec: ExecutionContext
   }
 
   override def get(thread: String): Future[Seq[(NanoboardMessage, Int)]] = {
-    db.run(Post.answers(thread))
+    db.run(Post.thread(thread))
   }
 
   override def delete(message: String): Future[Unit] = {

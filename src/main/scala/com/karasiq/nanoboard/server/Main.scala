@@ -6,11 +6,11 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
-import com.karasiq.nanoboard.NanoboardLegacy
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
 import com.karasiq.nanoboard.server.cache.MapDbNanoboardCache
 import com.karasiq.nanoboard.server.model.{Place, Post, _}
 import com.karasiq.nanoboard.sources.BoardPngSource
+import com.karasiq.nanoboard.{NanoboardCategory, NanoboardLegacy}
 import slick.driver.H2Driver.api._
 import slick.jdbc.meta.MTable
 
@@ -42,6 +42,7 @@ object Main extends App {
     pendingPosts.schema.create,
     categories.schema.create,
     places.schema.create,
+    categories += NanoboardCategory("bdd4b5fc1b3a933367bc6830fef72a35", "Metacategory"),
     categories ++= NanoboardLegacy.categoriesFromTxt("categories.txt"),
     places ++= NanoboardLegacy.placesFromTxt("places.txt")
   )

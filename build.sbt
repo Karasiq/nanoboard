@@ -100,9 +100,12 @@ lazy val backendSettings = Seq(
 lazy val frontendSettings = Seq(
   persistLauncher in Compile := true,
   name := "nanoboard-frontend",
+  resolvers += Resolver.sonatypeRepo("snapshots"),
   libraryDependencies ++= Seq(
-    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.2",
-    "com.lihaoyi" %%% "upickle" % "0.3.8"
+    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.3-SNAPSHOT",
+    "com.lihaoyi" %%% "upickle" % "0.3.8",
+    "com.github.karasiq" %%% "parboiled" % "2.1.1-SNAPSHOT",
+    "com.chuusai" %%% "shapeless" % "2.2.5"
   )
 )
 

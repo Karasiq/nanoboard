@@ -15,16 +15,6 @@ object NanoboardAssets {
 
   def style: String = {
     """
-      |#main-container {
-      |    padding: 20px;
-      |}
-      |
-      |@media (min-width: 768px) {
-      |    #main-container {
-      |        max-width: 80%;
-      |    }
-      |}
-      |
       |td.buttons {
       |    text-align: center;
       |}
@@ -40,10 +30,6 @@ object NanoboardAssets {
       |
       |.panel-title .glyphicon {
       |    margin-right: 10px;
-      |}
-      |
-      |#main-container {
-      |    margin-top: 50px;
       |}
     """.stripMargin
   }
