@@ -1,7 +1,7 @@
 package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.nanoboard.frontend.styles.BoardStyle
+import com.karasiq.nanoboard.frontend.components.NanoboardController
 import com.karasiq.nanoboard.frontend.utils.PostDomValue._
 import com.karasiq.nanoboard.frontend.utils._
 import rx._
@@ -10,8 +10,8 @@ import scalatags.JsDom.all._
 
 //noinspection VariablePatternShadow
 private[components] object PostRenderer {
-  def apply(style: BoardStyle)(implicit ctx: Ctx.Owner): PostRenderer = {
-    new PostRenderer(style)
+  def apply()(implicit ctx: Ctx.Owner, controller: NanoboardController): PostRenderer = {
+    new PostRenderer
   }
 
   def asPlainText(parsed: PostDomValue): String = parsed match {
@@ -45,7 +45,7 @@ private[components] object PostRenderer {
 }
 
 //noinspection VariablePatternShadow
-private[components] final class PostRenderer(style: BoardStyle)(implicit ctx: Ctx.Owner) {
+private[components] final class PostRenderer(implicit ctx: Ctx.Owner, controller: NanoboardController) {
   def render(parsed: PostDomValue): Frag = parsed match {
     case PlainText(value) ⇒
       Linkifier(value)
@@ -66,10 +66,10 @@ private[components] final class PostRenderer(style: BoardStyle)(implicit ctx: Ct
       span(textDecoration.`line-through`, render(value))
 
     case GreenText(value) ⇒
-      span(style.greenText, render(value))
+      span(controller.style.greenText, render(value))
 
     case SpoilerText(value) ⇒
-      span(style.spoiler, render(value))
+      span(controller.style.spoiler, render(value))
 
     case InlineImage(base64) ⇒
       PostInlineImage(base64)

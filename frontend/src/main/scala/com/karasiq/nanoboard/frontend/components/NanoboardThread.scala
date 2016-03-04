@@ -6,7 +6,6 @@ import com.karasiq.bootstrap.grid.GridSystem
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.frontend.components.post.NanoboardPost
-import com.karasiq.nanoboard.frontend.styles.BoardStyle
 import com.karasiq.nanoboard.frontend.{NanoboardApi, NanoboardContext, NanoboardMessageData}
 import org.scalajs.dom
 import rx._
@@ -16,19 +15,23 @@ import scala.util.{Failure, Success}
 import scalatags.JsDom.all._
 
 object NanoboardThread {
-  def apply(postsPerPage: Int, style: BoardStyle)(implicit ec: ExecutionContext, ctx: Ctx.Owner): NanoboardThread = {
-    new NanoboardThread(postsPerPage, style)
+  def apply(postsPerPage: Int)(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController): NanoboardThread = {
+    new NanoboardThread(postsPerPage)
   }
 }
 
-final class NanoboardThread(postsPerPage: Int, style: BoardStyle)(implicit ec: ExecutionContext, ctx: Ctx.Owner) extends BootstrapHtmlComponent[dom.html.Div] {
-  val context: Var[NanoboardContext] = NanoboardContext.fromLocation()
+trait NanoboardPostContainer {
+  val context: Var[NanoboardContext]
+  val posts: Var[Vector[NanoboardMessageData]]
+  def update(): Unit
+}
 
-  private val posts_ : Var[Vector[NanoboardMessageData]] = Var(Vector.empty)
-  def posts: Rx[Vector[NanoboardMessageData]] = this.posts_
+final class NanoboardThread(postsPerPage: Int)(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] with NanoboardPostContainer {
+  override val context: Var[NanoboardContext] = NanoboardContext.fromLocation()
 
+  override val posts = Var(Vector.empty[NanoboardMessageData])
 
-  def update(): Unit = {
+  override def update(): Unit = {
     val future = context.now match {
       case NanoboardContext.Root ⇒
         NanoboardApi.categories()
@@ -39,11 +42,11 @@ final class NanoboardThread(postsPerPage: Int, style: BoardStyle)(implicit ec: E
 
     future.onComplete {
       case Success(posts) ⇒
-        this.posts_.update(posts)
+        this.posts.update(posts)
 
       case Failure(exc) ⇒
         println(s"Nanoboard thread error: $exc")
-        this.posts_.update(Vector.empty)
+        this.posts.update(Vector.empty)
     }
   }
 
@@ -51,10 +54,12 @@ final class NanoboardThread(postsPerPage: Int, style: BoardStyle)(implicit ec: E
 
   private val threadPosts = Rx[Frag] {
     val thread = posts()
-    div(for {
-      opPost ← thread.headOption.map(new NanoboardPost(this, context() != NanoboardContext.Root, style, _))
-      answers ← Some(thread.tail.map(new NanoboardPost(this, false, style, _)))
-    } yield opPost +: answers)
+    val rendered = for {
+      opPost ← thread.headOption.map(NanoboardPost(context() != NanoboardContext.Root, _))
+      answers ← Some(thread.tail.map(NanoboardPost(false, _)))
+    } yield opPost +: answers
+
+    div(for (p ← rendered.toVector.flatten) yield GridSystem.mkRow(p))
   }
 
   private val pagination = Rx[Frag] {

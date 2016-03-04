@@ -1,7 +1,7 @@
 lazy val commonSettings = Seq(
   organization := "com.github.karasiq",
-  isSnapshot := true,
-  version := "1.0.0-SNAPSHOT",
+  isSnapshot := false,
+  version := "1.0.0",
   scalaVersion := "2.11.7"
 )
 
@@ -63,6 +63,7 @@ lazy val backendSettings = Seq(
     import com.karasiq.scalajsbundler.dsl._
 
     val videoJs = github("videojs", "video.js", "5.8.0") / "dist"
+    val notyJs = github("needim", "noty", "2.3.8") / "js" / "noty"
     val jsDeps = Seq(
       // jQuery
       Script from url("https://code.jquery.com/jquery-2.1.4.min.js"),
@@ -80,13 +81,17 @@ lazy val backendSettings = Seq(
       Static("video-js.swf") from url(videoJs % "video-js.swf"),
 
       // Plugins
-      Script from url(github("eXon", "videojs-youtube", "2.0.8") % "dist/Youtube.min.js")
+      Script from url(github("eXon", "videojs-youtube", "2.0.8") / "dist" % "Youtube.min.js"),
+
+      // Noty.js
+      Script from url(notyJs / "packaged" % "jquery.noty.packaged.min.js")
     )
 
     val appFiles = Seq(
       // Static
       Html from NanoboardAssets.index,
       Style from NanoboardAssets.style,
+      Image("favicon.ico") from file("frontend") / "files" / "favicon.ico",
 
       // Scala.js app
       Script from file("frontend") / "target" / "scala-2.11" / "nanoboard-frontend-opt.js",

@@ -53,6 +53,12 @@ package object model {
   val categories = TableQuery[Category]
 
   object Post {
+    def pending()(implicit ec: ExecutionContext) = {
+      pendingPosts
+        .flatMap(_.post)
+        .sortBy(_.firstSeen.asc)
+    }
+
     def addReply(m: NanoboardMessage) = DBIO.seq(insertMessage(m), pendingPosts.forceInsertQuery {
       val exists = (for (p <- pendingPosts if p.hash === m.hash) yield ()).exists
       for (message <- Query(m.hash) if !exists) yield message

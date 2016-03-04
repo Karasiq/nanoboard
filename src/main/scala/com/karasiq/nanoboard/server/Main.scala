@@ -26,9 +26,9 @@ object Main extends App {
   implicit val executionContext = actorSystem.dispatcher
   implicit val actorMaterializer = ActorMaterializer()
   val db = Database.forConfig("nanoboard.database")
-  val dispatcher = new NanoboardSlickDispatcher(db)
+  val dispatcher = new NanoboardSlickDispatcher(config, db)
   val cache = new MapDbNanoboardCache(config.getConfig("nanoboard.scheduler.cache"))
-  val maxPostSize = config.getInt("nanoboard.max-post-size")
+  val maxPostSize = config.getMemorySize("nanoboard.max-post-size").toBytes
 
   actorSystem.registerOnTermination(db.close())
   actorSystem.registerOnTermination(cache.close())
@@ -73,6 +73,9 @@ object Main extends App {
       .runWith(Sink.foreach(message ⇒ db.run(Post.insertMessage(message))))
 
     val server = new NanoboardServer(dispatcher)
-    Http().bindAndHandle(server.route, "127.0.0.1", 7657)
+    val host = config.getString("nanoboard.server.host")
+    val port = config.getInt("nanoboard.server.port")
+    actorSystem.log.info(s"Nanoboard server listening at http://$host:$port/")
+    Http().bindAndHandle(server.route, host, port)
   }
 }

@@ -26,7 +26,7 @@ class FileEncodingTest extends FlatSpec with Matchers {
   private val salsaCipher = SalsaCipher("nano")
 
   val testData = {
-    val array = new Array[Byte](200000)
+    val array = new Array[Byte](50000)
     Random.nextBytes(array)
     ByteString(array)
   }

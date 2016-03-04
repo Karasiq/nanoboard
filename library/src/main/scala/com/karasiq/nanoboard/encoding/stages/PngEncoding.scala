@@ -37,10 +37,11 @@ final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataE
   private def readBytes(bytes: Array[Int], dataLength: Int, index: Int): ByteString = {
     val bitCount = dataLength * 8
     val offset = index * 8
-    assert(bytes.length >= offset + bitCount - 1, "Invalid data length")
+    val required: Int = offset + bitCount - 1
+    assert(bytes.length >= required, s"Invalid data length, $required bytes required")
     val result = new util.BitSet(bitCount)
     for (i ← 0 until bitCount) {
-      if (bytes(offset + i) % 2 == 1) result.set(i)
+      result.set(i, bytes(offset + i) % 2 == 1)
     }
     ByteString(result.toByteArray).take(dataLength)
   }
@@ -71,7 +72,8 @@ final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataE
   private def writeBytes(bytes: Array[Int], data: ByteString, byteIndex: Int): Unit = {
     val bitOffset = byteIndex * 8
     val bitSet = util.BitSet.valueOf(data.toArray)
-    for (i ← 0 to bitSet.length()) {
+    val bitCount = data.length * 8
+    for (i ← 0 until bitCount) {
       val index: Int = bitOffset + i
       val evenByte = bytes(index) - (bytes(index) % 2)
       bytes(index) = evenByte + (if (bitSet.get(i)) 1 else 0)

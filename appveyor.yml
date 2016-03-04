@@ -17,7 +17,7 @@ install:
 build_script:
   - sbt compile
 test_script:
-  - sbt nanoboard/test
+  - sbt nanoboard/test nanoboard-server/test
 cache:
   - C:\sbt\
   - C:\Users\appveyor\.m2

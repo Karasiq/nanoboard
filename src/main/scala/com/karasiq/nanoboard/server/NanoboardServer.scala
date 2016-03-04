@@ -1,13 +1,15 @@
 package com.karasiq.nanoboard.server
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
+import akka.util.ByteString
 import com.karasiq.nanoboard.NanoboardCategory
 import com.karasiq.nanoboard.dispatcher.NanoboardDispatcher
 
 import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success}
 
 case class NanoboardReply(parent: String, message: String)
 
@@ -22,6 +24,9 @@ final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSyste
       encodeResponse {
         (path("posts" / sha256HashRegex) & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (hash, offset, count) ⇒
           complete(StatusCodes.OK, dispatcher.get(hash, offset, count))
+        } ~
+        path("pending") {
+          complete(StatusCodes.OK, dispatcher.pending())
         } ~
         path("categories") {
           complete(StatusCodes.OK, dispatcher.categories())
@@ -38,6 +43,16 @@ final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSyste
     post {
       (path("post") & entity[NanoboardReply](jsonUnmarshaller)) { case NanoboardReply(parent, message) ⇒
         complete(StatusCodes.OK, dispatcher.reply(parent, message))
+      } ~
+      (path("container") & parameters('pending.as[Int].?(10), 'random.as[Int].?(50), 'format.?("png")) & entity(as[ByteString]) & extractLog) { (pending, random, format, entity, log) ⇒
+        onComplete(dispatcher.createContainer(pending, random, format, entity)) {
+          case Success(data) ⇒
+            complete(StatusCodes.OK, data)
+
+          case Failure(exc) ⇒
+            log.error(exc, "Container creation error")
+            complete(StatusCodes.BadRequest, HttpEntity(s"Container creation error: $exc"))
+        }
       }
     } ~
     delete {

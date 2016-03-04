@@ -16,7 +16,7 @@ class DatabaseTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     assert(testMessage.parent.length == testMessage.hash.length)
 
     val query = for {
-      _ ← DBIO.seq(posts.schema.create, deletedPosts.schema.create, pendingPosts.schema.create, Post.insertMessage(testMessage))
+      _ ← DBIO.seq(posts.schema.create, deletedPosts.schema.create, pendingPosts.schema.create, categories.schema.create, Post.insertMessage(testMessage))
       message ← Post.find(testMessage.hash)
     } yield message
 

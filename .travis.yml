@@ -4,5 +4,5 @@ scala:
 jdk:
   - oraclejdk8
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION compile nanoboard/test
+  - sbt ++$TRAVIS_SCALA_VERSION compile nanoboard/test nanoboard-server/test
 sudo: false

@@ -11,12 +11,12 @@ import scalatags.JsDom.all._
 import scalatags.JsDom.tags2
 
 object NanoboardPageTitle {
-  def apply(thread: NanoboardThread)(implicit ctx: Ctx.Owner): NanoboardPageTitle = {
+  def apply(thread: NanoboardPostContainer)(implicit ctx: Ctx.Owner): NanoboardPageTitle = {
     new NanoboardPageTitle(thread)
   }
 }
 
-private[components] final class NanoboardPageTitle(thread: NanoboardThread)(implicit ctx: Ctx.Owner) extends BootstrapHtmlComponent[dom.html.Title] {
+private[components] final class NanoboardPageTitle(thread: NanoboardPostContainer)(implicit ctx: Ctx.Owner) extends BootstrapHtmlComponent[dom.html.Title] {
   val title = Rx {
     thread.posts().headOption.fold("Nanoboard") { post ⇒
       val parser = new PostParser(post.text)

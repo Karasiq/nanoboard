@@ -4,7 +4,7 @@ import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.buttons.ButtonBuilder
 import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
-import com.karasiq.nanoboard.frontend.{NanoboardApi, NanoboardCategory, NanoboardContext}
+import com.karasiq.nanoboard.frontend.{NanoboardApi, NanoboardCategory}
 import org.scalajs.dom
 import rx._
 
@@ -12,8 +12,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import scalatags.JsDom.all._
 
-//noinspection VariablePatternShadow
-final class SettingsPanel(thread: NanoboardThread)(implicit ctx: Ctx.Owner, ec: ExecutionContext) extends BootstrapHtmlComponent[dom.html.Div] {
+object SettingsPanel {
+  def apply()(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController): SettingsPanel = {
+    new SettingsPanel
+  }
+}
+
+final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
   private val placesText = Var("")
   private val categoriesText = Var("")
 
@@ -54,9 +59,7 @@ final class SettingsPanel(thread: NanoboardThread)(implicit ctx: Ctx.Owner, ec: 
           Future.sequence(Seq(NanoboardApi.setCategories(categories.now), NanoboardApi.setPlaces(places.now))).onComplete {
             case Success(_) ⇒
               loading() = false
-              if (thread.context.now == NanoboardContext.Root) {
-                thread.update()
-              }
+              controller.updateCategories(categories.now)
 
             case Failure(exc) ⇒
               println(s"Settings update error: $exc")
@@ -78,10 +81,4 @@ final class SettingsPanel(thread: NanoboardThread)(implicit ctx: Ctx.Owner, ec: 
   }
 
   update()
-
-  thread.posts.foreach { posts ⇒
-    if (thread.context.now == NanoboardContext.Root) {
-      categoriesText() = posts.map(c ⇒ s"${c.hash}\n${c.text}").mkString("\n")
-    }
-  }
 }

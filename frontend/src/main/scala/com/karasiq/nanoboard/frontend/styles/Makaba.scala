@@ -12,7 +12,6 @@ trait Makaba extends BoardStyle {
     background := "#DDDDDD",
     color := "#333333",
     margin := 0.25.em,
-    float.left,
     clear.both,
     padding := "0.5em 1.5em"
   )

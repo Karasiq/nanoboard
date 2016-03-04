@@ -1,7 +1,8 @@
 package com.karasiq.nanoboard.frontend
 
+import org.scalajs.dom.Blob
 import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.XMLHttpRequest
+import org.scalajs.dom.raw.{File, XMLHttpRequest}
 import upickle.default._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,5 +52,21 @@ object NanoboardApi {
   def setCategories(newList: Seq[NanoboardCategory])(implicit ec: ExecutionContext): Future[Unit] = {
     Ajax.put("/categories", write(newList))
       .map(_ ⇒ ())
+  }
+
+  def pending()(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
+    Ajax.get("/pending")
+      .map(readResponse[Vector[NanoboardMessageData]])
+  }
+
+  def generateContainer(pending: Int, random: Int, format: String, container: File)(implicit ec: ExecutionContext): Future[Blob] = {
+    Ajax.post(s"/container?pending=$pending&random=$random&format=$format", container, responseType = "blob")
+      .map { r ⇒
+        if (r.status == 200) {
+          r.response.asInstanceOf[Blob]
+        } else {
+          throw new IllegalArgumentException(s"${r.status} ${r.statusText}")
+        }
+      }
   }
 }

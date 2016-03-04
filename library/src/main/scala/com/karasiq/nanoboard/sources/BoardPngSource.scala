@@ -1,5 +1,7 @@
 package com.karasiq.nanoboard.sources
 
+import java.net.URL
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
@@ -12,6 +14,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 
 import scala.collection.JavaConversions._
+import scala.util.Try
 
 class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: ActorMaterializer) extends UrlPngSource {
   protected final val http = Http()
@@ -25,7 +28,7 @@ class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: 
       }
       .recover { case _ ⇒ Nil }
       .filter(_.nonEmpty)
-      .log("image-messages")
+      // .log("image-messages")
       .mapConcat(identity)
   }
 
@@ -38,22 +41,15 @@ class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: 
   }
 
   protected def imagesFromPage(page: Document): Source[String, akka.NotUsed] = {
-    val urls = page.select("img").flatMap { img ⇒
-      Vector(getUrl(img.parent(), "href"), getUrl(img, "src"))
-        .flatten
-        .headOption
-    }
-
+    val urls = page.select("a").flatMap(getUrl(_, "href"))
     Source(urls.toVector)
       .log("page-image")
   }
 
   protected def getUrl(e: Element, attr: String): Option[String] = {
-    val url: String = e.attr(attr)
-    if (url.startsWith("/src/") && (url.endsWith(".png") || url.endsWith(".bmp"))) {
-      Some(e.absUrl(attr))
-    } else {
-      None
-    }
+    Try(new URL(e.absUrl(attr)))
+      .toOption
+      .filter(_.getPath.matches("([/\\w]+)?/src/([/\\w]+)?\\.(png|bmp)"))
+      .map(_.toString)
   }
 }
