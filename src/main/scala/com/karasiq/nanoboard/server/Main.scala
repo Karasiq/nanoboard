@@ -9,8 +9,9 @@ import akka.stream.scaladsl._
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
 import com.karasiq.nanoboard.server.cache.MapDbNanoboardCache
 import com.karasiq.nanoboard.server.model.{Place, Post, _}
-import com.karasiq.nanoboard.sources.BoardPngSource
+import com.karasiq.nanoboard.sources.UrlPngSource
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardLegacy}
+import com.typesafe.config.ConfigFactory
 import slick.driver.H2Driver.api._
 import slick.jdbc.meta.MTable
 
@@ -20,12 +21,15 @@ import scala.language.postfixOps
 
 
 object Main extends App {
-  implicit val actorSystem = ActorSystem("nanoboard-server")
+  val config = ConfigFactory.load()
+  implicit val actorSystem = ActorSystem("nanoboard-server", config)
   implicit val executionContext = actorSystem.dispatcher
   implicit val actorMaterializer = ActorMaterializer()
   val db = Database.forConfig("nanoboard.database")
   val dispatcher = new NanoboardSlickDispatcher(db)
-  val cache = new MapDbNanoboardCache(actorSystem.settings.config.getConfig("nanoboard.scheduler.cache"))
+  val cache = new MapDbNanoboardCache(config.getConfig("nanoboard.scheduler.cache"))
+  val maxPostSize = config.getInt("nanoboard.max-post-size")
+
   actorSystem.registerOnTermination(db.close())
   actorSystem.registerOnTermination(cache.close())
 
@@ -57,7 +61,7 @@ object Main extends App {
     }
 
   schema.foreach { _ ⇒
-    val messageSource = BoardPngSource()
+    val messageSource = UrlPngSource()
 
     Source.tick(10 seconds, FiniteDuration(actorSystem.settings.config.getDuration("nanoboard.scheduler.update-interval", TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS), ())
       .flatMapConcat(_ ⇒ Source.fromPublisher(db.stream(Place.list())))
@@ -65,6 +69,7 @@ object Main extends App {
       .filterNot(cache.contains)
       .alsoTo(Sink.foreach(image ⇒ cache += image))
       .flatMapMerge(8, messageSource.messagesFromImage)
+      .filter(_.text.length <= maxPostSize)
       .runWith(Sink.foreach(message ⇒ db.run(Post.insertMessage(message))))
 
     val server = new NanoboardServer(dispatcher)

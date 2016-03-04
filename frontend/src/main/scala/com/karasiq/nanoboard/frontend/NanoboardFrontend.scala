@@ -3,7 +3,7 @@ package com.karasiq.nanoboard.frontend
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.navbar.{NavigationBar, NavigationTab}
-import com.karasiq.nanoboard.frontend.components.{NanoboardPageTitle, NanoboardThread}
+import com.karasiq.nanoboard.frontend.components.{NanoboardPageTitle, NanoboardThread, SettingsPanel}
 import com.karasiq.nanoboard.frontend.styles._
 import org.scalajs.dom.document
 import org.scalajs.jquery.jQuery
@@ -24,13 +24,14 @@ object NanoboardFrontend extends JSApp {
   override def main(): Unit = {
     jQuery(() ⇒ {
       val styleSelector = BoardStyle.selector
-      val thread = NanoboardThread(200, styleSelector.style.now)
+      val thread = NanoboardThread(100, styleSelector.style.now)
       val title = NanoboardPageTitle(thread)
       val navigationBar = NavigationBar(
-        NavigationTab("Nanoboard", "posts", "server".fontAwesome(FontAwesome.fixedWidth), div("container-fluid".addClass, thread))
+        NavigationTab("Nanoboard", "posts", "server".fontAwesome(FontAwesome.fixedWidth), div("container-fluid".addClass, thread)),
+        NavigationTab("Server settings", "server-settings", "wrench".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, new SettingsPanel(thread)))
       )
       document.head.appendChild(title().render)
-      Seq[Frag](navigationBar.navbar("Nanoboard"), div(marginTop := 50.px, navigationBar.content), styleSelector.renderTag(id := "nanoboard-style"))
+      Seq[Frag](navigationBar.navbar("Nanoboard"), div(marginTop := 70.px, navigationBar.content), styleSelector.renderTag(id := "nanoboard-style"))
         .foreach(_.applyTo(document.body))
     })
   }

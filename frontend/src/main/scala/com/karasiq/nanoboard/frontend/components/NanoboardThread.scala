@@ -52,7 +52,7 @@ final class NanoboardThread(postsPerPage: Int, style: BoardStyle)(implicit ec: E
   private val threadPosts = Rx[Frag] {
     val thread = posts()
     div(for {
-      opPost ← thread.headOption.map(new NanoboardPost(this, true, style, _))
+      opPost ← thread.headOption.map(new NanoboardPost(this, context() != NanoboardContext.Root, style, _))
       answers ← Some(thread.tail.map(new NanoboardPost(this, false, style, _)))
     } yield opPost +: answers)
   }

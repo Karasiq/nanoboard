@@ -8,30 +8,13 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.karasiq.nanoboard.NanoboardMessage
 import com.karasiq.nanoboard.encoding.DataEncodingStage
-import com.karasiq.nanoboard.encoding.DataEncodingStage._
-import com.karasiq.nanoboard.encoding.stages.{GzipCompression, PngEncoding, SalsaCipher}
-import com.typesafe.config.{Config, ConfigFactory}
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 
 import scala.collection.JavaConversions._
 
-object BoardPngSource {
-  def fromConfig(config: Config)(implicit as: ActorSystem, am: ActorMaterializer): BoardPngSource = {
-    new BoardPngSource(Seq(GzipCompression(), SalsaCipher(config.getString("encryption-key")), PngEncoding.decoder))
-  }
-
-  def apply(encoding: DataEncodingStage)(implicit as: ActorSystem, am: ActorMaterializer): BoardPngSource = {
-    new BoardPngSource(encoding)
-  }
-
-  def apply()(implicit as: ActorSystem, am: ActorMaterializer): BoardPngSource = {
-    fromConfig(ConfigFactory.load().getConfig("nanoboard"))
-  }
-}
-
-class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: ActorMaterializer) {
-  protected val http = Http()
+class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: ActorMaterializer) extends UrlPngSource {
+  protected final val http = Http()
 
   def messagesFromImage(url: String): Source[NanoboardMessage, akka.NotUsed] = {
     Source.fromFuture(http.singleRequest(HttpRequest(uri = url)))
@@ -56,15 +39,6 @@ class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: 
 
   protected def imagesFromPage(page: Document): Source[String, akka.NotUsed] = {
     val urls = page.select("img").flatMap { img ⇒
-      def getUrl(e: Element, attr: String): Option[String] = {
-        val url: String = e.attr(attr)
-        if (url.startsWith("/src/") && (url.endsWith(".png") || url.endsWith(".bmp"))) {
-          Some(e.absUrl(attr))
-        } else {
-          None
-        }
-      }
-
       Vector(getUrl(img.parent(), "href"), getUrl(img, "src"))
         .flatten
         .headOption
@@ -72,5 +46,14 @@ class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: 
 
     Source(urls.toVector)
       .log("page-image")
+  }
+
+  protected def getUrl(e: Element, attr: String): Option[String] = {
+    val url: String = e.attr(attr)
+    if (url.startsWith("/src/") && (url.endsWith(".png") || url.endsWith(".bmp"))) {
+      Some(e.absUrl(attr))
+    } else {
+      None
+    }
   }
 }

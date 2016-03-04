@@ -9,7 +9,6 @@ trait Makaba extends BoardStyle {
     border := "solid 1px #CCCCCC",
     borderRadius := 2.px,
     display.`inline-block`,
-    whiteSpace.normal,
     background := "#DDDDDD",
     color := "#333333",
     margin := 0.25.em,
@@ -24,7 +23,8 @@ trait Makaba extends BoardStyle {
     overflowY.auto,
     marginBottom := 0.5.em,
     fontSize := 0.9.em,
-    fontFamily := "Verdana,sans-serif"
+    fontFamily := "Verdana,sans-serif",
+    whiteSpace.`pre-wrap`
   )
 
   override def postId = cls(

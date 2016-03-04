@@ -4,13 +4,13 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
+import com.karasiq.nanoboard.NanoboardCategory
 import com.karasiq.nanoboard.dispatcher.NanoboardDispatcher
-import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 
 import scala.concurrent.ExecutionContext
 
 case class NanoboardReply(parent: String, message: String)
-case class NanoboardMessageData(parent: Option[String], hash: String, text: String, answers: Int)
+
 
 final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSystem: ActorSystem, actorMaterializer: ActorMaterializer) extends UpickleMarshaller {
   private implicit def ec: ExecutionContext = actorSystem.dispatcher
@@ -20,21 +20,14 @@ final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSyste
   val route = {
     get {
       encodeResponse {
-        pathPrefix("posts") {
-          (path(sha256HashRegex) & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (hash, offset, count) ⇒
-            val result = dispatcher.get(hash, offset, count).map(_.map {
-              case (m @ NanoboardMessage(parent, text), answers) ⇒
-                NanoboardMessageData(Some(parent), m.hash, text, answers)
-            })
-            complete(StatusCodes.OK, result)
-          } ~
-          pathEndOrSingleSlash {
-            val result = dispatcher.categories().map(_.map {
-              case (NanoboardCategory(hash, name), answers) ⇒
-                NanoboardMessageData(None, hash, name, answers)
-            })
-            complete(StatusCodes.OK, result)
-          }
+        (path("posts" / sha256HashRegex) & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (hash, offset, count) ⇒
+          complete(StatusCodes.OK, dispatcher.get(hash, offset, count))
+        } ~
+        path("categories") {
+          complete(StatusCodes.OK, dispatcher.categories())
+        } ~
+        path("places") {
+          complete(StatusCodes.OK, dispatcher.places())
         } ~
         pathEndOrSingleSlash {
           getFromResource("webapp/index.html")
@@ -44,21 +37,24 @@ final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSyste
     } ~
     post {
       (path("post") & entity[NanoboardReply](jsonUnmarshaller)) { case NanoboardReply(parent, message) ⇒
-        complete(StatusCodes.OK, dispatcher.reply(parent, message).map { m ⇒
-          NanoboardMessageData(Some(m.parent), m.hash, m.text, 0)
-        })
+        complete(StatusCodes.OK, dispatcher.reply(parent, message))
       }
     } ~
     delete {
       path("post" / sha256HashRegex) { hash ⇒
-        complete(StatusCodes.OK, dispatcher.delete(hash))
+        extractLog { log ⇒
+          log.info("Post permanently deleted: {}", hash)
+          complete(StatusCodes.OK, dispatcher.delete(hash))
+        }
       }
     } ~
     put {
-      (path("places") & entity[Seq[String]](jsonUnmarshaller)) { places ⇒
+      (path("places") & entity[Seq[String]](jsonUnmarshaller) & extractLog) { (places, log) ⇒
+        log.info("Places updated: {}", places)
         complete(StatusCodes.OK, dispatcher.updatePlaces(places))
       } ~
-      (path("categories") & entity[Seq[NanoboardCategory]](jsonUnmarshaller)) { categories ⇒
+      (path("categories") & entity[Seq[NanoboardCategory]](jsonUnmarshaller) & extractLog) { (categories, log) ⇒
+        log.info("Categories updated: {}", categories)
         complete(StatusCodes.OK, dispatcher.updateCategories(categories))
       }
     }

@@ -6,6 +6,7 @@ import upickle.default._
 
 import scala.concurrent.{ExecutionContext, Future}
 
+case class NanoboardCategory(hash: String, name: String)
 case class NanoboardReply(parent: String, message: String)
 case class NanoboardMessageData(parent: Option[String], hash: String, text: String, answers: Int)
 
@@ -19,7 +20,7 @@ object NanoboardApi {
   }
 
   def categories()(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
-    Ajax.get(s"/posts")
+    Ajax.get("/categories")
       .map(readResponse[Vector[NanoboardMessageData]])
   }
 
@@ -31,5 +32,24 @@ object NanoboardApi {
   def addReply(hash: String, message: String)(implicit ec: ExecutionContext): Future[NanoboardMessageData] = {
     Ajax.post(s"/post", write(NanoboardReply(hash, message)))
       .map(readResponse[NanoboardMessageData])
+  }
+
+  def delete(hash: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    Ajax.delete(s"/post/$hash").map(_ ⇒ ())
+  }
+
+  def places()(implicit ec: ExecutionContext): Future[Seq[String]] = {
+    Ajax.get("/places")
+      .map(readResponse[Seq[String]])
+  }
+
+  def setPlaces(newList: Seq[String])(implicit ec: ExecutionContext): Future[Unit] = {
+    Ajax.put("/places", write(newList))
+      .map(_ ⇒ ())
+  }
+
+  def setCategories(newList: Seq[NanoboardCategory])(implicit ec: ExecutionContext): Future[Unit] = {
+    Ajax.put("/categories", write(newList))
+      .map(_ ⇒ ())
   }
 }
