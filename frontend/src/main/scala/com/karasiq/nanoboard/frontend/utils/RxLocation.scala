@@ -8,17 +8,21 @@ import rx._
 import scala.scalajs.js.UndefOr
 
 final class RxLocation(implicit ctx: Ctx.Owner) {
-  private val hash_ : Var[UndefOr[String]] = Var(window.location.hash)
-
-  val hash: Rx[Option[String]] = hash_.map { hash ⇒
+  private def readHash(hash: UndefOr[String]): Option[String] = {
     hash
       .filter(_.nonEmpty)
       .map(_.tail)
       .toOption
   }
 
+  val hash: Var[Option[String]] = Var(readHash(window.location.hash))
+
+  hash.triggerLater {
+    window.location.hash = hash.now.fold("")("#" + _)
+  }
+
   jQuery(dom.window).on("hashchange", () ⇒ {
-    hash_() = window.location.hash
+    hash() = readHash(window.location.hash)
   })
 }
 

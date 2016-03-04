@@ -11,8 +11,8 @@ final class NanoboardSlickDispatcher(db: Database)(implicit ec: ExecutionContext
     db.run(Category.list())
   }
 
-  override def get(thread: String): Future[Seq[(NanoboardMessage, Int)]] = {
-    db.run(Post.thread(thread))
+  override def get(thread: String, offset: Int, count: Int): Future[Seq[(NanoboardMessage, Int)]] = {
+    db.run(Post.thread(thread, offset, count))
   }
 
   override def delete(message: String): Future[Unit] = {
@@ -22,5 +22,13 @@ final class NanoboardSlickDispatcher(db: Database)(implicit ec: ExecutionContext
   override def reply(parent: String, text: String): Future[NanoboardMessage] = {
     val newMessage: NanoboardMessage = NanoboardMessage.newMessage(parent, text)
     db.run(Post.addReply(newMessage)).map(_ ⇒ newMessage)
+  }
+
+  override def updatePlaces(places: Seq[String]): Future[Unit] = {
+    db.run(Place.update(places))
+  }
+
+  override def updateCategories(categories: Seq[NanoboardCategory]): Future[Unit] = {
+    db.run(Category.update(categories))
   }
 }

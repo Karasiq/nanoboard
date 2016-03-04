@@ -1,10 +1,16 @@
 package com.karasiq.nanoboard.server
 
-import akka.http.scaladsl.marshalling.Marshaller
+import akka.http.scaladsl.marshalling._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.unmarshalling.Unmarshaller
 import upickle.default._
 
 trait UpickleMarshaller {
-  implicit def jsonMarshaller[A, B](implicit ev: Writer[A], m: Marshaller[String, B]): Marshaller[A, B] = {
-    Marshaller(implicit ec ⇒ value ⇒ m(write(value)))
+  implicit def jsonMarshaller[T: Writer]: ToEntityMarshaller[T] = {
+    Marshaller.withFixedContentType(ContentTypes.`application/json`)((value: T) ⇒ HttpEntity(ContentTypes.`application/json`, write(value)))
+  }
+
+  def jsonUnmarshaller[A, B](implicit ev: Reader[B], m: Unmarshaller[A, String]): Unmarshaller[A, B] = {
+    m.map(read[B])
   }
 }

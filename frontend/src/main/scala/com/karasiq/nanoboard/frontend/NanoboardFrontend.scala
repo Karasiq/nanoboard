@@ -5,7 +5,6 @@ import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.navbar.{NavigationBar, NavigationTab}
 import com.karasiq.nanoboard.frontend.components.{NanoboardPageTitle, NanoboardThread}
 import com.karasiq.nanoboard.frontend.styles._
-import com.karasiq.nanoboard.frontend.utils.RxLocation
 import org.scalajs.dom.document
 import org.scalajs.jquery.jQuery
 import rx._
@@ -25,8 +24,7 @@ object NanoboardFrontend extends JSApp {
   override def main(): Unit = {
     jQuery(() ⇒ {
       val styleSelector = BoardStyle.selector
-      val location = RxLocation()
-      val thread = NanoboardThread(location.hash, styleSelector.style.now)
+      val thread = NanoboardThread(200, styleSelector.style.now)
       val title = NanoboardPageTitle(thread)
       val navigationBar = NavigationBar(
         NavigationTab("Nanoboard", "posts", "server".fontAwesome(FontAwesome.fixedWidth), div("container-fluid".addClass, thread))

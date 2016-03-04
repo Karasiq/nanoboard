@@ -69,8 +69,11 @@ package object model {
       DBIO.sequence(messages.map(insertMessage))
     }
 
-    def thread(hash: String)(implicit ec: ExecutionContext) = {
-      val query = posts.filter(_.parent === hash).sortBy(_.firstSeen.desc)
+    def thread(hash: String, offset: Int, count: Int)(implicit ec: ExecutionContext) = {
+      val query = posts.filter(_.parent === hash)
+        .sortBy(_.firstSeen.desc)
+        .drop(offset)
+        .take(count)
 
       def withAnswerCount(query: Query[Post, DBPost, Seq]) = query.map { post ⇒
         (post, posts.filter(_.parent === post.hash).length)
@@ -92,6 +95,8 @@ package object model {
 
     def delete(hash: String) = {
       DBIO.seq(
+        pendingPosts.filter(_.hash === hash).delete,
+        Category.delete(hash),
         posts.filter(_.hash === hash).delete,
         deletedPosts += hash
       )
@@ -103,13 +108,10 @@ package object model {
       places.result
     }
 
-    def add(url: String) = {
-      places.insertOrUpdate(url)
-    }
-
-    def delete(url: String) = {
-      places.filter(_.url === url).delete
-    }
+    def update(newList: Seq[String])(implicit ec: ExecutionContext) = DBIO.sequence(
+      newList.map(url ⇒ places.insertOrUpdate(url)) :+
+        places.filterNot(_ inSet newList).delete
+    ).map(_ ⇒ ())
   }
 
   object Category {
@@ -123,9 +125,15 @@ package object model {
       })
     }
 
-    def add(hash: String, name: String) = {
+    def update(newList: Seq[NanoboardCategory])(implicit ec: ExecutionContext) = DBIO.sequence(
+      newList.map(c ⇒ categories.insertOrUpdate(c)):+
+        categories.filterNot(_.hash inSet newList.map(_.hash)).delete
+    ).map(_ ⇒ ())
+
+    def add(hash: String, name: String) = DBIO.seq(
+      deletedPosts.filter(_.hash === hash).delete,
       categories.insertOrUpdate(NanoboardCategory(hash, name))
-    }
+    )
 
     def delete(hash: String) = {
       categories.filter(_.hash === hash).delete
