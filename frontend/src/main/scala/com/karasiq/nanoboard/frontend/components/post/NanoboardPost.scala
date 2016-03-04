@@ -1,10 +1,11 @@
-package com.karasiq.nanoboard.frontend.components
+package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.frontend.NanoboardMessageData
 import com.karasiq.nanoboard.frontend.styles.BoardStyle
+import com.karasiq.nanoboard.frontend.utils.PostParser
 import org.parboiled2.ParseError
 import org.scalajs.dom
 import rx.Ctx
@@ -13,14 +14,12 @@ import scala.util.{Failure, Success}
 import scalatags.JsDom.all._
 
 //noinspection VariablePatternShadow
-// TODO: Formatting
-final class NanoboardPost(isOp: Boolean, style: BoardStyle, data: NanoboardMessageData)(implicit ctx: Ctx.Owner) extends BootstrapHtmlComponent[dom.html.Div] {
+private[components] final class NanoboardPost(isOp: Boolean, style: BoardStyle, data: NanoboardMessageData)(implicit ctx: Ctx.Owner) extends BootstrapHtmlComponent[dom.html.Div] {
   private def parsePost(text: String): Frag = {
-    val parser = new NanoboardPostParser(text)
-    val renderer = new NanoboardPostRenderer(style)
+    val parser = new PostParser(text)
     parser.Message.run() match {
       case Success(value) ⇒
-        renderer.render(value)
+        PostRenderer(style).render(value)
 
       case Failure(exc: ParseError) ⇒
         println(parser.formatError(exc))

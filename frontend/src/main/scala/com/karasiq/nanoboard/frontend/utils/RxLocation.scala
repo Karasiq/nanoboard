@@ -21,3 +21,9 @@ final class RxLocation(implicit ctx: Ctx.Owner) {
     hash_() = window.location.hash
   })
 }
+
+object RxLocation {
+  def apply()(implicit ctx: Ctx.Owner): RxLocation = {
+    new RxLocation()
+  }
+}

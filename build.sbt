@@ -60,24 +60,27 @@ lazy val backendSettings = Seq(
   mainClass in Compile := Some("com.karasiq.nanoboard.server.Main"),
   scalaJsBundlerCompile in Compile <<= (scalaJsBundlerCompile in Compile).dependsOn(fullOptJS in Compile in frontend),
   scalaJsBundlerAssets in Compile += {
-    import com.karasiq.scalajsbundler.ScalaJSBundler.PageContent
     import com.karasiq.scalajsbundler.dsl._
-    def fontPackage(name: String, baseUrl: String): Seq[PageContent] = {
-      Seq("eot", "svg", "ttf", "woff", "woff2").map { ext ⇒
-        Static(s"fonts/$name.$ext") from url(s"$baseUrl.$ext")
-      }
-    }
 
+    val videoJs = github("videojs", "video.js", "5.8.0") / "dist"
     val jsDeps = Seq(
       // jQuery
-      Script from url("https://code.jquery.com/jquery-1.12.0.js"),
+      Script from url("https://code.jquery.com/jquery-2.1.4.min.js"),
 
       // Bootstrap
       Style from url("https://raw.githubusercontent.com/twbs/bootstrap/v3.3.6/dist/css/bootstrap.css"),
       Script from url("https://raw.githubusercontent.com/twbs/bootstrap/v3.3.6/dist/js/bootstrap.js"),
 
       // Font Awesome
-      Style from url("https://raw.githubusercontent.com/FortAwesome/Font-Awesome/v4.5.0/css/font-awesome.css")
+      Style from url("https://raw.githubusercontent.com/FortAwesome/Font-Awesome/v4.5.0/css/font-awesome.css"),
+
+      // Video.js
+      Script from url(videoJs % "video.min.js"),
+      Style from url(videoJs % "video-js.min.css"),
+      Static("video-js.swf") from url(videoJs % "video-js.swf"),
+
+      // Plugins
+      Script from url(github("eXon", "videojs-youtube", "2.0.8") % "dist/Youtube.min.js")
     )
 
     val appFiles = Seq(
@@ -91,7 +94,8 @@ lazy val backendSettings = Seq(
     )
 
     val fonts = fontPackage("glyphicons-halflings-regular", "https://raw.githubusercontent.com/twbs/bootstrap/v3.3.6/dist/fonts/glyphicons-halflings-regular") ++
-      fontPackage("fontawesome-webfont", "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/v4.5.0/fonts/fontawesome-webfont")
+      fontPackage("fontawesome-webfont", "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/v4.5.0/fonts/fontawesome-webfont") ++
+      fontPackage("VideoJS", videoJs % "font/VideoJS", "font", Seq("eot", "svg", "ttf", "woff"))
 
     Bundle("index", jsDeps ++ appFiles ++ fonts:_*)
   }
@@ -102,10 +106,11 @@ lazy val frontendSettings = Seq(
   name := "nanoboard-frontend",
   resolvers += Resolver.sonatypeRepo("snapshots"),
   libraryDependencies ++= Seq(
-    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.3-SNAPSHOT",
+    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.3",
     "com.lihaoyi" %%% "upickle" % "0.3.8",
     "com.github.karasiq" %%% "parboiled" % "2.1.1-SNAPSHOT",
-    "com.chuusai" %%% "shapeless" % "2.2.5"
+    "com.chuusai" %%% "shapeless" % "2.2.5",
+    "com.github.karasiq" %%% "scalajs-videojs" % "1.0.1"
   )
 )
 

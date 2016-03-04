@@ -14,7 +14,6 @@ final class MapDbNanoboardCache(config: Config) extends NanoboardCache {
     override protected def setSettings(dbMaker: Maker): Maker = {
       dbMaker
         .transactionDisable()
-        .compressionEnable()
         .executorEnable()
         .asyncWriteEnable()
         .asyncWriteFlushDelay(1000)
