@@ -6,6 +6,8 @@ import com.karasiq.bootstrap.grid.GridSystem
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.frontend.components.post.NanoboardPost
+import com.karasiq.nanoboard.frontend.utils.Notifications
+import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.{NanoboardApi, NanoboardContext, NanoboardMessageData}
 import org.scalajs.dom
 import rx._
@@ -45,7 +47,7 @@ final class NanoboardThread(postsPerPage: Int)(implicit ec: ExecutionContext, ct
         this.posts.update(posts)
 
       case Failure(exc) ⇒
-        println(s"Nanoboard thread error: $exc")
+        Notifications.error(s"Nanoboard thread error: $exc", Layout.topRight)
         this.posts.update(Vector.empty)
     }
   }

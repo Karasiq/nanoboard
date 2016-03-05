@@ -94,9 +94,8 @@ package object model {
       }
     }
 
-    def find(hash: String)(implicit ec: ExecutionContext) = {
-      val query = for(post ← posts if post.hash === hash) yield (post.parent, post.message)
-      for((parent, message) ← query.result.head) yield NanoboardMessage(parent, message)
+    def get(hash: String)(implicit ec: ExecutionContext) = {
+      thread(hash, 0, 0).map(_.headOption)
     }
 
     def delete(hash: String)(implicit ec: ExecutionContext) = {

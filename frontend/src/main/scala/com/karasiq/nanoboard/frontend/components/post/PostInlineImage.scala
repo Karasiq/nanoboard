@@ -2,6 +2,7 @@ package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
+import com.karasiq.nanoboard.frontend.utils.FileSaver
 import org.scalajs.dom
 import rx._
 
@@ -26,7 +27,9 @@ private[components] final class PostInlineImage(base64: String)(implicit ctx: Ct
   }
 
   override def renderTag(md: Modifier*) = {
-    img(alt := "Embedded image", src := s"data:image/jpeg;base64,$base64", styleMod, onclick := Bootstrap.jsClick { _ ⇒
+    val blobUrl = FileSaver.asUrl(FileSaver.asBlob(base64))
+    // s"data:image/jpeg;base64,$base64"
+    img(alt := "Embedded image", src := blobUrl, styleMod, onclick := Bootstrap.jsClick { _ ⇒
       state() = !state.now
     }, md)
   }

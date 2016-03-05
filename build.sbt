@@ -1,7 +1,7 @@
 lazy val commonSettings = Seq(
   organization := "com.github.karasiq",
-  isSnapshot := false,
-  version := "1.0.0",
+  version := "1.0.1",
+  isSnapshot := version.value.endsWith("SNAPSHOT"),
   scalaVersion := "2.11.7"
 )
 
@@ -16,7 +16,6 @@ lazy val librarySettings = Seq(
       "com.typesafe.akka" %% "akka-http-experimental" % akkaV,
       "commons-codec" % "commons-codec" % "1.8",
       "commons-io" % "commons-io" % "2.4",
-      "org.parboiled" %% "parboiled" % "2.1.1",
       "org.bouncycastle" % "bcprov-jdk15on" % "1.52",
       "org.jsoup" % "jsoup" % "1.8.3"
     )
@@ -111,7 +110,7 @@ lazy val frontendSettings = Seq(
   name := "nanoboard-frontend",
   resolvers += Resolver.sonatypeRepo("snapshots"),
   libraryDependencies ++= Seq(
-    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.3",
+    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.4-SNAPSHOT",
     "com.lihaoyi" %%% "upickle" % "0.3.8",
     "com.github.karasiq" %%% "parboiled" % "2.1.1-SNAPSHOT",
     "com.chuusai" %%% "shapeless" % "2.2.5",

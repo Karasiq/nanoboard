@@ -68,8 +68,16 @@ final class NanoboardSlickDispatcher(config: Config, db: Database)(implicit ec: 
     })
   }
 
-  override def get(thread: String, offset: Int, count: Int): Future[Seq[NanoboardMessageData]] = {
-    db.run(Post.thread(thread, offset, count))
+  override def post(hash: String): Future[Option[NanoboardMessageData]] = {
+    db.run(Post.get(hash))
+      .map(_.map {
+        case (m @ NanoboardMessage(parent, text), answers) ⇒
+          NanoboardMessageData(Some(parent), m.hash, text, answers)
+      })
+  }
+
+  override def thread(hash: String, offset: Int, count: Int): Future[Seq[NanoboardMessageData]] = {
+    db.run(Post.thread(hash, offset, count))
       .map(_.map {
         case (m @ NanoboardMessage(parent, text), answers) ⇒
           NanoboardMessageData(Some(parent), m.hash, text, answers)

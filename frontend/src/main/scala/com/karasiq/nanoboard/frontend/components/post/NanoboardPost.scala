@@ -16,7 +16,7 @@ import scala.util.{Failure, Success}
 import scalatags.JsDom.all._
 
 private[components] object NanoboardPost {
-  def render(text: String)(implicit ctx: Ctx.Owner, controller: NanoboardController): Frag = {
+  def render(text: String)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): Frag = {
     val parser = new PostParser(text)
     parser.Message.run() match {
       case Success(value) ⇒
@@ -58,7 +58,7 @@ private[components] final class NanoboardPost(isOp: Boolean, data: NanoboardMess
         a(style.postLink, href := "#", "trash-o".fontAwesome(FontAwesome.fixedWidth), "Delete", onclick := Bootstrap.jsClick { _ ⇒
           this.delete()
         }),
-        new PostReplyField(data)
+        PostReplyField(data)
       ),
       md
     )

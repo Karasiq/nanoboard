@@ -4,14 +4,16 @@ import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.frontend.components.post.NanoboardPost
+import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
+import com.karasiq.nanoboard.frontend.utils.{FileSaver, Notifications}
 import com.karasiq.nanoboard.frontend.{NanoboardApi, NanoboardContext, NanoboardMessageData}
 import org.scalajs.dom
 import org.scalajs.dom.html.Input
-import org.scalajs.dom.raw.URL
 import rx._
 
 import scala.concurrent.ExecutionContext
 import scala.scalajs.js
+import scala.util.{Failure, Success}
 import scalatags.JsDom.all._
 
 object PngGenerationPanel {
@@ -25,9 +27,17 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
 
   override val context: Var[NanoboardContext] = Var(NanoboardContext.Root)
 
+  private val loading = Var(false)
+
   override def update(): Unit = {
-    NanoboardApi.pending().foreach { posts ⇒
-      this.posts() = posts
+    loading() = true
+    NanoboardApi.pending().onComplete {
+      case Success(posts) ⇒
+        this.posts() = posts
+        loading() = false
+
+      case Failure(_) ⇒
+        loading() = false
     }
   }
 
@@ -36,7 +46,7 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
     if (posts.nonEmpty) Bootstrap.well(
       marginTop := 20.px,
       h3("Pending posts"),
-      for (p ← posts) yield NanoboardPost(true, p)
+      for (p ← posts) yield NanoboardPost(isOp = true, p)
     ) else ()
   }
 
@@ -45,20 +55,28 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
     FormInput.number("Random posts", name := "random", value := 50),
     FormInput.text("Output format", name := "format", value := "png"),
     FormInput.file("Data container", name := "container"),
-    Form.submit("Generate container image"),
+    Form.submit("Generate container image")("disabled".classIf(loading)),
     onsubmit := Bootstrap.jsSubmit { frm ⇒
-      def input(name: String) = frm(name).asInstanceOf[Input]
-      input("container").files.headOption.foreach { file ⇒
-        val format: String = input("format").value
-        NanoboardApi.generateContainer(input("pending").valueAsNumber, input("random").valueAsNumber, format, file)
-          .foreach { blob ⇒
-            val urlObject = js.Dynamic.global.window.URL.asInstanceOf[URL]
-            val url = urlObject.createObjectURL(blob)
-            val anchor = a(href := url, "download".attr := s"${js.Date.now()}.$format", target := "_blank").render
-            anchor.click()
-            urlObject.revokeObjectURL(url)
-            update()
-          }
+      if (!loading.now) {
+        def input(name: String) = frm(name).asInstanceOf[Input]
+        input("container").files.headOption match {
+          case Some(file) ⇒
+            val pending = input("pending").valueAsNumber
+            val random = input("random").valueAsNumber
+            val format: String = input("format").value
+
+            NanoboardApi.generateContainer(pending, random, format, file).onComplete {
+              case Success(blob) ⇒
+                FileSaver.saveBlob(blob, s"${js.Date.now()}.$format")
+                update()
+
+              case Failure(exc) ⇒
+                Notifications.error(s"Container generation failure: $exc", Layout.topRight, 1500)
+            }
+
+          case None ⇒
+            Notifications.warning("Container file not selected", Layout.topRight)
+        }
       }
     }
   )

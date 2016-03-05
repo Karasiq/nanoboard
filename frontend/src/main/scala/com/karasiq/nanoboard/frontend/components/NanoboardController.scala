@@ -8,7 +8,7 @@ import rx._
 import scala.concurrent.ExecutionContext
 
 final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
-  private implicit val controller: NanoboardController = this
+  private implicit def controller: NanoboardController = this
 
   val styleSelector = BoardStyle.selector
 

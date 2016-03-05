@@ -25,6 +25,11 @@ object NanoboardApi {
       .map(readResponse[Vector[NanoboardMessageData]])
   }
 
+  def post(hash: String)(implicit ec: ExecutionContext): Future[Option[NanoboardMessageData]] = {
+    Ajax.get(s"/post/$hash")
+      .map(readResponse[Option[NanoboardMessageData]])
+  }
+
   def thread(hash: String, offset: Int, count: Int)(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
     Ajax.get(s"/posts/$hash?offset=$offset&count=$count")
       .map(readResponse[Vector[NanoboardMessageData]])
@@ -68,5 +73,10 @@ object NanoboardApi {
           throw new IllegalArgumentException(s"${r.status} ${r.statusText}")
         }
       }
+  }
+
+  def generateAttachment(format: String, size: Int, quality: Int, container: File)(implicit ec: ExecutionContext): Future[String] = {
+    Ajax.post(s"/attachment?format=$format&size=$size&quality=$quality", container)
+      .map(_.responseText)
   }
 }

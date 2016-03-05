@@ -42,7 +42,7 @@ trait Makaba extends BoardStyle {
 
   override def greenText = cls(
     color.green,
-    fontSize := 85.pct,
+    fontSize := 90.pct,
     lineHeight := 2.em
   )
 

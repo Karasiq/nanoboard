@@ -20,7 +20,7 @@ object PostDomValue {
 }
 
 class PostParser(val input: ParserInput) extends Parser {
-  def bbcode(tag: String): Rule1[PostDomValue] = rule { ignoreCase(s"[$tag]") ~ FormattedText ~ (ignoreCase(s"[/$tag]") | EOI) }
+  def bbcode(tag: String): Rule1[PostDomValue] = rule { ignoreCase(s"[$tag]") ~ FormattedText ~ ignoreCase(s"[/$tag]") }
   def shortBbcode(tag: String): Rule1[String] = rule { ignoreCase(s"[$tag=") ~ capture(oneOrMore(!']' ~ ANY)) ~ ']' }
 
   def Green = rule { bbcode("g") ~> GreenText }

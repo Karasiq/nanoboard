@@ -6,11 +6,12 @@ import com.karasiq.nanoboard.frontend.utils.PostDomValue._
 import com.karasiq.nanoboard.frontend.utils._
 import rx._
 
+import scala.concurrent.ExecutionContext
 import scalatags.JsDom.all._
 
 //noinspection VariablePatternShadow
 private[components] object PostRenderer {
-  def apply()(implicit ctx: Ctx.Owner, controller: NanoboardController): PostRenderer = {
+  def apply()(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): PostRenderer = {
     new PostRenderer
   }
 
@@ -45,7 +46,7 @@ private[components] object PostRenderer {
 }
 
 //noinspection VariablePatternShadow
-private[components] final class PostRenderer(implicit ctx: Ctx.Owner, controller: NanoboardController) {
+private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) {
   def render(parsed: PostDomValue): Frag = parsed match {
     case PlainText(value) ⇒
       Linkifier(value)

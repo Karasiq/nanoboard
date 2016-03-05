@@ -1,12 +1,13 @@
 package com.karasiq.nanoboard.server
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.{HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import com.karasiq.nanoboard.NanoboardCategory
 import com.karasiq.nanoboard.dispatcher.NanoboardDispatcher
+import com.karasiq.nanoboard.server.util.AttachmentGenerator
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
@@ -19,11 +20,16 @@ final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSyste
 
   private val sha256HashRegex = "[A-Za-z0-9]{32}".r
 
+  private val maxPostSize = actorSystem.settings.config.getMemorySize("nanoboard.max-post-size").toBytes
+
   val route = {
     get {
       encodeResponse {
+        path("post" / sha256HashRegex) { hash ⇒
+          complete(StatusCodes.OK, dispatcher.post(hash))
+        } ~
         (path("posts" / sha256HashRegex) & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (hash, offset, count) ⇒
-          complete(StatusCodes.OK, dispatcher.get(hash, offset, count))
+          complete(StatusCodes.OK, dispatcher.thread(hash, offset, count))
         } ~
         path("pending") {
           complete(StatusCodes.OK, dispatcher.pending())
@@ -42,7 +48,9 @@ final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSyste
     } ~
     post {
       (path("post") & entity[NanoboardReply](jsonUnmarshaller)) { case NanoboardReply(parent, message) ⇒
-        complete(StatusCodes.OK, dispatcher.reply(parent, message))
+        validate(message.length <= maxPostSize, s"Message is too long. Max size is $maxPostSize bytes") {
+          complete(StatusCodes.OK, dispatcher.reply(parent, message))
+        }
       } ~
       (path("container") & parameters('pending.as[Int].?(10), 'random.as[Int].?(50), 'format.?("png")) & entity(as[ByteString]) & extractLog) { (pending, random, format, entity, log) ⇒
         onComplete(dispatcher.createContainer(pending, random, format, entity)) {
@@ -53,6 +61,9 @@ final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSyste
             log.error(exc, "Container creation error")
             complete(StatusCodes.BadRequest, HttpEntity(s"Container creation error: $exc"))
         }
+      } ~
+      (path("attachment") & parameters('format.?("jpeg"), 'size.as[Int].?(500), 'quality.as[Int].?(70)) & entity(as[ByteString])) { (format, size, quality, data) ⇒
+        complete(StatusCodes.OK, HttpEntity(ContentTypes.`text/plain(UTF-8)`, AttachmentGenerator.createImage(format, size, quality, data)))
       }
     } ~
     delete {

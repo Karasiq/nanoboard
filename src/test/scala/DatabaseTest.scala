@@ -17,11 +17,11 @@ class DatabaseTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     val query = for {
       _ ← DBIO.seq(posts.schema.create, deletedPosts.schema.create, pendingPosts.schema.create, categories.schema.create, Post.insertMessage(testMessage))
-      message ← Post.find(testMessage.hash)
+      message ← Post.get(testMessage.hash)
     } yield message
 
     val result = Await.result(db.run(query), Duration.Inf)
-    result shouldBe testMessage
+    result shouldBe Some((testMessage, 0))
 
     val answers = Await.result(db.run(Post.thread("8b8cfb7574741838450e286909e8fd1f", 0, 10)), Duration.Inf)
     answers.toVector shouldBe Vector(testMessage → 0)
