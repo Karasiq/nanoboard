@@ -1,6 +1,6 @@
 #define OutputName "nanoboard"
 #define MyAppName "Nanoboard"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.0.2"
 #define MyAppPublisher "Karasiq, Inc."
 #define MyAppURL "http://www.github.com/Karasiq/nanoboard"
 #define MyAppExeName "bin\nanoboard-server.bat"
@@ -33,6 +33,8 @@ Name: desktopicon; Description: {cm:CreateDesktopIcon}; GroupDescription: {cm:Ad
 
 [Files]
 Source: {#ProjectFolder}\target\universal\stage\*; DestDir: {app}; Flags: ignoreversion recursesubdirs
+Source: {#ProjectFolder}\setup\places.txt; DestDir: {app}
+Source: {#ProjectFolder}\setup\categories.txt; DestDir: {app}
 Source: {#ProjectFolder}\frontend\files\favicon.ico; DestDir: {app}
 
 [Icons]

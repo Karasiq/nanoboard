@@ -31,12 +31,12 @@ private[components] object NanoboardPost {
     }
   }
 
-  def apply(isOp: Boolean, data: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): NanoboardPost = {
-    new NanoboardPost(isOp, data)
+  def apply(showParent: Boolean, showAnswers: Boolean, data: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): NanoboardPost = {
+    new NanoboardPost(showParent, showAnswers, data)
   }
 }
 
-private[components] final class NanoboardPost(isOp: Boolean, data: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
+private[components] final class NanoboardPost(showParent: Boolean, showAnswers: Boolean, data: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
   import controller.style
 
   override def renderTag(md: Modifier*): RenderedTag = {
@@ -46,13 +46,13 @@ private[components] final class NanoboardPost(isOp: Boolean, data: NanoboardMess
         style.postInner,
         span(
           style.postId,
-          if (isOp && data.parent.isDefined) a(href := s"#${data.parent.mkString}", "level-up".fontAwesome(FontAwesome.fixedWidth)) else (),
+          if (showParent && data.parent.isDefined) PostLink(data.parent.get).renderTag("level-up".fontAwesome(FontAwesome.fixedWidth)) else (),
           sup(data.hash)
         ),
         span(NanoboardPost.render(data.text))
       ),
       div(
-        if (!isOp && data.answers > 0) a(style.postLink, href := s"#${data.hash}", "envelope-o".fontAwesome(FontAwesome.fixedWidth), s"${data.answers}", onclick := Bootstrap.jsClick {_ ⇒
+        if (showAnswers && data.answers > 0) a(style.postLink, href := s"#${data.hash}", "envelope-o".fontAwesome(FontAwesome.fixedWidth), s"${data.answers}", onclick := Bootstrap.jsClick {_ ⇒
           this.openAsThread()
         }) else (),
         a(style.postLink, href := "#", "trash-o".fontAwesome(FontAwesome.fixedWidth), "Delete", onclick := Bootstrap.jsClick { _ ⇒

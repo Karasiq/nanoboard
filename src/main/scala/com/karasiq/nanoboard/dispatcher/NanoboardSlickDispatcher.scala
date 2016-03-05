@@ -18,15 +18,13 @@ final class NanoboardSlickDispatcher(config: Config, db: Database)(implicit ec: 
   private val encryptionKey = config.getString("nanoboard.encryption-key")
 
   override def createContainer(pendingCount: Int, randomCount: Int, format: String, container: ByteString) = {
-    val pending = Post.pending().take(pendingCount)
+    val pending = Post.pending(0, pendingCount)
     val rand = SimpleFunction.nullary[Double]("rand")
-    val random = posts.sortBy(_ ⇒ rand).take(randomCount)
+    val random = posts.sortBy(_ ⇒ rand).take(randomCount).result.map(_.map(_.asThread(0)))
     val query = for {
-      p ← pending.result
-      r ← random.result
-    } yield Random.shuffle((p ++ r).toVector).map { post ⇒
-      NanoboardMessageData(Some(post.parent), post.hash, post.message, 0)
-    }
+      p ← pending
+      r ← random
+    } yield Random.shuffle((p ++ r).toVector)
 
     val stage = Seq(GzipCompression(), SalsaCipher(encryptionKey), PngEncoding(data ⇒ {
       val inputStream = new ByteArrayInputStream(container.toArray)
@@ -50,11 +48,12 @@ final class NanoboardSlickDispatcher(config: Config, db: Database)(implicit ec: 
     }
   }
 
-  def pending(): Future[Seq[NanoboardMessageData]] = {
-    db.run(Post.pending().map(p ⇒ p.parent → p.message).result).map(_.map {
-      case (parent, text) ⇒
-        NanoboardMessageData(Some(parent), NanoboardMessage(parent, text).hash, text, 0)
-    })
+  override def recent(offset: Int, count: Int): Future[Seq[NanoboardMessageData]] = {
+    db.run(Post.recent(offset, count))
+  }
+
+  def pending(offset: Int, count: Int): Future[Seq[NanoboardMessageData]] = {
+    db.run(Post.pending(offset, count))
   }
 
   override def places(): Future[Seq[String]] = {
@@ -62,26 +61,15 @@ final class NanoboardSlickDispatcher(config: Config, db: Database)(implicit ec: 
   }
 
   override def categories(): Future[Seq[NanoboardMessageData]] = {
-    db.run(Category.list()).map(_.map {
-      case (NanoboardCategory(hash, name), answers) ⇒
-        NanoboardMessageData(None, hash, name, answers)
-    })
+    db.run(Category.list())
   }
 
   override def post(hash: String): Future[Option[NanoboardMessageData]] = {
     db.run(Post.get(hash))
-      .map(_.map {
-        case (m @ NanoboardMessage(parent, text), answers) ⇒
-          NanoboardMessageData(Some(parent), m.hash, text, answers)
-      })
   }
 
   override def thread(hash: String, offset: Int, count: Int): Future[Seq[NanoboardMessageData]] = {
     db.run(Post.thread(hash, offset, count))
-      .map(_.map {
-        case (m @ NanoboardMessage(parent, text), answers) ⇒
-          NanoboardMessageData(Some(parent), m.hash, text, answers)
-      })
   }
 
   override def delete(message: String): Future[Unit] = {

@@ -5,7 +5,7 @@ import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.frontend.components.post.NanoboardPost
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
-import com.karasiq.nanoboard.frontend.utils.{FileSaver, Notifications}
+import com.karasiq.nanoboard.frontend.utils.{Blobs, Notifications}
 import com.karasiq.nanoboard.frontend.{NanoboardApi, NanoboardContext, NanoboardMessageData}
 import org.scalajs.dom
 import org.scalajs.dom.html.Input
@@ -22,12 +22,20 @@ object PngGenerationPanel {
   }
 }
 
-final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] with NanoboardPostContainer {
+final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] with PostsContainer {
   override val posts = Var(Vector.empty[NanoboardMessageData])
 
-  override val context: Var[NanoboardContext] = Var(NanoboardContext.Root)
+  override val context: Var[NanoboardContext] = Var(NanoboardContext.Categories)
 
   private val loading = Var(false)
+
+  override def addPost(post: NanoboardMessageData): Unit = {
+    posts() = posts.now :+ post
+  }
+
+  override def deletePost(post: NanoboardMessageData): Unit = {
+    posts() = posts.now.filterNot(p ⇒ p.hash == post.hash || p.parent.contains(post.hash))
+  }
 
   override def update(): Unit = {
     loading() = true
@@ -46,18 +54,19 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
     if (posts.nonEmpty) Bootstrap.well(
       marginTop := 20.px,
       h3("Pending posts"),
-      for (p ← posts) yield NanoboardPost(isOp = true, p)
+      for (p ← posts) yield NanoboardPost(showParent = true, showAnswers = false, p)
     ) else ()
   }
 
   private val form = Form(
-    FormInput.number("Pending posts", name := "pending", value := 10),
-    FormInput.number("Random posts", name := "random", value := 50),
+    FormInput.number("Pending posts", name := "pending", value := 10, min := 0),
+    FormInput.number("Random posts", name := "random", value := 50, min := 0),
     FormInput.text("Output format", name := "format", value := "png"),
     FormInput.file("Data container", name := "container"),
     Form.submit("Generate container image")("disabled".classIf(loading)),
     onsubmit := Bootstrap.jsSubmit { frm ⇒
       if (!loading.now) {
+        loading() = true
         def input(name: String) = frm(name).asInstanceOf[Input]
         input("container").files.headOption match {
           case Some(file) ⇒
@@ -67,14 +76,17 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
 
             NanoboardApi.generateContainer(pending, random, format, file).onComplete {
               case Success(blob) ⇒
-                FileSaver.saveBlob(blob, s"${js.Date.now()}.$format")
+                loading() = false
+                Blobs.saveBlob(blob, s"${js.Date.now()}.$format")
                 update()
 
               case Failure(exc) ⇒
-                Notifications.error(s"Container generation failure: $exc", Layout.topRight, 1500)
+                loading() = false
+                Notifications.error(exc)("Container generation failure", Layout.topRight, 1500)
             }
 
           case None ⇒
+            loading() = false
             Notifications.warning("Container file not selected", Layout.topRight)
         }
       }

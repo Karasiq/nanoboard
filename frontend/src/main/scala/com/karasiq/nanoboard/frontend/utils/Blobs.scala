@@ -11,8 +11,8 @@ import scala.scalajs.js.UndefOr
 import scala.scalajs.js.typedarray.Uint8Array
 import scalatags.JsDom.all._
 
-// File saver util
-object FileSaver {
+// Blob/file util
+object Blobs {
   private def urlObject: URL = {
     js.Dynamic.global.window.URL.asInstanceOf[UndefOr[URL]]
       .orElse(js.Dynamic.global.window.webkitURL.asInstanceOf[UndefOr[URL]])

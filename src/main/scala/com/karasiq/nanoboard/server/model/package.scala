@@ -2,6 +2,7 @@ package com.karasiq.nanoboard.server
 
 import java.time.Instant
 
+import com.karasiq.nanoboard.dispatcher.NanoboardMessageData
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 import slick.driver.H2Driver.api._
 
@@ -9,14 +10,19 @@ import scala.concurrent.ExecutionContext
 import scala.language.postfixOps
 
 package object model {
-  case class DBPost(hash: String, parent: String, message: String, firstSeen: Long)
+  case class DBPost(hash: String, parent: String, message: String, firstSeen: Long) {
+    def asThread(answers: Int): NanoboardMessageData = {
+      NanoboardMessageData(Some(parent), hash, message, answers)
+    }
+  }
   class Post(tag: Tag) extends Table[DBPost](tag, "posts") {
     def hash = column[String]("hash", O.SqlType("char(32)"), O.PrimaryKey)
     def parent = column[String]("parent_hash", O.SqlType("char(32)"))
     def message = column[String]("message")
     def firstSeen = column[Long]("first_seen")
 
-    def idx = index("post_index", parent, unique = false)
+    def threadIdx = index("thread_index", parent, unique = false)
+    def recentIdx = index("recent_index", firstSeen, unique = false)
     def * = (hash, parent, message, firstSeen) <> (DBPost.tupled, DBPost.unapply)
   }
 
@@ -53,12 +59,6 @@ package object model {
   val categories = TableQuery[Category]
 
   object Post {
-    def pending()(implicit ec: ExecutionContext) = {
-      pendingPosts
-        .flatMap(_.post)
-        .sortBy(_.firstSeen.asc)
-    }
-
     def addReply(m: NanoboardMessage) = DBIO.seq(insertMessage(m), pendingPosts.forceInsertQuery {
       val exists = (for (p <- pendingPosts if p.hash === m.hash) yield ()).exists
       for (message <- Query(m.hash) if !exists) yield message
@@ -73,6 +73,29 @@ package object model {
 
     def insertMessages(messages: Seq[NanoboardMessage]) = {
       DBIO.sequence(messages.map(insertMessage))
+    }
+
+    def recent(offset: Int, count: Int)(implicit ec: ExecutionContext) = {
+      posts
+        .sortBy(_.firstSeen.desc)
+        .drop(offset)
+        .take(count)
+        .map(post ⇒ (post, posts.filter(_.parent === post.hash).length))
+        .result
+        .map(_.map {
+          case (post, answers) ⇒
+            post.asThread(answers)
+        })
+    }
+
+    def pending(offset: Int, count: Int)(implicit ec: ExecutionContext) = {
+      pendingPosts
+        .flatMap(_.post)
+        .sortBy(_.firstSeen.asc)
+        .drop(offset)
+        .take(count)
+        .result
+        .map(_.map(_.asThread(0)))
     }
 
     def thread(hash: String, offset: Int, count: Int)(implicit ec: ExecutionContext) = {
@@ -90,7 +113,7 @@ package object model {
         answers ← withAnswerCount(query).result
       } yield (originalPost ++ answers).map {
         case (post, answersCount) ⇒
-          NanoboardMessage(post.parent, post.message) → answersCount
+          post.asThread(answersCount)
       }
     }
 
@@ -133,7 +156,7 @@ package object model {
       }
       query.result.map(_.map {
         case (hash, name, answers) ⇒
-          NanoboardCategory(hash, name) → answers
+          NanoboardMessageData(None, hash, name, answers)
       })
     }
 

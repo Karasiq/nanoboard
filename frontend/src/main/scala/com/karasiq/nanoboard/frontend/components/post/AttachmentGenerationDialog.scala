@@ -5,6 +5,7 @@ import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.modal.Modal
 import com.karasiq.nanoboard.frontend.NanoboardApi
+import com.karasiq.nanoboard.frontend.utils.CancelledException
 import org.scalajs.dom.html.Input
 import org.scalajs.dom.raw.File
 import rx._
@@ -40,7 +41,7 @@ private[components] final class AttachmentGenerationDialog(implicit ctx: Ctx.Own
       ))
       .withButtons(
         Modal.closeButton("Cancel")(onclick := Bootstrap.jsClick { _ ⇒
-          promise.failure(new IllegalArgumentException("Cancelled"))
+          promise.failure(CancelledException)
         }),
         Modal.button("Generate", Modal.dismiss, ready.reactiveShow, onclick := Bootstrap.jsClick { _ ⇒
           promise.completeWith(NanoboardApi.generateAttachment(format.now, size.now, quality.now, file.now.get))

@@ -17,7 +17,7 @@ final class MapDbNanoboardCache(config: Config) extends NanoboardCache {
         .executorEnable()
         .asyncWriteEnable()
         .asyncWriteFlushDelay(1000)
-        .cacheSoftRefEnable()
+        .cacheWeakRefEnable()
     }
   }
 

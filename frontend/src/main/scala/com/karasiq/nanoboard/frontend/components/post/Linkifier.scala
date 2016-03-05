@@ -1,6 +1,7 @@
 package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
+import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.nanoboard.frontend.components.NanoboardController
 import com.karasiq.videojs.VideoSource
 import org.scalajs.dom.Element
@@ -26,7 +27,7 @@ object Linkifier {
   private val youtubeRegex = """https?://(?:www\.)?youtu(?:be\.com/watch\?v=|\.be/)([\w\-]+)(&(amp;)?[\w\?=]*)?""".r
   private val urlRegex = """\b(?:(?:https?|ftp|file)://|www\.|ftp\.)[-a-zA-Z0-9+&@#/%=~_|$?!:,.]*[A-Za-z0-9+&@#/%=~_|$]""".r
   private val postLinkRegex = """(?:>>|/expand/)([A-Za-z0-9]{32})""".r
-  private val quoteRegex = """>[^\r\n]+""".r
+  private val quoteRegex = """(^|\n)>[^\r\n]+""".r
 
   private def processText(text: String, regex: Regex, f: String ⇒ Frag): Seq[LinkifierNode] = {
     regex.findFirstMatchIn(text) match {
@@ -59,7 +60,7 @@ object Linkifier {
   def postLinks(text: String)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): Seq[LinkifierNode] = {
     processText(text, postLinkRegex, {
       case postLinkRegex(hash) ⇒
-        PostLink(hash)
+        PostLink(hash).renderTag("link".fontAwesome(FontAwesome.fixedWidth), hash)
     })
   }
 

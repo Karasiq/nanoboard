@@ -28,11 +28,16 @@ final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSyste
         path("post" / sha256HashRegex) { hash ⇒
           complete(StatusCodes.OK, dispatcher.post(hash))
         } ~
-        (path("posts" / sha256HashRegex) & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (hash, offset, count) ⇒
-          complete(StatusCodes.OK, dispatcher.thread(hash, offset, count))
+        (pathPrefix("posts") & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (offset, count) ⇒
+          path(sha256HashRegex) { hash ⇒
+            complete(StatusCodes.OK, dispatcher.thread(hash, offset, count))
+          } ~
+          pathEndOrSingleSlash {
+            complete(StatusCodes.OK, dispatcher.recent(offset, count))
+          }
         } ~
-        path("pending") {
-          complete(StatusCodes.OK, dispatcher.pending())
+        (path("pending") & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (offset, count) ⇒
+          complete(StatusCodes.OK, dispatcher.pending(offset, count))
         } ~
         path("categories") {
           complete(StatusCodes.OK, dispatcher.categories())
@@ -48,18 +53,20 @@ final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSyste
     } ~
     post {
       (path("post") & entity[NanoboardReply](jsonUnmarshaller)) { case NanoboardReply(parent, message) ⇒
-        validate(message.length <= maxPostSize, s"Message is too long. Max size is $maxPostSize bytes") {
+        if (message.length <= maxPostSize) {
           complete(StatusCodes.OK, dispatcher.reply(parent, message))
+        } else {
+          complete(StatusCodes.custom(400, s"Message is too long. Max size is $maxPostSize bytes"), HttpEntity(""))
         }
       } ~
       (path("container") & parameters('pending.as[Int].?(10), 'random.as[Int].?(50), 'format.?("png")) & entity(as[ByteString]) & extractLog) { (pending, random, format, entity, log) ⇒
         onComplete(dispatcher.createContainer(pending, random, format, entity)) {
           case Success(data) ⇒
-            complete(StatusCodes.OK, data)
+            complete(StatusCodes.OK, HttpEntity(data))
 
           case Failure(exc) ⇒
             log.error(exc, "Container creation error")
-            complete(StatusCodes.BadRequest, HttpEntity(s"Container creation error: $exc"))
+            complete(StatusCodes.custom(500, "Container creation error"), HttpEntity(ByteString.empty))
         }
       } ~
       (path("attachment") & parameters('format.?("jpeg"), 'size.as[Int].?(500), 'quality.as[Int].?(70)) & entity(as[ByteString])) { (format, size, quality, data) ⇒

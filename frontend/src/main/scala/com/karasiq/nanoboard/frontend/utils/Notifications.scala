@@ -1,9 +1,17 @@
 package com.karasiq.nanoboard.frontend.utils
 
+import java.io.{PrintWriter, StringWriter}
+
+import org.scalajs.dom.console
+
 // From proxychecker frontend
 object Notifications {
   import scala.scalajs.js.Dynamic.{global => js, literal => lt}
   import scala.scalajs.js.{Array => JsArray}
+
+  private def defaultTimeout: Int = {
+    1800
+  }
 
   sealed trait Layout {
     def apply(): String
@@ -30,16 +38,36 @@ object Notifications {
   }
 
   sealed class InfoMessage(`type`: String) {
-    def apply(text: String, layout: Layout = Layout.top, timeout: Int = 800): Unit = {
+    def apply(text: String, layout: Layout = Layout.top, timeout: Int = defaultTimeout): Unit = {
       Notifications.notify(text, `type`=`type`, layout=layout, timeout = Some(timeout))
     }
   }
 
-  def alert = new InfoMessage("alert")
-  def success = new InfoMessage("success")
-  def error = new InfoMessage("error")
-  def warning = new InfoMessage("warning")
-  def info = new InfoMessage("information")
+  sealed class ErrorMessage(cause: Option[Throwable]) extends InfoMessage("error") {
+    private def formatException(title: String, exc: Option[Throwable]): String = {
+      val stringWriter = new StringWriter(256)
+      val printWriter = new PrintWriter(stringWriter)
+      try {
+        printWriter.println(title)
+        exc.foreach(_.printStackTrace(printWriter))
+        printWriter.flush()
+        stringWriter.toString
+      } finally printWriter.close()
+    }
+
+    override def apply(text: String, layout: Layout = Layout.top, timeout: Int = defaultTimeout): Unit = {
+      val formatted = formatException(text, cause)
+      console.error(formatted)
+      super.apply(formatted, layout, timeout)
+    }
+  }
+
+  def alert: InfoMessage = new InfoMessage("alert")
+  def success: InfoMessage = new InfoMessage("success")
+  def error(cause: Throwable): InfoMessage = new ErrorMessage(Some(cause))
+  def error: InfoMessage = new ErrorMessage(None)
+  def warning: InfoMessage = new InfoMessage("warning")
+  def info: InfoMessage = new InfoMessage("information")
 
   sealed class ConfirmationMessage {
     def apply(text: String, layout: Layout = Layout.top)(onSuccess: ⇒ Unit): Unit = {

@@ -6,8 +6,8 @@ import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.frontend.components.NanoboardController
-import com.karasiq.nanoboard.frontend.utils.Notifications
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
+import com.karasiq.nanoboard.frontend.utils.{CancelledException, Notifications}
 import com.karasiq.nanoboard.frontend.{NanoboardApi, NanoboardMessageData}
 import org.scalajs.dom
 import rx._
@@ -41,8 +41,11 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
         case Success(base64) ⇒
           replyText() = replyText.now + s"[img=$base64]"
 
+        case Failure(CancelledException) ⇒
+          // Pass
+
         case Failure(exc) ⇒
-          Notifications.error(s"Attachment generation error: $exc", Layout.topRight)
+          Notifications.error(exc)("Attachment generation error", Layout.topRight)
       }
     })
 
@@ -55,7 +58,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
             controller.addPost(newPost)
 
           case Failure(exc) ⇒
-            Notifications.error(s"Posting error: $exc", Layout.topRight)
+            Notifications.error(exc)("Posting error", Layout.topRight)
         }
       }
     })

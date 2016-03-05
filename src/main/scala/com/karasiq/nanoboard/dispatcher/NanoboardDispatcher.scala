@@ -9,7 +9,8 @@ case class NanoboardMessageData(parent: Option[String], hash: String, text: Stri
 
 trait NanoboardDispatcher {
   def createContainer(pending: Int, random: Int, format: String, container: ByteString): Future[ByteString]
-  def pending(): Future[Seq[NanoboardMessageData]]
+  def recent(offset: Int, count: Int): Future[Seq[NanoboardMessageData]]
+  def pending(offset: Int, count: Int): Future[Seq[NanoboardMessageData]]
   def places(): Future[Seq[String]]
   def categories(): Future[Seq[NanoboardMessageData]]
   def post(hash: String): Future[Option[NanoboardMessageData]]

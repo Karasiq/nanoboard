@@ -1,4 +1,5 @@
 import com.karasiq.nanoboard.NanoboardMessage
+import com.karasiq.nanoboard.dispatcher.NanoboardMessageData
 import com.karasiq.nanoboard.server.model._
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import slick.driver.H2Driver.api._
@@ -20,11 +21,12 @@ class DatabaseTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       message ← Post.get(testMessage.hash)
     } yield message
 
-    val result = Await.result(db.run(query), Duration.Inf)
-    result shouldBe Some((testMessage, 0))
+    val result: Option[NanoboardMessageData] = Await.result(db.run(query), Duration.Inf)
+    val testMessageData = NanoboardMessageData(Some(testMessage.parent), testMessage.hash, testMessage.text, 0)
+    result shouldBe Some(testMessageData)
 
-    val answers = Await.result(db.run(Post.thread("8b8cfb7574741838450e286909e8fd1f", 0, 10)), Duration.Inf)
-    answers.toVector shouldBe Vector(testMessage → 0)
+    val answers: Vector[NanoboardMessageData] = Await.result(db.run(Post.thread("8b8cfb7574741838450e286909e8fd1f", 0, 10)), Duration.Inf).toVector
+    answers shouldBe Vector(testMessageData)
   }
 
   it should "delete entry" in {

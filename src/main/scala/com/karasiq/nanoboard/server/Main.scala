@@ -15,6 +15,7 @@ import com.typesafe.config.ConfigFactory
 import slick.driver.H2Driver.api._
 import slick.jdbc.meta.MTable
 
+import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
@@ -62,6 +63,7 @@ object Main extends App {
 
   schema.foreach { _ ⇒
     val messageSource = UrlPngSource()
+    val spamFilter = config.getStringList("nanoboard.scheduler.spam-filter").toVector
 
     Source.tick(10 seconds, FiniteDuration(actorSystem.settings.config.getDuration("nanoboard.scheduler.update-interval", TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS), ())
       .flatMapConcat(_ ⇒ Source.fromPublisher(db.stream(Place.list())))
@@ -69,7 +71,7 @@ object Main extends App {
       .filterNot(cache.contains)
       .alsoTo(Sink.foreach(image ⇒ cache += image))
       .flatMapMerge(8, messageSource.messagesFromImage)
-      .filter(_.text.length <= maxPostSize)
+      .filter(message ⇒ message.text.length <= maxPostSize && spamFilter.forall(!message.text.matches(_)))
       .runWith(Sink.foreach(message ⇒ db.run(Post.insertMessage(message))))
 
     val server = new NanoboardServer(dispatcher)

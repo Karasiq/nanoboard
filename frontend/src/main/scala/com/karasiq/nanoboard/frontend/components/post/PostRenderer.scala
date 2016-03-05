@@ -9,7 +9,6 @@ import rx._
 import scala.concurrent.ExecutionContext
 import scalatags.JsDom.all._
 
-//noinspection VariablePatternShadow
 private[components] object PostRenderer {
   def apply()(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): PostRenderer = {
     new PostRenderer
@@ -22,30 +21,18 @@ private[components] object PostRenderer {
     case PostDomValues(values) ⇒
       values.map(asPlainText).mkString
 
-    case BoldText(value) ⇒
-      asPlainText(value)
-
-    case ItalicText(value) ⇒
-      asPlainText(value)
-
-    case UnderlinedText(value) ⇒
-      asPlainText(value)
-
-    case StrikeThroughText(value) ⇒
-      asPlainText(value)
-
-    case GreenText(_) | SpoilerText(_) | InlineImage(_) | FractalMusic(_) ⇒
+    case BBCode("grn" | "sp" | "spoiler", _) ⇒
       ""
 
-    case ExternalImage(url) ⇒
-      url
+    case BBCode(_, value) ⇒
+      asPlainText(value)
 
-    case ExternalVideo(url) ⇒
-      url
+    case _ ⇒
+      ""
   }
 }
 
-//noinspection VariablePatternShadow
+// TODO: Fractal music
 private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) {
   def render(parsed: PostDomValue): Frag = parsed match {
     case PlainText(value) ⇒
@@ -54,34 +41,41 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
     case PostDomValues(values) ⇒
       values.map(render)
 
-    case BoldText(value) ⇒
+    case BBCode("b", value) ⇒
       span(fontWeight.bold, render(value))
 
-    case ItalicText(value) ⇒
+    case BBCode("i", value) ⇒
       span(fontStyle.italic, render(value))
 
-    case UnderlinedText(value) ⇒
+    case BBCode("u", value) ⇒
       span(textDecoration.underline, render(value))
 
-    case StrikeThroughText(value) ⇒
+    case BBCode("s", value) ⇒
       span(textDecoration.`line-through`, render(value))
 
-    case GreenText(value) ⇒
+    case BBCode("g", value) ⇒
       span(controller.style.greenText, render(value))
 
-    case SpoilerText(value) ⇒
+    case BBCode("sp" | "spoiler", value) ⇒
       span(controller.style.spoiler, render(value))
 
-    case InlineImage(base64) ⇒
+    case ShortBBCode("img", base64) ⇒
       PostInlineImage(base64)
 
-    case ExternalImage(url) ⇒
+    case ShortBBCode("simg", url) ⇒
       PostExternalImage(url)
 
-    case ExternalVideo(url) ⇒
+    case ShortBBCode("svid", url) ⇒
       PostExternalVideo(url)
 
-    case FractalMusic(music) ⇒
+    case ShortBBCode("fm", music) ⇒
       s"<music: $music>"
+
+    // Unknown
+    case BBCode(name, value) ⇒
+      span(s"[$name]", render(value), s"[/$name]")
+
+    case ShortBBCode(name, value) ⇒
+      s"[$name=$value]"
   }
 }

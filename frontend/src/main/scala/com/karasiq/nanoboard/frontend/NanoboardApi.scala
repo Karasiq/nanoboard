@@ -1,6 +1,6 @@
 package com.karasiq.nanoboard.frontend
 
-import org.scalajs.dom.Blob
+import org.scalajs.dom.{Blob, console}
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.{File, XMLHttpRequest}
 import upickle.default._
@@ -11,12 +11,17 @@ case class NanoboardCategory(hash: String, name: String)
 case class NanoboardReply(parent: String, message: String)
 case class NanoboardMessageData(parent: Option[String], hash: String, text: String, answers: Int)
 
+/**
+  * Nanoboard REST API
+  */
 object NanoboardApi {
   private def readResponse[T: Reader](response: XMLHttpRequest): T = {
     if (response.status == 200) {
       read[T](response.responseText)
     } else {
-      throw new IllegalArgumentException(s"Server error: ${response.status} ${response.statusText} (${response.responseText})")
+      val message = s"Nanoboard API error: ${response.status} ${response.statusText}"
+      console.error(message)
+      throw new IllegalArgumentException(message)
     }
   }
 
@@ -61,6 +66,11 @@ object NanoboardApi {
 
   def pending()(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
     Ajax.get("/pending")
+      .map(readResponse[Vector[NanoboardMessageData]])
+  }
+
+  def recent(offset: Int, count: Int)(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
+    Ajax.get(s"/posts?offset=$offset&count=$count")
       .map(readResponse[Vector[NanoboardMessageData]])
   }
 

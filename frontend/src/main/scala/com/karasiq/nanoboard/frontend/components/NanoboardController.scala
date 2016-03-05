@@ -1,61 +1,73 @@
 package com.karasiq.nanoboard.frontend.components
 
 import com.karasiq.bootstrap.BootstrapImplicits._
+import com.karasiq.bootstrap.icons.FontAwesome
+import com.karasiq.bootstrap.navbar.{NavigationBar, NavigationTab}
 import com.karasiq.nanoboard.frontend.styles.BoardStyle
 import com.karasiq.nanoboard.frontend.{NanoboardCategory, NanoboardContext, NanoboardMessageData}
+import org.scalajs.dom._
 import rx._
 
 import scala.concurrent.ExecutionContext
+import scalatags.JsDom.all._
 
-final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
+object NanoboardController {
+  def apply()(implicit ec: ExecutionContext, ctx: Ctx.Owner): NanoboardController = {
+    new NanoboardController()
+  }
+}
+
+final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) extends PostsContainer {
   private implicit def controller: NanoboardController = this
 
-  val styleSelector = BoardStyle.selector
+  private val styleSelector = BoardStyle.selector
 
   val style: BoardStyle = styleSelector.style.now
 
-  val thread = NanoboardThread(50)
+  private val thread = ThreadContainer(NanoboardContext.fromLocation(), postsPerPage = 20)
 
-  val settingsPanel = SettingsPanel()
+  private val settingsPanel = SettingsPanel()
 
-  val pngGenerationPanel = PngGenerationPanel()
+  private val pngGenerationPanel = PngGenerationPanel()
 
-  val title = NanoboardPageTitle(thread)
+  private val title = ThreadPageTitle(thread)
+
+  private val navigationBar = NavigationBar(
+    NavigationTab("Nanoboard", "thread", "server".fontAwesome(FontAwesome.fixedWidth), div("container-fluid".addClass, thread)),
+    NavigationTab("Server settings", "server-settings", "wrench".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, settingsPanel)),
+    NavigationTab("Container generation", "png-gen", "camera-retro".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, pngGenerationPanel))
+  )
+
+  def initialize(): Unit = {
+    document.head.appendChild(controller.title.renderTag().render)
+    Seq[Frag](navigationBar.navbar("Nanoboard"), div(marginTop := 70.px, navigationBar.content), controller.styleSelector.renderTag(id := "nanoboard-style"))
+      .foreach(_.applyTo(document.body))
+  }
 
   def updateCategories(newList: Seq[NanoboardCategory]): Unit = {
-    if (thread.context.now == NanoboardContext.Root) {
+    if (thread.context.now == NanoboardContext.Categories) {
       thread.update()
     }
   }
 
   def setContext(context: NanoboardContext): Unit = {
     thread.context() = context
+    navigationBar.selectTab("thread")
   }
 
-  def addPost(post: NanoboardMessageData): Unit = {
-    val posts = thread.posts.now
-    if (post.parent.contains(posts.head.hash)) {
-      thread.posts() = posts.take(1) ++ Seq(post) ++ posts.drop(1)
-    } else {
-      thread.posts() = posts.collect {
-        case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(hash) ⇒
-          msg.copy(answers = answers + 1)
+  override def context: Rx[NanoboardContext] = thread.context
 
-        case msg ⇒
-          msg
-      }
-    }
-    pngGenerationPanel.posts() = pngGenerationPanel.posts.now :+ post
+  override def posts: Rx[Vector[NanoboardMessageData]] = thread.posts
+
+  override def update(): Unit = {
+    Seq(thread, pngGenerationPanel).foreach(_.update())
   }
 
-  def deletePost(post: NanoboardMessageData): Unit = {
-    pngGenerationPanel.posts() = pngGenerationPanel.posts.now.filterNot(_.hash == post.hash)
-    thread.context.now match {
-      case NanoboardContext.Thread(post.hash, _) ⇒
-        setContext(post.parent.fold[NanoboardContext](NanoboardContext.Root)(NanoboardContext.Thread(_, 0)))
+  override def addPost(post: NanoboardMessageData): Unit = {
+    Seq(thread, pngGenerationPanel).foreach(_.addPost(post))
+  }
 
-      case _ ⇒
-        thread.posts() = thread.posts.now.filterNot(_.hash == post.hash)
-    }
+  override def deletePost(post: NanoboardMessageData): Unit = {
+    Seq(thread, pngGenerationPanel).foreach(_.deletePost(post))
   }
 }
