@@ -18,6 +18,8 @@ object NanoboardMessage extends DefaultNanoboardMessageFormat {
   private val clientVersion = ConfigFactory.load().getString("nanoboard.client-version")
 
   private val timestampFormat = new DateTimeFormatterBuilder()
+    .appendText(ChronoField.DAY_OF_WEEK, TextStyle.SHORT)
+    .appendLiteral(", ")
     .appendValue(ChronoField.DAY_OF_MONTH)
     .appendLiteral('/')
     .appendText(ChronoField.MONTH_OF_YEAR, TextStyle.SHORT)

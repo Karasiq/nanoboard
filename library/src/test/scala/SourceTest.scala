@@ -1,7 +1,7 @@
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
-import com.karasiq.nanoboard.sources.UrlPngSource
+import com.karasiq.nanoboard.sources.png.UrlPngSource
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
 import scala.concurrent.Await

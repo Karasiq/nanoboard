@@ -1,6 +1,6 @@
 lazy val commonSettings = Seq(
   organization := "com.github.karasiq",
-  version := "1.0.2",
+  version := "1.0.3",
   isSnapshot := version.value.endsWith("SNAPSHOT"),
   scalaVersion := "2.11.7"
 )
@@ -17,7 +17,9 @@ lazy val librarySettings = Seq(
       "commons-codec" % "commons-codec" % "1.8",
       "commons-io" % "commons-io" % "2.4",
       "org.bouncycastle" % "bcprov-jdk15on" % "1.52",
-      "org.jsoup" % "jsoup" % "1.8.3"
+      "org.jsoup" % "jsoup" % "1.8.3",
+      "com.lihaoyi" %% "upickle" % "0.3.8",
+      "com.lihaoyi" %% "scalatags" % "0.5.4"
     )
   },
   publishMavenStyle := true,
@@ -50,7 +52,6 @@ lazy val backendSettings = Seq(
   libraryDependencies ++= Seq(
     "com.github.karasiq" %% "mapdbutils" % "1.1.1",
     "org.mapdb" % "mapdb" % "2.0-beta12",
-    "com.lihaoyi" %% "upickle" % "0.3.8",
     "me.chrons" %% "boopickle" % "1.1.2",
     "com.typesafe.slick" %% "slick" % "3.1.1",
     "com.h2database" % "h2" % "1.4.191",

@@ -28,6 +28,7 @@ private[components] final class PostExternalVideo(url: String, sources: Seq[Vide
       VideoJSBuilder()
         .techOrder(techOrder:_*)
         .sources(sources:_*)
+        .dimensions(640, 360)
         .fluid(true)
         .autoplay(true)
         .loop(true)

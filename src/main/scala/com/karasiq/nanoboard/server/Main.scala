@@ -10,7 +10,7 @@ import akka.stream.scaladsl._
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
 import com.karasiq.nanoboard.server.cache.MapDbNanoboardCache
 import com.karasiq.nanoboard.server.model.{Place, Post, _}
-import com.karasiq.nanoboard.sources.UrlPngSource
+import com.karasiq.nanoboard.sources.png.UrlPngSource
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardLegacy}
 import com.typesafe.config.ConfigFactory
 import slick.driver.H2Driver.api._

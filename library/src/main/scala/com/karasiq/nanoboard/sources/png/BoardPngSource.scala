@@ -1,4 +1,4 @@
-package com.karasiq.nanoboard.sources
+package com.karasiq.nanoboard.sources.png
 
 import java.net.URL
 
