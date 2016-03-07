@@ -3,10 +3,11 @@ package com.karasiq.nanoboard.frontend.components.post
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
+import com.karasiq.nanoboard.frontend.NanoboardContext
+import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardMessageData}
 import com.karasiq.nanoboard.frontend.components.NanoboardController
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Notifications, PostParser}
-import com.karasiq.nanoboard.frontend.{NanoboardApi, NanoboardContext, NanoboardMessageData}
 import org.parboiled2.ParseError
 import org.scalajs.dom
 import rx.Ctx

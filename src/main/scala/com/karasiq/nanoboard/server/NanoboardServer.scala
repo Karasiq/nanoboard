@@ -5,6 +5,7 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
+import boopickle.Default._
 import com.karasiq.nanoboard.NanoboardCategory
 import com.karasiq.nanoboard.dispatcher.NanoboardDispatcher
 import com.karasiq.nanoboard.server.util.AttachmentGenerator
@@ -15,7 +16,7 @@ import scala.util.{Failure, Success}
 case class NanoboardReply(parent: String, message: String)
 
 
-final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSystem: ActorSystem, actorMaterializer: ActorMaterializer) extends UpickleMarshaller {
+final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSystem: ActorSystem, actorMaterializer: ActorMaterializer) extends BinaryMarshaller {
   private implicit def ec: ExecutionContext = actorSystem.dispatcher
 
   private val sha256HashRegex = "[A-Za-z0-9]{32}".r
@@ -52,7 +53,7 @@ final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSyste
       }
     } ~
     post {
-      (path("post") & entity[NanoboardReply](jsonUnmarshaller)) { case NanoboardReply(parent, message) ⇒
+      (path("post") & entity(as[NanoboardReply])) { case NanoboardReply(parent, message) ⇒
         if (message.length <= maxPostSize) {
           complete(StatusCodes.OK, dispatcher.reply(parent, message))
         } else {
@@ -82,11 +83,11 @@ final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSyste
       }
     } ~
     put {
-      (path("places") & entity[Seq[String]](jsonUnmarshaller) & extractLog) { (places, log) ⇒
+      (path("places") & entity(as[Seq[String]]) & extractLog) { (places, log) ⇒
         log.info("Places updated: {}", places)
         complete(StatusCodes.OK, dispatcher.updatePlaces(places))
       } ~
-      (path("categories") & entity[Seq[NanoboardCategory]](jsonUnmarshaller) & extractLog) { (categories, log) ⇒
+      (path("categories") & entity(as[Seq[NanoboardCategory]]) & extractLog) { (categories, log) ⇒
         log.info("Categories updated: {}", categories)
         complete(StatusCodes.OK, dispatcher.updateCategories(categories))
       }

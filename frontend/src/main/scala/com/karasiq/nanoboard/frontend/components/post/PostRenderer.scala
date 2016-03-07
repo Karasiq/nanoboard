@@ -21,7 +21,7 @@ private[components] object PostRenderer {
     case PostDomValues(values) ⇒
       values.map(asPlainText).mkString
 
-    case BBCode("grn" | "sp" | "spoiler", _) ⇒
+    case BBCode("g" | "sp" | "spoiler", _) ⇒
       ""
 
     case BBCode(_, value) ⇒

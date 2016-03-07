@@ -2,8 +2,9 @@ package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
+import com.karasiq.nanoboard.frontend.NanoboardContext
+import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.components.NanoboardController
-import com.karasiq.nanoboard.frontend.{NanoboardApi, NanoboardContext}
 import org.scalajs.dom
 import rx._
 import rx.async._

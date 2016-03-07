@@ -3,8 +3,9 @@ package com.karasiq.nanoboard.frontend.components
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.navbar.{NavigationBar, NavigationTab}
+import com.karasiq.nanoboard.frontend.NanoboardContext
+import com.karasiq.nanoboard.frontend.api.{NanoboardCategory, NanoboardMessageData}
 import com.karasiq.nanoboard.frontend.styles.BoardStyle
-import com.karasiq.nanoboard.frontend.{NanoboardCategory, NanoboardContext, NanoboardMessageData}
 import org.scalajs.dom._
 import rx._
 

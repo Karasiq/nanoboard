@@ -21,7 +21,7 @@ private[components] final class ThreadPageTitle(thread: PostsContainer)(implicit
     thread.posts().headOption.fold("Nanoboard") { post ⇒
       val parser = new PostParser(post.text)
       val text = parser.Message.run().toOption
-        .map(PostRenderer.asPlainText(_).take(100))
+        .map(PostRenderer.asPlainText(_).trim.split("\\s+").take(10).mkString(" "))
         .filter(_.nonEmpty)
       text.fold("Nanoboard")("Nanoboard - " + _)
     }

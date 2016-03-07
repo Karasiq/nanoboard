@@ -21,14 +21,14 @@ private[components] object PostExternalVideo {
 }
 
 private[components] final class PostExternalVideo(url: String, sources: Seq[VideoSource], techOrder: Seq[String] = Nil)(implicit ctx: Ctx.Owner) extends BootstrapHtmlComponent[dom.html.Span] {
-  val state = Var(false)
+  val expanded = Var(false)
 
   private val videoPlayer = Rx[Frag] {
-    if (state()) {
+    if (expanded()) {
       VideoJSBuilder()
         .techOrder(techOrder:_*)
         .sources(sources:_*)
-        .dimensions(640, 360)
+        .fluid(true)
         .autoplay(true)
         .loop(true)
         .controls(true)
@@ -40,7 +40,7 @@ private[components] final class PostExternalVideo(url: String, sources: Seq[Vide
 
   override def renderTag(md: Modifier*) = {
     span(
-      a(href := url, fontWeight.bold, "play-circle".fontAwesome(FontAwesome.fixedWidth), url, onclick := Bootstrap.jsClick(_ ⇒ state() = !state.now)),
+      a(href := url, fontWeight.bold, "play-circle".fontAwesome(FontAwesome.fixedWidth), url, onclick := Bootstrap.jsClick(_ ⇒ expanded() = !expanded.now)),
       videoPlayer,
       md
     )

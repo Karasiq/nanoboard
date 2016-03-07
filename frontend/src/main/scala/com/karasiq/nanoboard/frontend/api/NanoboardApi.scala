@@ -1,9 +1,10 @@
-package com.karasiq.nanoboard.frontend
+package com.karasiq.nanoboard.frontend.api
 
-import org.scalajs.dom.{Blob, console}
+
+import boopickle.Default._
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.{File, XMLHttpRequest}
-import upickle.default._
+import org.scalajs.dom.{Blob, console}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -15,9 +16,11 @@ case class NanoboardMessageData(parent: Option[String], hash: String, text: Stri
   * Nanoboard REST API
   */
 object NanoboardApi {
-  private def readResponse[T: Reader](response: XMLHttpRequest): T = {
+  private val marshaller = BinaryMarshaller
+  
+  private def readResponse[T: Pickler](response: XMLHttpRequest): T = {
     if (response.status == 200) {
-      read[T](response.responseText)
+      marshaller.read[T](response.response)
     } else {
       val message = s"Nanoboard API error: ${response.status} ${response.statusText}"
       console.error(message)
@@ -26,22 +29,22 @@ object NanoboardApi {
   }
 
   def categories()(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
-    Ajax.get("/categories")
+    Ajax.get("/categories", responseType = marshaller.responseType)
       .map(readResponse[Vector[NanoboardMessageData]])
   }
 
   def post(hash: String)(implicit ec: ExecutionContext): Future[Option[NanoboardMessageData]] = {
-    Ajax.get(s"/post/$hash")
+    Ajax.get(s"/post/$hash", responseType = marshaller.responseType)
       .map(readResponse[Option[NanoboardMessageData]])
   }
 
   def thread(hash: String, offset: Int, count: Int)(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
-    Ajax.get(s"/posts/$hash?offset=$offset&count=$count")
+    Ajax.get(s"/posts/$hash?offset=$offset&count=$count", responseType = marshaller.responseType)
       .map(readResponse[Vector[NanoboardMessageData]])
   }
 
   def addReply(hash: String, message: String)(implicit ec: ExecutionContext): Future[NanoboardMessageData] = {
-    Ajax.post(s"/post", write(NanoboardReply(hash, message)))
+    Ajax.post(s"/post", marshaller.write(NanoboardReply(hash, message)), responseType = marshaller.responseType)
       .map(readResponse[NanoboardMessageData])
   }
 
@@ -50,27 +53,27 @@ object NanoboardApi {
   }
 
   def places()(implicit ec: ExecutionContext): Future[Seq[String]] = {
-    Ajax.get("/places")
+    Ajax.get("/places", responseType = marshaller.responseType)
       .map(readResponse[Seq[String]])
   }
 
   def setPlaces(newList: Seq[String])(implicit ec: ExecutionContext): Future[Unit] = {
-    Ajax.put("/places", write(newList))
+    Ajax.put("/places", marshaller.write(newList))
       .map(_ ⇒ ())
   }
 
   def setCategories(newList: Seq[NanoboardCategory])(implicit ec: ExecutionContext): Future[Unit] = {
-    Ajax.put("/categories", write(newList))
+    Ajax.put("/categories", marshaller.write(newList))
       .map(_ ⇒ ())
   }
 
   def pending()(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
-    Ajax.get("/pending")
+    Ajax.get("/pending", responseType = marshaller.responseType)
       .map(readResponse[Vector[NanoboardMessageData]])
   }
 
   def recent(offset: Int, count: Int)(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
-    Ajax.get(s"/posts?offset=$offset&count=$count")
+    Ajax.get(s"/posts?offset=$offset&count=$count", responseType = marshaller.responseType)
       .map(readResponse[Vector[NanoboardMessageData]])
   }
 

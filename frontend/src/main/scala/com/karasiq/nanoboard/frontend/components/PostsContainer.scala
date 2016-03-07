@@ -1,6 +1,7 @@
 package com.karasiq.nanoboard.frontend.components
 
-import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardMessageData}
+import com.karasiq.nanoboard.frontend.NanoboardContext
+import com.karasiq.nanoboard.frontend.api.NanoboardMessageData
 import rx.Rx
 
 trait PostsContainer {

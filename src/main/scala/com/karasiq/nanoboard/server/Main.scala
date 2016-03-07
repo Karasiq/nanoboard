@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.Http.ServerBinding
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
@@ -19,6 +20,7 @@ import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
+import scala.util.{Failure, Success}
 
 
 object Main extends App {
@@ -77,7 +79,12 @@ object Main extends App {
     val server = new NanoboardServer(dispatcher)
     val host = config.getString("nanoboard.server.host")
     val port = config.getInt("nanoboard.server.port")
-    actorSystem.log.info(s"Nanoboard server listening at http://$host:$port/")
-    Http().bindAndHandle(server.route, host, port)
+    Http().bindAndHandle(server.route, host, port).onComplete {
+      case Success(ServerBinding(address)) ⇒
+        actorSystem.log.info("Nanoboard server listening at {}", address)
+
+      case Failure(exc) ⇒
+        actorSystem.log.error(exc, "Port binding failure")
+    }
   }
 }

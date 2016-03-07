@@ -27,17 +27,13 @@ class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: 
         NanoboardMessage.parseMessages(decoded)
       }
       .recover { case _ ⇒ Nil }
-      .filter(_.nonEmpty)
-      // .log("image-messages")
       .mapConcat(identity)
   }
 
   def imagesFromPage(url: String): Source[String, akka.NotUsed] = {
     Source.fromFuture(http.singleRequest(HttpRequest(uri = url)))
       .flatMapConcat(_.entity.dataBytes.fold(ByteString.empty)(_ ++ _))
-      .map(data ⇒ imagesFromPage(Jsoup.parse(data.utf8String, url)))
-      .recover { case _ ⇒ Source.empty }
-      .flatMapConcat(identity)
+      .flatMapConcat(data ⇒ imagesFromPage(Jsoup.parse(data.utf8String, url)))
   }
 
   protected def imagesFromPage(page: Document): Source[String, akka.NotUsed] = {

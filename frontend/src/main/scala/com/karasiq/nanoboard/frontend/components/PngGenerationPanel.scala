@@ -3,10 +3,11 @@ package com.karasiq.nanoboard.frontend.components
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
+import com.karasiq.nanoboard.frontend.NanoboardContext
+import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardMessageData}
 import com.karasiq.nanoboard.frontend.components.post.NanoboardPost
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Blobs, Notifications}
-import com.karasiq.nanoboard.frontend.{NanoboardApi, NanoboardContext, NanoboardMessageData}
 import org.scalajs.dom
 import org.scalajs.dom.html.Input
 import rx._
@@ -60,7 +61,7 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
 
   private val form = Form(
     FormInput.number("Pending posts", name := "pending", value := 10, min := 0),
-    FormInput.number("Random posts", name := "random", value := 50, min := 0),
+    FormInput.number("Random posts", name := "random", value := 30, min := 0),
     FormInput.text("Output format", name := "format", value := "png"),
     FormInput.file("Data container", name := "container"),
     Form.submit("Generate container image")("disabled".classIf(loading)),

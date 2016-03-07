@@ -50,7 +50,7 @@ final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataE
   private def asRgbBytes(img: BufferedImage): Array[Int] = {
     val colors = new Array[Int](img.getWidth * img.getHeight)
     img.getRGB(0, 0, img.getWidth, img.getHeight, colors, 0, img.getWidth)
-    val bytes = new Array[Int](colors.length * 4)
+    val bytes = new Array[Int](colors.length * 3)
     for (i ← colors.indices) {
       val color = new Color(colors(i))
       bytes(i * 3) = color.getRed

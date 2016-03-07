@@ -21,7 +21,7 @@ package object model {
     def message = column[String]("message")
     def firstSeen = column[Long]("first_seen")
 
-    def threadIdx = index("thread_index", parent, unique = false)
+    def threadIdx = index("thread_index", (parent, firstSeen), unique = false)
     def recentIdx = index("recent_index", firstSeen, unique = false)
     def * = (hash, parent, message, firstSeen) <> (DBPost.tupled, DBPost.unapply)
   }

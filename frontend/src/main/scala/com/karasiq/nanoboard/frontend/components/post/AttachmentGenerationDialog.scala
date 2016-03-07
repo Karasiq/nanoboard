@@ -4,7 +4,7 @@ import com.karasiq.bootstrap.Bootstrap
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.modal.Modal
-import com.karasiq.nanoboard.frontend.NanoboardApi
+import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.utils.CancelledException
 import org.scalajs.dom.html.Input
 import org.scalajs.dom.raw.File
