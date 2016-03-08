@@ -16,6 +16,8 @@ trait NanoboardDispatcher {
   def post(hash: String): Future[Option[NanoboardMessageData]]
   def thread(hash: String, offset: Int, count: Int): Future[Seq[NanoboardMessageData]]
   def reply(parent: String, text: String): Future[NanoboardMessageData]
+  def markAsNotPending(message: String): Future[Unit]
+  def markAsPending(message: String): Future[Unit]
   def delete(message: String): Future[Unit]
   def updatePlaces(places: Seq[String]): Future[Unit]
   def updateCategories(categories: Seq[NanoboardCategory]): Future[Unit]

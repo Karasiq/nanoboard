@@ -77,6 +77,9 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
           log.info("Post permanently deleted: {}", hash)
           complete(StatusCodes.OK, dispatcher.delete(hash))
         }
+      } ~
+      path("pending" / NanoboardMessage.hashRegex) { hash ⇒
+        complete(StatusCodes.OK, dispatcher.markAsNotPending(hash))
       }
     } ~
     put {
@@ -87,6 +90,9 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       (path("categories") & entity(as[Seq[NanoboardCategory]]) & extractLog) { (categories, log) ⇒
         log.info("Categories updated: {}", categories)
         complete(StatusCodes.OK, dispatcher.updateCategories(categories))
+      } ~
+      path("pending" / NanoboardMessage.hashRegex) { hash ⇒
+        complete(StatusCodes.OK, dispatcher.markAsPending(hash))
       }
     }
   }

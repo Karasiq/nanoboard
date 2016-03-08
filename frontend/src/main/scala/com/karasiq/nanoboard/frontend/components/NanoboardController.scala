@@ -54,6 +54,18 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
     navigationBar.selectTab("thread")
   }
 
+  def isPending(hash: String): Rx[Boolean] = {
+    pngGenerationPanel.posts.map(_.exists(_.hash == hash))
+  }
+
+  def addPending(post: NanoboardMessageData): Unit = {
+    pngGenerationPanel.addPost(post)
+  }
+
+  def deletePending(post: NanoboardMessageData): Unit = {
+    pngGenerationPanel.deletePost(post)
+  }
+
   override def context: Rx[NanoboardContext] = thread.context
 
   override def posts: Rx[Vector[NanoboardMessageData]] = thread.posts

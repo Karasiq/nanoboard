@@ -46,7 +46,18 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
         a(style.postLink, href := "#", "trash-o".fontAwesome(FontAwesome.fixedWidth), "Delete", onclick := Bootstrap.jsClick { _ ⇒
           this.delete()
         }),
-        PostReplyField(data)
+        PostReplyField(data),
+        controller.isPending(data.hash).map { pending ⇒
+          if (!pending) a(style.postLink, href := "#", "sign-in".fontAwesome(FontAwesome.fixedWidth), "Enqueue", onclick := Bootstrap.jsClick { a ⇒
+            NanoboardApi.markAsPending(data.hash).foreach { _ ⇒
+              controller.addPending(data)
+            }
+          }) else a(style.postLink, href := "#", "sign-out".fontAwesome(FontAwesome.fixedWidth), "Dequeue", onclick := Bootstrap.jsClick { a ⇒
+            NanoboardApi.markAsNotPending(data.hash).foreach { _ ⇒
+              controller.deletePending(data)
+            }
+          })
+        }
       ),
       md
     )

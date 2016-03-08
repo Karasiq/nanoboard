@@ -83,6 +83,14 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
     db.run(Post.thread(hash, offset, count))
   }
 
+  override def markAsNotPending(message: String): Future[Unit] = {
+    db.run(DBIO.seq(pendingPosts.filter(_.hash === message).delete))
+  }
+
+  override def markAsPending(message: String): Future[Unit] = {
+    db.run(DBIO.seq(pendingPosts.insertOrUpdate(message)))
+  }
+
   override def delete(message: String): Future[Unit] = {
     db.run(Post.delete(message))
   }

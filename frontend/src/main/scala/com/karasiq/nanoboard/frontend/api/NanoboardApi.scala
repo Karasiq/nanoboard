@@ -48,6 +48,14 @@ object NanoboardApi {
       .map(readResponse[NanoboardMessageData])
   }
 
+  def markAsPending(hash: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    Ajax.put(s"/pending/$hash").map(_ ⇒ ())
+  }
+
+  def markAsNotPending(hash: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    Ajax.delete(s"/pending/$hash").map(_ ⇒ ())
+  }
+
   def delete(hash: String)(implicit ec: ExecutionContext): Future[Unit] = {
     Ajax.delete(s"/post/$hash").map(_ ⇒ ())
   }
