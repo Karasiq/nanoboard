@@ -33,6 +33,7 @@ private[components] final class PostExternalVideo(url: String, sources: Seq[Vide
         .autoplay(true)
         .loop(true)
         .controls(true)
+        .options("iv_load_policy" → 1)
         .build()
     } else {
       ""

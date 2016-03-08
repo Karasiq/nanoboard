@@ -9,7 +9,7 @@ final class DefaultUrlPngSource(encoding: DataEncodingStage)(implicit as: ActorS
   private val sosach = new SosachPngSource(encoding)
 
   private def select(url: String): UrlPngSource = {
-    if (url.startsWith("https://2ch.hk/")) sosach
+    if (url.startsWith("https://2ch.hk/") || url.startsWith("http://2ch.hk/")) sosach
     else generic
   }
 

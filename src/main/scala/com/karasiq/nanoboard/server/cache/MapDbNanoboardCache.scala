@@ -3,14 +3,20 @@ package com.karasiq.nanoboard.server.cache
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 
-final class MapDbNanoboardCache(config: Config) extends NanoboardCache {
+private[server] object MapDbNanoboardCache {
+  def apply(config: Config = ConfigFactory.load()): NanoboardCache = {
+    new MapDbNanoboardCache(config)
+  }
+}
+
+private[cache] final class MapDbNanoboardCache(config: Config) extends NanoboardCache {
   import com.karasiq.mapdb.{MapDbSingleFileProducer, MapDbWrapper}
   import org.mapdb.DBMaker.Maker
   import org.mapdb.Serializer
 
-  private object DbProvider extends MapDbSingleFileProducer(Paths.get(config.getString("path"))) {
+  private object DbProvider extends MapDbSingleFileProducer(Paths.get(config.getString("nanoboard.scheduler.cache.path"))) {
     override protected def setSettings(dbMaker: Maker): Maker = {
       dbMaker
         .transactionDisable()

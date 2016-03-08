@@ -4,32 +4,29 @@ import java.io.ByteArrayInputStream
 import javax.imageio.ImageIO
 
 import akka.actor.ActorSystem
-import akka.event.Logging
-import akka.http.scaladsl.Http
-import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.util.ByteString
 import com.karasiq.nanoboard.encoding.DataEncodingStage._
 import com.karasiq.nanoboard.encoding.stages.{GzipCompression, PngEncoding, SalsaCipher}
 import com.karasiq.nanoboard.server.model._
-import com.karasiq.nanoboard.sources.bitmessage.BitMessageTransport
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 import slick.driver.H2Driver.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-final class NanoboardSlickDispatcher(config: Config, db: Database)(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer) extends NanoboardDispatcher {
-  private val encryptionKey = config.getString("nanoboard.encryption-key")
+object NanoboardSlickDispatcher {
+  def apply(db: Database, config: Config = ConfigFactory.load(), postSink: Sink[NanoboardMessage, _] = Sink.ignore)(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer): NanoboardDispatcher = {
+    new NanoboardSlickDispatcher(db, config, postSink)
+  }
+}
 
-  private val log = Logging(as, "NanoboardDispatcher")
-
-  private val bitMessage = new BitMessageTransport(config, { message ⇒
-    log.debug("Message from BM transport received: {}", message)
-    db.run(Post.insertMessage(message))
-  })
-
-  Http().bindAndHandle(bitMessage.route, "127.0.0.1", config.getInt("nanoboard.bitmessage.listen-port"))
+private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: Config, postSink: Sink[NanoboardMessage, _])(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer) extends NanoboardDispatcher {
+  private val postQueue = Source.queue(20, OverflowStrategy.dropHead)
+    .to(postSink)
+    .run()
 
   override def createContainer(pendingCount: Int, randomCount: Int, format: String, container: ByteString) = {
     val pending = Post.pending(0, pendingCount)
@@ -40,7 +37,7 @@ final class NanoboardSlickDispatcher(config: Config, db: Database)(implicit ec: 
       r ← random
     } yield Random.shuffle((p ++ r).toVector)
 
-    val stage = Seq(GzipCompression(), SalsaCipher(encryptionKey), PngEncoding(data ⇒ {
+    val stage = Seq(GzipCompression(), SalsaCipher.fromConfig(config), PngEncoding(data ⇒ {
       val inputStream = new ByteArrayInputStream(container.toArray)
       val image = try { ImageIO.read(inputStream) } finally inputStream.close()
       assert(image.ne(null), "Invalid image")
@@ -92,11 +89,7 @@ final class NanoboardSlickDispatcher(config: Config, db: Database)(implicit ec: 
 
   override def reply(parent: String, text: String): Future[NanoboardMessageData] = {
     val newMessage: NanoboardMessage = NanoboardMessage.newMessage(parent, text)
-    if (config.getBoolean("nanoboard.bitmessage.send")) {
-      bitMessage.sendMessage(newMessage).foreach { response ⇒
-        log.info("Message sent to BM transport: {}", response)
-      }
-    }
+    postQueue.offer(newMessage)
     db.run(Post.addReply(newMessage)).map(_ ⇒ NanoboardMessageData(Some(parent), newMessage.hash, newMessage.text, 0))
   }
 

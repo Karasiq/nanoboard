@@ -6,7 +6,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.util.ByteString
 import boopickle.Default._
 
-trait BinaryMarshaller {
+private[server] trait BinaryMarshaller {
   implicit def defaultMarshaller[T: Pickler]: ToEntityMarshaller[T] = {
     val contentType = ContentTypes.`application/octet-stream`
     Marshaller.withFixedContentType(contentType)((value: T) ⇒ HttpEntity(contentType, ByteString(Pickle.intoBytes(value))))

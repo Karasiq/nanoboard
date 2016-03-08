@@ -12,8 +12,8 @@ object NanoboardContext {
   // Simple single page app router
   def fromLocation()(implicit ctx: Ctx.Owner): Var[NanoboardContext] = {
     val location = RxLocation()
-    val sha256 = "([A-Za-z0-9]{32})".r
-    val sha256WithOffset = "([A-Za-z0-9]{32})/(\\d+)".r
+    val sha256 = "([a-fA-F0-9]{32})".r
+    val sha256WithOffset = "([a-fA-F0-9]{32})/(\\d+)".r
     val onlyOffset = "(\\d+)".r
     val result = Var[NanoboardContext](NanoboardContext.Categories)
     location.hash.foreach { hash ⇒

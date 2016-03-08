@@ -32,6 +32,8 @@ object NanoboardMessage extends DefaultNanoboardMessageFormat {
     .appendLiteral(")")
     .toFormatter(Locale.ENGLISH)
 
+  val hashRegex = "(?i)[a-f0-9]{32}".r
+
   def newMessage(parent: String, text: String): NanoboardMessage = {
     val header = s"[g]${timestampFormat.format(ZonedDateTime.now())}, client: $clientVersion[/g]"
     NanoboardMessage(parent, s"$header\n$text")

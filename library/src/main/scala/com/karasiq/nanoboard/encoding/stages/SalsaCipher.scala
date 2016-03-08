@@ -2,6 +2,7 @@ package com.karasiq.nanoboard.encoding.stages
 
 import akka.util.ByteString
 import com.karasiq.nanoboard.encoding.{DataCipher, DataEncodingStage}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.codec.Charsets
 import org.bouncycastle.crypto.engines.Salsa20Engine
 import org.bouncycastle.crypto.params.{KeyParameter, ParametersWithIV}
@@ -9,6 +10,10 @@ import org.bouncycastle.crypto.params.{KeyParameter, ParametersWithIV}
 object SalsaCipher {
   def apply(key: String): SalsaCipher = {
     new SalsaCipher(key)
+  }
+
+  def fromConfig(config: Config = ConfigFactory.load()): SalsaCipher = {
+    apply(config.getString("nanoboard.encryption-key"))
   }
 }
 
