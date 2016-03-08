@@ -46,9 +46,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
   }
 
   def updateCategories(newList: Seq[NanoboardCategory]): Unit = {
-    if (thread.context.now == NanoboardContext.Categories) {
-      thread.update()
-    }
+    thread.updateCategories()
   }
 
   def setContext(context: NanoboardContext): Unit = {

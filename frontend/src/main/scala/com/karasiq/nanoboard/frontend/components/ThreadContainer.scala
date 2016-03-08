@@ -7,13 +7,13 @@ import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.frontend.NanoboardContext
 import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardMessageData}
-import com.karasiq.nanoboard.frontend.components.post.NanoboardPost
-import com.karasiq.nanoboard.frontend.utils.Notifications
+import com.karasiq.nanoboard.frontend.components.post.{NanoboardPost, PostRenderer}
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
+import com.karasiq.nanoboard.frontend.utils.{Notifications, PostParser}
 import org.scalajs.dom
 import rx._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import scalatags.JsDom.all._
 
@@ -24,10 +24,12 @@ object ThreadContainer {
 }
 
 final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: Int)(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] with PostsContainer {
+  // Model
   private val deletedPosts = Var(0)
-
+  val categories = Var(Vector.empty[NanoboardMessageData])
   override val posts = Var(Vector.empty[NanoboardMessageData])
 
+  // Controller
   override def addPost(post: NanoboardMessageData): Unit = {
     context.now match {
       case NanoboardContext.Recent(0) ⇒
@@ -48,20 +50,27 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
   }
 
   override def deletePost(post: NanoboardMessageData): Unit = {
+    categories() = categories.now.filterNot(_.hash == post.hash)
     context.now match {
       case NanoboardContext.Thread(post.hash, _) ⇒
-        context() = post.parent.fold[NanoboardContext](NanoboardContext.Categories)(NanoboardContext.Thread(_, 0))
+        context() = post.parent.fold[NanoboardContext](NanoboardContext.Categories)(NanoboardContext.Thread(_))
+
+      case NanoboardContext.Thread(_, _) ⇒
+        val (Vector(opPost), answers) = posts.now.splitAt(1)
+        posts() = opPost.copy(answers = opPost.answers - 1) +: answers.filterNot(p ⇒ p.hash == post.hash || p.parent.contains(post.hash))
+        deletedPosts() = deletedPosts.now + (answers.length - posts.now.length + 1)
 
       case _ ⇒
-        posts() = posts.now.filterNot(p ⇒ p.hash == post.hash || p.parent.contains(post.hash))
-        deletedPosts() = deletedPosts.now + 1
+        val current = posts.now
+        posts() = current.filterNot(p ⇒ p.hash == post.hash || p.parent.contains(post.hash))
+        deletedPosts() = deletedPosts.now + (current.length - posts.now.length)
     }
   }
 
   override def update(): Unit = {
     val future = context.now match {
       case NanoboardContext.Categories ⇒
-        NanoboardApi.categories()
+        Future.successful(categories.now)
 
       case NanoboardContext.Thread(hash, offset) ⇒
         NanoboardApi.thread(hash, offset, postsPerPage)
@@ -80,8 +89,27 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
     }
   }
 
-  context.foreach(_ ⇒ update())
+  def updateCategories(): Unit = {
+    NanoboardApi.categories().onComplete {
+      case Success(categories) ⇒
+        this.categories() = categories
 
+      case Failure(exc) ⇒
+        Notifications.error(exc)("Nanoboard categories update error", Layout.topRight)
+    }
+  }
+
+  // Initialization
+  context.foreach(_ ⇒ update())
+  categories.foreach { categories ⇒
+    if (context.now == NanoboardContext.Categories) {
+      deletedPosts() = 0
+      posts() = categories
+    }
+  }
+  updateCategories()
+
+  // View
   private val threadPosts = Rx[Frag] {
     val thread = posts()
     val rendered = context.now match {
@@ -152,14 +180,27 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
   }
 
   override def renderTag(md: Modifier*): RenderedTag = {
+    val categories = Rx[Frag] {
+      span(
+        this.categories().map[Frag, Seq[Frag]] {
+          case NanoboardMessageData(_, hash, text, answers) ⇒
+            val plainText = PostRenderer.asPlainText(PostParser.parse(text))
+            val answersSpan = span(marginLeft := 0.25.em, "envelope-o".fontAwesome(FontAwesome.fixedWidth), answers)
+            a(href := s"#$hash", margin := 0.25.em, "[", span(fontWeight.bold, plainText), answersSpan, "]", onclick := Bootstrap.jsClick { _ ⇒
+              controller.setContext(NanoboardContext.Thread(hash))
+            })
+        }
+      )
+    }
+
     val navigation = Seq(
       a(href := "#0", margin := 0.25.em, "newspaper-o".fontAwesome(FontAwesome.fixedWidth), "Recent posts", onclick := Bootstrap.jsClick { _ ⇒
-        controller.setContext(NanoboardContext.Recent(0))
+        controller.setContext(NanoboardContext.Recent())
       }),
       a(href := "#", margin := 0.25.em, "sitemap".fontAwesome(FontAwesome.fixedWidth), "Categories", onclick := Bootstrap.jsClick { _ ⇒
         controller.setContext(NanoboardContext.Categories)
       })
     )
-    div(GridSystem.mkRow(navigation), GridSystem.mkRow(pagination), GridSystem.mkRow(threadPosts), GridSystem.mkRow(pagination), marginBottom := 400.px, md)
+    div(GridSystem.mkRow(categories), GridSystem.mkRow(navigation), GridSystem.mkRow(pagination), GridSystem.mkRow(threadPosts), GridSystem.mkRow(pagination), marginBottom := 400.px, md)
   }
 }

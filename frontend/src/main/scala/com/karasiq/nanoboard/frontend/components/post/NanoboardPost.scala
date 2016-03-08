@@ -8,28 +8,15 @@ import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardMessageData}
 import com.karasiq.nanoboard.frontend.components.NanoboardController
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Notifications, PostParser}
-import org.parboiled2.ParseError
 import org.scalajs.dom
 import rx.Ctx
 
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
 import scalatags.JsDom.all._
 
 private[components] object NanoboardPost {
   def render(text: String)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): Frag = {
-    val parser = new PostParser(text)
-    parser.Message.run() match {
-      case Success(value) ⇒
-        PostRenderer().render(value)
-
-      case Failure(exc: ParseError) ⇒
-        println(parser.formatError(exc))
-        text
-
-      case _ ⇒
-        text
-    }
+    PostRenderer().render(PostParser.parse(text))
   }
 
   def apply(showParent: Boolean, showAnswers: Boolean, data: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): NanoboardPost = {

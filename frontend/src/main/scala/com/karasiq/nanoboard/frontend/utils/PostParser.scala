@@ -11,10 +11,16 @@ object PostDomValue {
   case class ShortBBCode(name: String, value: String) extends PostDomValue
 }
 
+object PostParser {
+  def parse(text: String): PostDomValue = {
+    new PostParser(text).Message.run().getOrElse(PlainText(text))
+  }
+}
+
 class PostParser(val input: ParserInput) extends Parser {
-  private def bbcode: Rule1[BBCode] = rule { '[' ~ capture(oneOrMore(CharPredicate.Alpha)) ~ ']' ~> ((tag: String) ⇒ push(tag) ~ FormattedText ~ ("[/" ~ tag ~ ']')) ~> BBCode }
-  private def shortBbcode: Rule1[ShortBBCode] = rule { '[' ~ capture(oneOrMore(CharPredicate.Alpha)) ~ '=' ~ capture(oneOrMore(!']' ~ ANY)) ~ ']' ~> ShortBBCode }
-  private def plainText: Rule1[PlainText] = rule { capture(oneOrMore(!('[' ~ optional('/') ~ oneOrMore(CharPredicate.Alpha) ~ optional('=' ~ oneOrMore(!']' ~ ANY)) ~ ']') ~ ANY)) ~> PlainText }
-  def FormattedText: Rule1[PostDomValues] = rule { zeroOrMore(bbcode | shortBbcode | plainText) ~> PostDomValues }
+  def BBCode: Rule1[PostDomValue.BBCode] = rule { '[' ~ capture(oneOrMore(CharPredicate.Alpha)) ~ ']' ~> ((tag: String) ⇒ push(tag) ~ FormattedText ~ ("[/" ~ tag ~ ']')) ~> PostDomValue.BBCode }
+  def ShortBBCode: Rule1[PostDomValue.ShortBBCode] = rule { '[' ~ capture(oneOrMore(CharPredicate.Alpha)) ~ '=' ~ capture(oneOrMore(!']' ~ ANY)) ~ ']' ~> PostDomValue.ShortBBCode }
+  def PlainText: Rule1[PostDomValue.PlainText] = rule { capture(oneOrMore(!('[' ~ optional('/') ~ oneOrMore(CharPredicate.Alpha) ~ optional('=' ~ oneOrMore(!']' ~ ANY)) ~ ']') ~ ANY)) ~> PostDomValue.PlainText }
+  def FormattedText: Rule1[PostDomValues] = rule { zeroOrMore(BBCode | ShortBBCode | PlainText) ~> PostDomValues }
   def Message = rule { FormattedText ~ EOI }
 }

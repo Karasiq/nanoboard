@@ -6,8 +6,8 @@ import rx._
 sealed trait NanoboardContext
 object NanoboardContext {
   case object Categories extends NanoboardContext
-  case class Thread(hash: String, offset: Int) extends NanoboardContext
-  case class Recent(offset: Int) extends NanoboardContext
+  case class Thread(hash: String, offset: Int = 0) extends NanoboardContext
+  case class Recent(offset: Int = 0) extends NanoboardContext
 
   // Simple single page app router
   def fromLocation()(implicit ctx: Ctx.Owner): Var[NanoboardContext] = {

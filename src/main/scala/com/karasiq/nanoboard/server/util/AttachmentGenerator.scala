@@ -79,8 +79,10 @@ private[util] final class ImageResizingUtil {
     try {
       val writer: ImageWriter = ImageIO.getImageWritersByFormatName(format).next
       val iwp: ImageWriteParam = writer.getDefaultWriteParam
-      iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
-      iwp.setCompressionQuality(quality.toFloat / 100.0f)
+      if (iwp.canWriteCompressed) {
+        iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
+        iwp.setCompressionQuality(quality.toFloat / 100.0f)
+      }
       writer.setOutput(ios)
       writer.write(null, new IIOImage(image, null, null), iwp)
       writer.dispose()
