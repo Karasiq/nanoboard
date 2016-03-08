@@ -15,7 +15,7 @@ trait UrlPngSource {
 
 object UrlPngSource {
   def fromConfig(config: Config)(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {
-    new DefaultUrlPngSource(Seq(GzipCompression(), SalsaCipher(config.getString("encryption-key")), PngEncoding.decoder))
+    new DefaultUrlPngSource(Seq(GzipCompression(), SalsaCipher.fromConfig(config), PngEncoding.decoder))
   }
 
   def apply(encoding: DataEncodingStage)(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {
@@ -23,6 +23,6 @@ object UrlPngSource {
   }
 
   def apply()(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {
-    fromConfig(ConfigFactory.load().getConfig("nanoboard"))
+    fromConfig(ConfigFactory.load())
   }
 }

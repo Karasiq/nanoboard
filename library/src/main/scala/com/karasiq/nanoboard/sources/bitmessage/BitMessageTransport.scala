@@ -17,12 +17,8 @@ import scala.concurrent.Future
 import scalatags.Text.all._
 
 object BitMessageTransport {
-  def apply(config: Config, sink: Sink[NanoboardMessage, _])(implicit ac: ActorSystem, am: ActorMaterializer) = {
-    new BitMessageTransport(config, sink)
-  }
-
-  def apply(sink: Sink[NanoboardMessage, _])(implicit ac: ActorSystem, am: ActorMaterializer) = {
-    new BitMessageTransport(ConfigFactory.load(), sink)
+  def apply(config: Config = ConfigFactory.load())(implicit ac: ActorSystem, am: ActorMaterializer) = {
+    new BitMessageTransport(config)
   }
 
   @inline
@@ -45,19 +41,15 @@ object BitMessageTransport {
   }
 }
 
-final class BitMessageTransport(config: Config, sink: Sink[NanoboardMessage, _])(implicit ac: ActorSystem, am: ActorMaterializer) {
-  private val http = Http()
+final class BitMessageTransport(config: Config)(implicit ac: ActorSystem, am: ActorMaterializer) {
+  // Settings
   private val apiAddress = config.getString("nanoboard.bitmessage.host")
   private val apiPort = config.getString("nanoboard.bitmessage.port")
   private val apiUsername = config.getString("nanoboard.bitmessage.username")
   private val apiPassword = config.getString("nanoboard.bitmessage.password")
   private val chanAddress = config.getString("nanoboard.bitmessage.chan-address")
 
-  private val queue = Source
-    .queue(20, OverflowStrategy.dropHead)
-    .to(sink)
-    .run()
-
+  // Input/output
   def sendMessage(message: NanoboardMessage): Future[HttpResponse] = {
     import XmlRpcTags._
     val entity = "<?xml version=\"1.0\"?>" + methodCall(
@@ -75,7 +67,19 @@ final class BitMessageTransport(config: Config, sink: Sink[NanoboardMessage, _])
     http.singleRequest(HttpRequest(method = HttpMethods.POST, uri = s"http://$apiAddress:$apiPort/", entity = HttpEntity(ContentTypes.`text/xml(UTF-8)`, entity), headers = List(authentication)))
   }
 
-  val route = {
+  def receiveMessages(host: String, port: Int, sink: Sink[NanoboardMessage, _]): Future[Http.ServerBinding] = {
+    http.bindAndHandle(route(sink), host, port)
+  }
+
+  // Handlers
+  private val http = Http()
+
+  private def route(sink: Sink[NanoboardMessage, _]) = {
+    val queue = Source
+      .queue(20, OverflowStrategy.dropHead)
+      .to(sink)
+      .run()
+
     post {
       (path("api" / "add" / NanoboardMessage.hashRegex) & entity(as[String])) { (parent, message) ⇒
         queue.offer(NanoboardMessage(parent, BitMessageTransport.fromBase64(message)))

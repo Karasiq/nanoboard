@@ -1,12 +1,13 @@
 package com.karasiq.nanoboard.server
 
+import java.nio.file.{Files, Paths}
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
 import com.karasiq.nanoboard.server.cache.MapDbNanoboardCache
 import com.karasiq.nanoboard.server.model.{Place, Post, _}
@@ -25,11 +26,22 @@ import scala.util.{Failure, Success}
 
 object Main extends App {
   // Initialize configuration
-  val config = ConfigFactory.load()
+  val config = {
+    val default = ConfigFactory.load()
+    val external = Paths.get(default.getString("nanoboard.external-config-file"))
+    if (Files.isRegularFile(external)) {
+      ConfigFactory.parseFile(external.toFile)
+        .withFallback(default)
+        .resolve()
+    } else {
+      default
+    }
+  }
+
   implicit val actorSystem = ActorSystem("nanoboard-server", config)
   implicit val executionContext = actorSystem.dispatcher
-  implicit val actorMaterializer = ActorMaterializer()
-  val db = Database.forConfig("nanoboard.database")
+  implicit val actorMaterializer = ActorMaterializer(ActorMaterializerSettings(actorSystem))
+  val db = Database.forConfig("nanoboard.database", config)
   val messageValidator = MessageValidator(config)
   val cache = MapDbNanoboardCache(config)
 
@@ -40,7 +52,7 @@ object Main extends App {
     }
   }
 
-  val bitMessage = BitMessageTransport(config, dbMessageSink)
+  val bitMessage = BitMessageTransport(config)
   val dispatcher = NanoboardSlickDispatcher(db, config, Sink.foreach { message ⇒
     bitMessage.sendMessage(message).foreach { response ⇒
       actorSystem.log.info("Message was sent to BM transport: {}", response)
@@ -80,10 +92,17 @@ object Main extends App {
 
   // Initialize server
   schema.foreach { _ ⇒
-    val messageSource = UrlPngSource()
-    Http().bindAndHandle(bitMessage.route, "127.0.0.1", config.getInt("nanoboard.bitmessage.listen-port"))
+    // Bitmessage
+    if (config.getBoolean("nanoboard.bitmessage.receive")) {
+      val host = config.getString("nanoboard.bitmessage.listen-host")
+      val port = config.getInt("nanoboard.bitmessage.listen-port")
+      bitMessage.receiveMessages(host, port, dbMessageSink)
+    }
 
-    Source.tick(10 seconds, FiniteDuration(actorSystem.settings.config.getDuration("nanoboard.scheduler.update-interval", TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS), ())
+    // Imageboards PNG
+    val messageSource = UrlPngSource.fromConfig(config)
+    val updateInterval = FiniteDuration(config.getDuration("nanoboard.scheduler.update-interval", TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS)
+    Source.tick(10 seconds, updateInterval, ())
       .flatMapConcat(_ ⇒ Source.fromPublisher(db.stream(Place.list())))
       .flatMapMerge(8, messageSource.imagesFromPage)
       .filterNot(cache.contains)
@@ -91,6 +110,7 @@ object Main extends App {
       .flatMapMerge(8, messageSource.messagesFromImage)
       .runWith(dbMessageSink)
 
+    // REST server
     val server = new NanoboardServer(dispatcher)
     val host = config.getString("nanoboard.server.host")
     val port = config.getInt("nanoboard.server.port")
