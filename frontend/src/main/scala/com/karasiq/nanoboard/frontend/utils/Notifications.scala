@@ -65,7 +65,6 @@ object Notifications {
   def alert: InfoMessage = new InfoMessage("alert")
   def success: InfoMessage = new InfoMessage("success")
   def error(cause: Throwable): InfoMessage = new ErrorMessage(Some(cause))
-  def error: InfoMessage = new ErrorMessage(None)
   def warning: InfoMessage = new InfoMessage("warning")
   def info: InfoMessage = new InfoMessage("information")
 

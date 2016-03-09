@@ -1,9 +1,10 @@
 package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.nanoboard.frontend.components.NanoboardController
+import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.utils.PostDomValue._
 import com.karasiq.nanoboard.frontend.utils._
+import com.karasiq.videojs.VideoSource
 import rx._
 
 import scala.concurrent.ExecutionContext
@@ -66,7 +67,7 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
       PostExternalImage(url)
 
     case ShortBBCode("svid", url) ⇒
-      PostExternalVideo(url)
+      PostExternalVideo(url, VideoSource("video/webm", url))
 
     case ShortBBCode("fm", music) ⇒
       s"<music: $music>"

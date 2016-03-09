@@ -5,11 +5,11 @@ import com.karasiq.bootstrap.buttons.{ButtonBuilder, ButtonGroup, ButtonGroupSiz
 import com.karasiq.bootstrap.grid.GridSystem
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
-import com.karasiq.nanoboard.frontend.NanoboardContext
 import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardMessageData}
 import com.karasiq.nanoboard.frontend.components.post.{NanoboardPost, PostRenderer}
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Notifications, PostParser}
+import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardController}
 import org.scalajs.dom
 import rx._
 
@@ -31,12 +31,33 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
 
   // Controller
   override def addPost(post: NanoboardMessageData): Unit = {
+    categories() = categories.now.collect {
+      case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(hash) ⇒
+        msg.copy(answers = answers + 1)
+
+      case msg ⇒
+        msg
+    }
+
     context.now match {
       case NanoboardContext.Recent(0) ⇒
-        posts() = post +: posts.now
+        if (posts.now.length == postsPerPage) {
+          posts() = post +: posts.now.dropRight(1)
+        } else {
+          posts() = post +: posts.now
+        }
 
       case NanoboardContext.Thread(hash, 0) if post.parent.contains(hash) ⇒
-        posts() = posts.now.take(1) ++ Seq(post) ++ posts.now.drop(1)
+        val (opPost, answers) = posts.now.partition(_.hash == hash)
+        if (answers.length >= postsPerPage) {
+          posts() = opPost ++ Some(post) ++ answers.dropRight(1)
+        } else {
+          posts() = opPost ++ Some(post) ++ answers
+        }
+
+      case NanoboardContext.Thread(post.hash, _) ⇒
+        val (_, answers) = posts.now.partition(_.hash == post.hash)
+        posts() = post +: answers
 
       case _ ⇒
         posts() = posts.now.collect {
@@ -134,7 +155,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
         ""
 
       case NanoboardContext.Thread(hash, offset) ⇒
-        val offsetAdd = posts.length - 1
+        val offsetAdd = math.max(0, posts.length - 1)
         val prevOffset = math.max(0, offset - postsPerPage)
         val previousButton = ButtonBuilder(ButtonStyle.info)(
           "angle-double-left".fontAwesome(FontAwesome.fixedWidth),
@@ -151,7 +172,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
 
         ButtonGroup(ButtonGroupSize.small,
           if (offset > 0) previousButton else (),
-          if ((offset + offsetAdd) < posts.headOption.fold(0)(_.answers)) nextButton else (),
+          if ((posts.length + deleted - 1) >= postsPerPage) nextButton else (),
           margin := 5.px
         )
 

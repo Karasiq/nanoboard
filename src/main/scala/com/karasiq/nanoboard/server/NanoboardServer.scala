@@ -1,17 +1,25 @@
 package com.karasiq.nanoboard.server
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Props}
+import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
-import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Flow, GraphDSL, Source}
+import akka.stream.{ActorMaterializer, FlowShape}
 import akka.util.ByteString
 import boopickle.Default._
-import com.karasiq.nanoboard.dispatcher.NanoboardDispatcher
+import com.karasiq.nanoboard.dispatcher.{NanoboardDispatcher, NanoboardMessageData}
 import com.karasiq.nanoboard.server.util.AttachmentGenerator
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
+
+object NanoboardServer {
+  def apply(dispatcher: NanoboardDispatcher)(implicit actorSystem: ActorSystem, actorMaterializer: ActorMaterializer): NanoboardServer = {
+    new NanoboardServer(dispatcher)
+  }
+}
 
 private[server] case class NanoboardReply(parent: String, message: String)
 
@@ -19,6 +27,37 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
   private implicit def ec: ExecutionContext = actorSystem.dispatcher
 
   private val maxPostSize = actorSystem.settings.config.getMemorySize("nanoboard.max-post-size").toBytes
+
+  private val messageFlow = {
+    Flow.fromGraph(GraphDSL.create() { implicit b: GraphDSL.Builder[akka.NotUsed] ⇒
+      import GraphDSL.Implicits._
+      val in = b.add {
+        Flow[Message]
+          .mapAsync(1) {
+            case bm: BinaryMessage ⇒
+              bm.dataStream.runFold(ByteString.empty)(_ ++ _)
+
+            case tm: TextMessage ⇒
+              tm.textStream.runFold("")(_ ++ _).map(ByteString(_))
+          }
+          .map(bs ⇒ Unpickle[Set[String]].fromBytes(bs.toByteBuffer))
+      }
+
+      val out = b.add {
+        Flow[NanoboardMessage]
+          .map(message ⇒ BinaryMessage(ByteString(Pickle.intoBytes(NanoboardMessageData(Some(message.parent), message.hash, message.text, 0)))))
+      }
+
+      val messages = b.add(Source.actorPublisher[NanoboardMessage](Props[NanoboardMessagePublisher]))
+
+      val processor = b.add(new NanoboardMessageStream)
+
+      in.out ~> processor.in0
+      messages.out ~> processor.in1
+      processor.out ~> out.in
+      FlowShape(in.in, out.out)
+    })
+  }
 
   val route = {
     get {
@@ -94,6 +133,9 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       path("pending" / NanoboardMessage.hashRegex) { hash ⇒
         complete(StatusCodes.OK, dispatcher.markAsPending(hash))
       }
+    } ~
+    path("live") {
+      handleWebSocketMessages(messageFlow)
     }
   }
 }

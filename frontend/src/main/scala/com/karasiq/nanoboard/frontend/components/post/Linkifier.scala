@@ -2,7 +2,7 @@ package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.icons.FontAwesome
-import com.karasiq.nanoboard.frontend.components.NanoboardController
+import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.videojs.VideoSource
 import org.scalajs.dom.Element
 import rx._

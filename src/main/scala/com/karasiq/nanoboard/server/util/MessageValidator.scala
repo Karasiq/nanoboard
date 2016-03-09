@@ -17,7 +17,8 @@ private[server] final class MessageValidator(config: Config) {
 
   def isMessageValid(message: NanoboardMessage): Boolean = {
     message.parent.matches(NanoboardMessage.hashRegex.regex) &&
-      (1L to maxPostSize).contains(message.text.length) &&
+      message.text.nonEmpty &&
+      message.text.length <= maxPostSize &&
       spamFilter.forall(!message.text.matches(_))
   }
 }

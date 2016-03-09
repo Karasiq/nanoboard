@@ -1,10 +1,10 @@
-package com.karasiq.nanoboard.frontend.components
+package com.karasiq.nanoboard.frontend
 
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.navbar.{NavigationBar, NavigationTab}
-import com.karasiq.nanoboard.frontend.NanoboardContext
-import com.karasiq.nanoboard.frontend.api.{NanoboardCategory, NanoboardMessageData}
+import com.karasiq.nanoboard.frontend.api.{NanoboardCategory, NanoboardMessageData, NanoboardMessageStream}
+import com.karasiq.nanoboard.frontend.components._
 import com.karasiq.nanoboard.frontend.styles.BoardStyle
 import org.scalajs.dom._
 import rx._
@@ -38,6 +38,11 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
     NavigationTab("Server settings", "server-settings", "wrench".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, settingsPanel)),
     NavigationTab("Container generation", "png-gen", "camera-retro".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, pngGenerationPanel))
   )
+
+  private val messageChannel = NanoboardMessageStream { message ⇒
+    // Notifications.info(s"New message: ${message.text}", Layout.topRight)
+    thread.addPost(message)
+  }
 
   def initialize(): Unit = {
     document.head.appendChild(controller.title.renderTag().render)
@@ -80,5 +85,16 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
 
   override def deletePost(post: NanoboardMessageData): Unit = {
     Seq(thread, pngGenerationPanel).foreach(_.deletePost(post))
+  }
+
+  private val messageChannelContext = Rx {
+    posts().map(_.hash).toSet ++ thread.categories().map(_.hash).toSet ++ Some(thread.context()).collect {
+      case NanoboardContext.Thread(hash, _) ⇒
+        hash
+    }
+  }
+
+  messageChannelContext.foreach { context ⇒
+    messageChannel.setContext(context)
   }
 }

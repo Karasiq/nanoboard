@@ -4,6 +4,7 @@ import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.buttons.ButtonBuilder
 import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
+import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardCategory}
 import org.scalajs.dom
 import rx._

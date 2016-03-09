@@ -5,8 +5,8 @@ import com.karasiq.bootstrap.buttons.{ButtonBuilder, ButtonGroup, ButtonGroupSiz
 import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
+import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardMessageData}
-import com.karasiq.nanoboard.frontend.components.NanoboardController
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{CancelledException, Notifications}
 import org.scalajs.dom

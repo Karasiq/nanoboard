@@ -48,7 +48,11 @@ object Main extends App {
   // Initialize transport
   def dbMessageSink = Sink.foreach { (message: NanoboardMessage) ⇒
     if (messageValidator.isMessageValid(message)) {
-      db.run(Post.insertMessage(message))
+      db.run(Post.insertMessage(message)).foreach { inserted ⇒
+        if (inserted > 0) {
+          actorSystem.eventStream.publish(message)
+        }
+      }
     }
   }
 
@@ -111,7 +115,7 @@ object Main extends App {
       .runWith(dbMessageSink)
 
     // REST server
-    val server = new NanoboardServer(dispatcher)
+    val server = NanoboardServer(dispatcher)
     val host = config.getString("nanoboard.server.host")
     val port = config.getInt("nanoboard.server.port")
     Http().bindAndHandle(server.route, host, port).onComplete {

@@ -3,11 +3,10 @@ package com.karasiq.nanoboard.frontend.components.post
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
-import com.karasiq.nanoboard.frontend.NanoboardContext
 import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardMessageData}
-import com.karasiq.nanoboard.frontend.components.NanoboardController
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Notifications, PostParser}
+import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardController}
 import org.scalajs.dom
 import rx.Ctx
 
@@ -46,7 +45,6 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
         a(style.postLink, href := "#", "trash-o".fontAwesome(FontAwesome.fixedWidth), "Delete", onclick := Bootstrap.jsClick { _ ⇒
           this.delete()
         }),
-        PostReplyField(data),
         controller.isPending(data.hash).map { pending ⇒
           if (!pending) a(style.postLink, href := "#", "sign-in".fontAwesome(FontAwesome.fixedWidth), "Enqueue", onclick := Bootstrap.jsClick { a ⇒
             NanoboardApi.markAsPending(data.hash).foreach { _ ⇒
@@ -57,7 +55,8 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
               controller.deletePending(data)
             }
           })
-        }
+        },
+        PostReplyField(data)
       ),
       md
     )
