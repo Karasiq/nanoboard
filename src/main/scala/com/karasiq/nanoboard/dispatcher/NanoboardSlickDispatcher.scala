@@ -9,7 +9,7 @@ import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.util.ByteString
 import com.karasiq.nanoboard.encoding.DataEncodingStage._
 import com.karasiq.nanoboard.encoding.stages.{GzipCompression, PngEncoding, SalsaCipher}
-import com.karasiq.nanoboard.server.model._
+import com.karasiq.nanoboard.model._
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 import com.typesafe.config.{Config, ConfigFactory}
 import slick.driver.H2Driver.api._

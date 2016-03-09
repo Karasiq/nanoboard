@@ -1,9 +1,7 @@
-package com.karasiq.nanoboard.server
+package com.karasiq.nanoboard
 
 import java.time.Instant
 
-import com.karasiq.nanoboard.dispatcher.NanoboardMessageData
-import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 import slick.driver.H2Driver.api._
 
 import scala.concurrent.ExecutionContext

@@ -2,10 +2,11 @@ package com.karasiq.nanoboard.dispatcher
 
 import akka.util.ByteString
 import com.karasiq.nanoboard.NanoboardCategory
+import com.karasiq.nanoboard.model.NanoboardMessageData
 
 import scala.concurrent.Future
 
-case class NanoboardMessageData(parent: Option[String], hash: String, text: String, answers: Int)
+
 
 trait NanoboardDispatcher {
   def createContainer(pending: Int, random: Int, format: String, container: ByteString): Future[ByteString]

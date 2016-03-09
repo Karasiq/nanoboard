@@ -1,6 +1,8 @@
+import sbtassembly.Plugin.AssemblyKeys._
+
 lazy val commonSettings = Seq(
   organization := "com.github.karasiq",
-  version := "1.0.4",
+  version := "1.0.5-M1",
   isSnapshot := version.value.endsWith("SNAPSHOT"),
   scalaVersion := "2.11.7"
 )
@@ -59,6 +61,18 @@ lazy val backendSettings = Seq(
     "org.scalatest" %% "scalatest" % "2.2.4" % "test"
   ),
   mainClass in Compile := Some("com.karasiq.nanoboard.server.Main"),
+  mainClass in assembly := (mainClass in Compile).value,
+  jarName in assembly := "nanoboard-server.jar",
+  test in assembly := {},
+  mappings in Universal := {
+    val universalMappings = (mappings in Universal).value
+    val fatJar = (assembly in Compile).value
+    val filtered = universalMappings filter {
+      case (file, name) ⇒ !name.endsWith(".jar")
+    }
+    filtered :+ (fatJar → ("lib/" + fatJar.getName))
+  },
+  scriptClasspath := Seq((jarName in assembly).value),
   scalaJsBundlerCompile in Compile <<= (scalaJsBundlerCompile in Compile).dependsOn(fullOptJS in Compile in frontend),
   scalaJsBundlerAssets in Compile += {
     import com.karasiq.scalajsbundler.dsl._
@@ -125,7 +139,7 @@ lazy val library = Project("nanoboard", file("library"))
 
 lazy val backend = Project("nanoboard-server", file("."))
   .dependsOn(library)
-  .settings(commonSettings, backendSettings)
+  .settings(assemblySettings, commonSettings, backendSettings)
   .enablePlugins(ScalaJSBundlerPlugin, JavaAppPackaging)
 
 lazy val frontend = Project("nanoboard-frontend", file("frontend"))

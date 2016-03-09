@@ -1,9 +1,9 @@
-#define OutputName "nanoboard"
+#define OutputName "nanoboard-server"
 #define MyAppName "Nanoboard"
-#define MyAppVersion "1.0.4"
+#define MyAppVersion "1.0.5-M1"
 #define MyAppPublisher "Karasiq, Inc."
 #define MyAppURL "http://www.github.com/Karasiq/nanoboard"
-#define MyAppExeName "bin\nanoboard-server.bat"
+#define MyAppExeName "nanoboard.exe"
 #define ProjectFolder "..\"
 
 [Setup]
@@ -32,54 +32,15 @@ Name: russian; MessagesFile: compiler:Languages\Russian.isl
 Name: desktopicon; Description: {cm:CreateDesktopIcon}; GroupDescription: {cm:AdditionalIcons}; Languages: 
 
 [Files]
-Source: {#ProjectFolder}\target\universal\stage\*; DestDir: {app}; Flags: ignoreversion recursesubdirs
-Source: {#ProjectFolder}\setup\places.txt; DestDir: {app}
-Source: {#ProjectFolder}\setup\categories.txt; DestDir: {app}
-Source: {#ProjectFolder}\frontend\files\favicon.ico; DestDir: {app}
+Source: {#ProjectFolder}\target\universal\nanoboard.exe; DestDir: {app}; Flags: ignoreversion
+Source: G:\Temp\Java\jre1.8.0_74\*; DestDir: {app}\jre1.8.0_74; Flags: recursesubdirs ignoreversion
+Source: {#ProjectFolder}\setup\places.txt; DestDir: {app}; Flags: ignoreversion
+Source: {#ProjectFolder}\setup\categories.txt; DestDir: {app}; Flags: ignoreversion
+Source: {#ProjectFolder}\frontend\files\favicon.ico; DestDir: {app}; Flags: ignoreversion
 
 [Icons]
 Name: {group}\{#MyAppName}; Filename: {app}\{#MyAppExeName}; IconFilename: {app}\favicon.ico; WorkingDir: {app}
 Name: {commondesktop}\{#MyAppName}; Filename: {app}\{#MyAppExeName}; Tasks: desktopicon; IconFilename: {app}\favicon.ico; WorkingDir: {app}
 
 [Run]
-Filename: {app}\{#MyAppExeName}; Description: {cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}; Flags: shellexec postinstall skipifsilent; WorkingDir: {app}; Check: IsJREInstalled
-
-[Code]
-#define MinJRE "1.8"
-#define WebJRE "https://www.java.com/ru/download/manual.jsp"
-
-function IsJREInstalled: Boolean;
-var
-  JREVersion: string;
-begin
-  // read JRE version
-  Result := RegQueryStringValue(HKLM32, 'Software\JavaSoft\Java Runtime Environment',
-    'CurrentVersion', JREVersion);
-  // if the previous reading failed and we're on 64-bit Windows, try to read 
-  // the JRE version from WOW node
-  if not Result and IsWin64 then
-    Result := RegQueryStringValue(HKLM64, 'Software\JavaSoft\Java Runtime Environment',
-      'CurrentVersion', JREVersion);
-  // if the JRE version was read, check if it's at least the minimum one
-  if Result then
-    Result := CompareStr(JREVersion, '{#MinJRE}') >= 0;
-end;
-
-function InitializeSetup: Boolean;
-var
-  ErrorCode: Integer;
-begin
-  Result := True;
-  // check if JRE is installed; if not, then...
-  if not IsJREInstalled then
-  begin
-    // show a message box and let user to choose if they want to download JRE;
-    // if so, go to its download site and exit setup; continue otherwise
-    if MsgBox('Java is required. Do you want to download it now ?',
-      mbConfirmation, MB_YESNO) = IDYES then
-    begin
-      Result := False;
-      ShellExec('', '{#WebJRE}', '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
-    end;
-  end;
-end;
+Filename: {app}\{#MyAppExeName}; Description: {cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}; Flags: shellexec postinstall skipifsilent; WorkingDir: {app}

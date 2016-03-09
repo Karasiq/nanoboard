@@ -8,7 +8,8 @@ import akka.stream.scaladsl.{Flow, GraphDSL, Source}
 import akka.stream.{ActorMaterializer, FlowShape}
 import akka.util.ByteString
 import boopickle.Default._
-import com.karasiq.nanoboard.dispatcher.{NanoboardDispatcher, NanoboardMessageData}
+import com.karasiq.nanoboard.dispatcher.NanoboardDispatcher
+import com.karasiq.nanoboard.model.NanoboardMessageData
 import com.karasiq.nanoboard.server.util.AttachmentGenerator
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 

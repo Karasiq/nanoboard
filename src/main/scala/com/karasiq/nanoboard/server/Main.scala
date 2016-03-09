@@ -9,8 +9,8 @@ import akka.http.scaladsl.Http.ServerBinding
 import akka.stream.scaladsl._
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
+import com.karasiq.nanoboard.model.{Place, Post, _}
 import com.karasiq.nanoboard.server.cache.MapDbNanoboardCache
-import com.karasiq.nanoboard.server.model.{Place, Post, _}
 import com.karasiq.nanoboard.server.util.MessageValidator
 import com.karasiq.nanoboard.sources.bitmessage.BitMessageTransport
 import com.karasiq.nanoboard.sources.png.UrlPngSource
