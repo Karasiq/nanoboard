@@ -25,6 +25,8 @@ object PngGenerationPanel {
 }
 
 final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] with PostsContainer {
+  import controller.locale
+
   override val posts = Var(Vector.empty[NanoboardMessageData])
 
   override val context: Var[NanoboardContext] = Var(NanoboardContext.Categories)
@@ -55,17 +57,17 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
     val posts = this.posts()
     if (posts.nonEmpty) Bootstrap.well(
       marginTop := 20.px,
-      h3("Pending posts"),
+      h3(locale.pendingPosts),
       for (p ← posts) yield GridSystem.mkRow(NanoboardPost(showParent = true, showAnswers = false, p))
     ) else ()
   }
 
   private val form = Form(
-    FormInput.number("Pending posts", name := "pending", value := 10, min := 0),
-    FormInput.number("Random posts", name := "random", value := 30, min := 0),
-    FormInput.text("Output format", name := "format", value := "png"),
-    FormInput.file("Data container", name := "container"),
-    Form.submit("Generate container image")("disabled".classIf(loading)),
+    FormInput.number(locale.pendingPosts, name := "pending", value := 10, min := 0),
+    FormInput.number(locale.randomPosts, name := "random", value := 30, min := 0),
+    FormInput.text(locale.imageFormat, name := "format", value := "png"),
+    FormInput.file(locale.dataContainer, name := "container"),
+    Form.submit(locale.generateContainer)("disabled".classIf(loading)),
     onsubmit := Bootstrap.jsSubmit { frm ⇒
       if (!loading.now) {
         loading() = true
@@ -84,12 +86,12 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
 
               case Failure(exc) ⇒
                 loading() = false
-                Notifications.error(exc)("Container generation failure", Layout.topRight, 1500)
+                Notifications.error(exc)(locale.containerGenerationError, Layout.topRight, 1500)
             }
 
           case None ⇒
             loading() = false
-            Notifications.warning("Container file not selected", Layout.topRight)
+            Notifications.warning(locale.fileNotSelected, Layout.topRight)
         }
       }
     }

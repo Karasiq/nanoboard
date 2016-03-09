@@ -20,6 +20,8 @@ object SettingsPanel {
 }
 
 final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
+  import controller.locale
+
   private val placesText = Var("")
   private val categoriesText = Var("")
 
@@ -37,7 +39,7 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
       val lines = categoriesText().lines.toVector
       assert(lines.length % 2 == 0)
       val categories = lines.grouped(2).map(seq ⇒ NanoboardCategory(seq.head, seq.last)).toVector
-      assert(categories.forall(c ⇒ c.hash.matches("[A-Za-z0-9]{32}") && c.name.nonEmpty))
+      assert(categories.forall(c ⇒ c.hash.matches("[a-fA-F0-9]{32}") && c.name.nonEmpty))
       categories
     }.getOrElse(Vector.empty)
   }
@@ -51,10 +53,10 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
   override def renderTag(md: Modifier*) = {
     div(
       Form(
-        FormInput.textArea("Places", rows := 15, placeholder := "http://imageboard.com/b/12356.html", placesText.reactiveInput)("has-error".classIf(places.map(_.isEmpty))),
-        FormInput.textArea("Categories", rows := 15, placeholder := "Category hash\nCategory name", categoriesText.reactiveInput)("has-error".classIf(categories.map(_.isEmpty)))
+        FormInput.textArea(locale.places, rows := 15, placesText.reactiveInput)("has-error".classIf(places.map(_.isEmpty))),
+        FormInput.textArea(locale.categories, rows := 15, categoriesText.reactiveInput)("has-error".classIf(categories.map(_.isEmpty)))
       ),
-      ButtonBuilder(block = true)("Apply settings", "disabled".classIf(buttonDisabled), onclick := Bootstrap.jsClick { _ ⇒
+      ButtonBuilder(block = true)(locale.submit, "disabled".classIf(buttonDisabled), onclick := Bootstrap.jsClick { _ ⇒
         if (!buttonDisabled.now) {
           loading() = true
           Future.sequence(Seq(NanoboardApi.setCategories(categories.now), NanoboardApi.setPlaces(places.now))).onComplete {

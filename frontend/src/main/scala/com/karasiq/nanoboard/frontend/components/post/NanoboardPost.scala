@@ -24,7 +24,7 @@ private[components] object NanoboardPost {
 }
 
 private[components] final class NanoboardPost(showParent: Boolean, showAnswers: Boolean, data: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
-  import controller.style
+  import controller.{locale, style}
 
   override def renderTag(md: Modifier*): RenderedTag = {
     div(
@@ -42,15 +42,15 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
         if (showAnswers && data.answers > 0) a(style.postLink, href := s"#${data.hash}", "envelope-o".fontAwesome(FontAwesome.fixedWidth), s"${data.answers}", onclick := Bootstrap.jsClick {_ ⇒
           this.openAsThread()
         }) else (),
-        a(style.postLink, href := "#", "trash-o".fontAwesome(FontAwesome.fixedWidth), "Delete", onclick := Bootstrap.jsClick { _ ⇒
+        a(style.postLink, href := "#", "trash-o".fontAwesome(FontAwesome.fixedWidth), locale.delete, onclick := Bootstrap.jsClick { _ ⇒
           this.delete()
         }),
         controller.isPending(data.hash).map { pending ⇒
-          if (!pending) a(style.postLink, href := "#", "sign-in".fontAwesome(FontAwesome.fixedWidth), "Enqueue", onclick := Bootstrap.jsClick { a ⇒
+          if (!pending) a(style.postLink, href := "#", "sign-in".fontAwesome(FontAwesome.fixedWidth), locale.enqueue, onclick := Bootstrap.jsClick { a ⇒
             NanoboardApi.markAsPending(data.hash).foreach { _ ⇒
               controller.addPending(data)
             }
-          }) else a(style.postLink, href := "#", "sign-out".fontAwesome(FontAwesome.fixedWidth), "Dequeue", onclick := Bootstrap.jsClick { a ⇒
+          }) else a(style.postLink, href := "#", "sign-out".fontAwesome(FontAwesome.fixedWidth), locale.dequeue, onclick := Bootstrap.jsClick { a ⇒
             NanoboardApi.markAsNotPending(data.hash).foreach { _ ⇒
               controller.deletePending(data)
             }
@@ -67,7 +67,7 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
   }
 
   def delete(): Unit = {
-    Notifications.confirmation(s"Delete post #${data.hash}?", Layout.topLeft) {
+    Notifications.confirmation(locale.deleteConfirmation(data.hash), Layout.topLeft) {
       NanoboardApi.delete(data.hash).foreach { _ ⇒
         controller.deletePost(data)
       }

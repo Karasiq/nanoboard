@@ -5,6 +5,7 @@ import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.navbar.{NavigationBar, NavigationTab}
 import com.karasiq.nanoboard.frontend.api.{NanoboardCategory, NanoboardMessageData, NanoboardMessageStream}
 import com.karasiq.nanoboard.frontend.components._
+import com.karasiq.nanoboard.frontend.locales.BoardLocale
 import com.karasiq.nanoboard.frontend.styles.BoardStyle
 import org.scalajs.dom._
 import rx._
@@ -25,6 +26,8 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
 
   val style: BoardStyle = styleSelector.style.now
 
+  val locale = BoardLocale.fromBrowserLanguage()
+
   private val thread = ThreadContainer(NanoboardContext.fromLocation(), postsPerPage = 20)
 
   private val settingsPanel = SettingsPanel()
@@ -34,9 +37,9 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
   private val title = ThreadPageTitle(thread)
 
   private val navigationBar = NavigationBar(
-    NavigationTab("Nanoboard", "thread", "server".fontAwesome(FontAwesome.fixedWidth), div("container-fluid".addClass, thread)),
-    NavigationTab("Server settings", "server-settings", "wrench".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, settingsPanel)),
-    NavigationTab("Container generation", "png-gen", "camera-retro".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, pngGenerationPanel))
+    NavigationTab(locale.nanoboard, "thread", "server".fontAwesome(FontAwesome.fixedWidth), div("container-fluid".addClass, thread)),
+    NavigationTab(locale.settings, "server-settings", "wrench".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, settingsPanel)),
+    NavigationTab(locale.containerGeneration, "png-gen", "camera-retro".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, pngGenerationPanel))
   )
 
   private val messageChannel = NanoboardMessageStream { message ⇒
@@ -46,7 +49,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
 
   def initialize(): Unit = {
     document.head.appendChild(controller.title.renderTag().render)
-    Seq[Frag](navigationBar.navbar("Nanoboard"), div(marginTop := 70.px, navigationBar.content), controller.styleSelector.renderTag(id := "nanoboard-style"))
+    Seq[Frag](navigationBar.navbar(locale.nanoboard), div(marginTop := 70.px, navigationBar.content), controller.styleSelector.renderTag(id := "nanoboard-style"))
       .foreach(_.applyTo(document.body))
   }
 

@@ -70,7 +70,7 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
       PostExternalVideo(url, VideoSource("video/webm", url))
 
     case ShortBBCode("fm", music) ⇒
-      s"<music: $music>"
+      s"<FM: $music>"
 
     // Unknown
     case BBCode(name, value) ⇒

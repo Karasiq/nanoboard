@@ -23,7 +23,7 @@ private[components] object PostReplyField {
 }
 
 private[components] final class PostReplyField(post: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Span] {
-  import controller.style
+  import controller.{locale, style}
 
   val expanded = Var(false)
 
@@ -33,10 +33,10 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
 
   override def renderTag(md: Modifier*) = {
     val field = Form(
-      FormInput.textArea((), placeholder := "Write your message", rows := 5, replyText.reactiveInput, "has-errors".classIf(lengthIsValid.map(!_)))
+      FormInput.textArea((), placeholder := locale.writeYourMessage, rows := 5, replyText.reactiveInput, "has-errors".classIf(lengthIsValid.map(!_)))
     )
 
-    val attachmentLink = ButtonBuilder(ButtonStyle.primary)("file-image-o".fontAwesome(FontAwesome.fixedWidth), "Insert image", onclick := Bootstrap.jsClick { _ ⇒
+    val attachmentLink = ButtonBuilder(ButtonStyle.primary)("file-image-o".fontAwesome(FontAwesome.fixedWidth), locale.insertImage, onclick := Bootstrap.jsClick { _ ⇒
       AttachmentGenerationDialog().generate().onComplete {
         case Success(base64) ⇒
           replyText() = replyText.now + s"[img=$base64]"
@@ -45,11 +45,11 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
           // Pass
 
         case Failure(exc) ⇒
-          Notifications.error(exc)("Attachment generation error", Layout.topRight)
+          Notifications.error(exc)(locale.attachmentGenerationError, Layout.topRight)
       }
     })
 
-    val submitButton = ButtonBuilder(ButtonStyle.success)("disabled".classIf(lengthIsValid.map(!_)), "mail-forward".fontAwesome(FontAwesome.fixedWidth), "Submit", onclick := Bootstrap.jsClick { _ ⇒
+    val submitButton = ButtonBuilder(ButtonStyle.success)("disabled".classIf(lengthIsValid.map(!_)), "mail-forward".fontAwesome(FontAwesome.fixedWidth), locale.submit, onclick := Bootstrap.jsClick { _ ⇒
       if (lengthIsValid.now) {
         NanoboardApi.addReply(post.hash, replyText.now).onComplete {
           case Success(newPost) ⇒
@@ -58,18 +58,18 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
             controller.addPost(newPost)
 
           case Failure(exc) ⇒
-            Notifications.error(exc)("Posting error", Layout.topRight)
+            Notifications.error(exc)(locale.postingError, Layout.topRight)
         }
       }
     })
 
     val postLength = Rx {
-      span(float.right, fontStyle.italic, if (!lengthIsValid()) color.red else (), s"${replyText().length} bytes")
+      span(float.right, fontStyle.italic, if (!lengthIsValid()) color.red else (), s"${replyText().length} ${locale.bytes}")
     }
 
     span(
       // Reply link
-      a(style.postLink, href := "#", "reply".fontAwesome(FontAwesome.fixedWidth), "Reply", onclick := Bootstrap.jsClick { _ ⇒
+      a(style.postLink, href := "#", "reply".fontAwesome(FontAwesome.fixedWidth), locale.reply, onclick := Bootstrap.jsClick { _ ⇒
         expanded() = !expanded.now
       }),
 

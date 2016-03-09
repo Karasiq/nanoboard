@@ -24,6 +24,8 @@ object ThreadContainer {
 }
 
 final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: Int)(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] with PostsContainer {
+  import controller.locale
+
   // Model
   private val deletedPosts = Var(0)
   val categories = Var(Vector.empty[NanoboardMessageData])
@@ -108,7 +110,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
         this.posts() = posts
 
       case Failure(exc) ⇒
-        Notifications.error(exc)("Nanoboard thread update error", Layout.topRight)
+        Notifications.error(exc)(locale.updateError, Layout.topRight)
     }
   }
 
@@ -118,7 +120,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
         this.categories() = categories
 
       case Failure(exc) ⇒
-        Notifications.error(exc)("Nanoboard categories update error", Layout.topRight)
+        Notifications.error(exc)(locale.updateError, Layout.topRight)
     }
   }
 
@@ -161,12 +163,12 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
         val prevOffset = math.max(0, offset - postsPerPage)
         val previousButton = ButtonBuilder(ButtonStyle.info)(
           "angle-double-left".fontAwesome(FontAwesome.fixedWidth),
-          s"From $prevOffset to ${prevOffset + postsPerPage}",
+          locale.fromTo(prevOffset, prevOffset + postsPerPage),
           onclick := Bootstrap.jsClick { _ ⇒
             context() = NanoboardContext.Thread(hash, prevOffset)
           })
         val nextButton = ButtonBuilder(ButtonStyle.info)(
-          s"From ${offset + offsetAdd} to ${offset + offsetAdd + postsPerPage}",
+          locale.fromTo(offset + offsetAdd, offset + offsetAdd + postsPerPage),
           "angle-double-right".fontAwesome(FontAwesome.fixedWidth),
           onclick := Bootstrap.jsClick { _ ⇒
             context() = NanoboardContext.Thread(hash, math.max(0, offset + offsetAdd))
@@ -188,7 +190,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
             context() = NanoboardContext.Recent(prevOffset)
           })
         val nextButton = ButtonBuilder(ButtonStyle.info)(
-          s"From ${offset + offsetAdd} to ${offset + offsetAdd + postsPerPage}",
+          locale.fromTo(offset + offsetAdd, offset + offsetAdd + postsPerPage),
           "angle-double-right".fontAwesome(FontAwesome.fixedWidth),
           onclick := Bootstrap.jsClick { _ ⇒
             context() = NanoboardContext.Recent(math.max(0, offset + offsetAdd))
@@ -217,10 +219,10 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
     }
 
     val navigation = Seq(
-      a(href := "#0", margin := 0.25.em, "newspaper-o".fontAwesome(FontAwesome.fixedWidth), "Recent posts", onclick := Bootstrap.jsClick { _ ⇒
+      a(href := "#0", margin := 0.25.em, "newspaper-o".fontAwesome(FontAwesome.fixedWidth), locale.recentPosts, onclick := Bootstrap.jsClick { _ ⇒
         controller.setContext(NanoboardContext.Recent())
       }),
-      a(href := "#", margin := 0.25.em, "sitemap".fontAwesome(FontAwesome.fixedWidth), "Categories", onclick := Bootstrap.jsClick { _ ⇒
+      a(href := "#", margin := 0.25.em, "sitemap".fontAwesome(FontAwesome.fixedWidth), locale.categories, onclick := Bootstrap.jsClick { _ ⇒
         controller.setContext(NanoboardContext.Categories)
       })
     )

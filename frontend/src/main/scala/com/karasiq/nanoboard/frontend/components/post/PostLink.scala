@@ -35,7 +35,7 @@ private[components] final class PostLink(hash: String)(implicit ctx: Ctx.Owner, 
 
     span(
       a(updateHover, href := s"#$hash", onclick := Bootstrap.jsClick { _ ⇒
-        controller.setContext(NanoboardContext.Thread(hash, 0))
+        controller.setContext(NanoboardContext.Thread(hash))
       }, md),
       Rx[Frag] {
         if (hover() && post().nonEmpty) {

@@ -2,9 +2,9 @@ package com.karasiq.nanoboard.frontend.components
 
 import com.karasiq.bootstrap.BootstrapHtmlComponent
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.nanoboard.frontend.NanoboardContext
 import com.karasiq.nanoboard.frontend.components.post.PostRenderer
 import com.karasiq.nanoboard.frontend.utils.PostParser
+import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardController}
 import org.scalajs.dom
 import rx._
 
@@ -12,30 +12,32 @@ import scalatags.JsDom.all._
 import scalatags.JsDom.tags2
 
 object ThreadPageTitle {
-  def apply(thread: PostsContainer)(implicit ctx: Ctx.Owner): ThreadPageTitle = {
+  def apply(thread: PostsContainer)(implicit ctx: Ctx.Owner, controller: NanoboardController): ThreadPageTitle = {
     new ThreadPageTitle(thread)
   }
 }
 
-private[components] final class ThreadPageTitle(thread: PostsContainer)(implicit ctx: Ctx.Owner) extends BootstrapHtmlComponent[dom.html.Title] {
+private[components] final class ThreadPageTitle(thread: PostsContainer)(implicit ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Title] {
+  import controller.locale
+
   val title = Rx[String] {
     thread.context() match {
       case NanoboardContext.Thread(_, _) ⇒
-        thread.posts().headOption.fold("Nanoboard") { post ⇒
+        thread.posts().headOption.fold(locale.nanoboard) { post ⇒
           val text = Some(PostParser.parse(post.text))
             .map(PostRenderer.asPlainText(_).trim.split("\\s+").take(10).mkString(" "))
             .filter(_.nonEmpty)
-          text.fold("Nanoboard")("Nanoboard - " + _)
+          text.fold(locale.nanoboard)(locale.nanoboard + " - " + _)
         }
 
       case NanoboardContext.Recent(0) ⇒
-        "Nanoboard - Recent posts"
+        s"${locale.nanoboard} - ${locale.recentPosts}"
 
       case NanoboardContext.Recent(offset) ⇒
-        s"Nanoboard - Recent posts (from $offset)"
+        s"${locale.nanoboard} - ${locale.recentPostsFrom(offset)}"
 
       case NanoboardContext.Categories ⇒
-        "Nanoboard - Categories"
+        s"${locale.nanoboard} - ${locale.categories}"
     }
 
   }

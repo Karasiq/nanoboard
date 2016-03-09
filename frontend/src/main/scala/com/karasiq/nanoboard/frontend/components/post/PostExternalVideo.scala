@@ -11,7 +11,6 @@ import scalatags.JsDom.all._
 
 private[components] object PostExternalVideo {
   def apply(url: String, sources: VideoSource*)(implicit ctx: Ctx.Owner): PostExternalVideo = {
-    assert(sources.nonEmpty, "Video sources is empty")
     new PostExternalVideo(url, sources)
   }
 
