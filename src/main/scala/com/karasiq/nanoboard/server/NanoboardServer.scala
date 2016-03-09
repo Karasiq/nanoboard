@@ -63,11 +63,11 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
   val route = {
     get {
       encodeResponse {
-        path("post" / NanoboardMessage.hashRegex) { hash ⇒
+        path("post" / NanoboardMessage.hashFormat) { hash ⇒
           complete(StatusCodes.OK, dispatcher.post(hash))
         } ~
         (pathPrefix("posts") & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (offset, count) ⇒
-          path(NanoboardMessage.hashRegex) { hash ⇒
+          path(NanoboardMessage.hashFormat) { hash ⇒
             complete(StatusCodes.OK, dispatcher.thread(hash, offset, count))
           } ~
           pathEndOrSingleSlash {
@@ -112,13 +112,13 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       }
     } ~
     delete {
-      path("post" / NanoboardMessage.hashRegex) { hash ⇒
+      path("post" / NanoboardMessage.hashFormat) { hash ⇒
         extractLog { log ⇒
           log.info("Post permanently deleted: {}", hash)
           complete(StatusCodes.OK, dispatcher.delete(hash))
         }
       } ~
-      path("pending" / NanoboardMessage.hashRegex) { hash ⇒
+      path("pending" / NanoboardMessage.hashFormat) { hash ⇒
         complete(StatusCodes.OK, dispatcher.markAsNotPending(hash))
       }
     } ~
@@ -131,7 +131,7 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
         log.info("Categories updated: {}", categories)
         complete(StatusCodes.OK, dispatcher.updateCategories(categories))
       } ~
-      path("pending" / NanoboardMessage.hashRegex) { hash ⇒
+      path("pending" / NanoboardMessage.hashFormat) { hash ⇒
         complete(StatusCodes.OK, dispatcher.markAsPending(hash))
       }
     } ~

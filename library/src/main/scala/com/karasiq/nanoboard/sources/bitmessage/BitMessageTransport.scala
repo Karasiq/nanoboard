@@ -81,7 +81,7 @@ final class BitMessageTransport(config: Config)(implicit ac: ActorSystem, am: Ac
       .run()
 
     post {
-      (path("api" / "add" / NanoboardMessage.hashRegex) & entity(as[String])) { (parent, message) ⇒
+      (path("api" / "add" / NanoboardMessage.hashFormat) & entity(as[String])) { (parent, message) ⇒
         queue.offer(NanoboardMessage(parent, BitMessageTransport.fromBase64(message)))
         complete(StatusCodes.OK)
       }

@@ -185,7 +185,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
         val prevOffset = math.max(0, offset - postsPerPage)
         val previousButton = ButtonBuilder(ButtonStyle.info)(
           "angle-double-left".fontAwesome(FontAwesome.fixedWidth),
-          s"From $prevOffset to ${prevOffset + postsPerPage}",
+          locale.fromTo(prevOffset, prevOffset + postsPerPage),
           onclick := Bootstrap.jsClick { _ ⇒
             context() = NanoboardContext.Recent(prevOffset)
           })

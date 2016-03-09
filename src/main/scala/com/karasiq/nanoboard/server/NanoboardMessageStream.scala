@@ -28,7 +28,6 @@ private[server] final class NanoboardMessageStream extends GraphStage[FanInShape
       override def onPush(): Unit = {
         subscription = grab(input)
         request()
-        // emit(output, NanoboardMessage.newMessage("cd94a3d60f2f521806abebcd3dc3f549", "Test"))
       }
     })
 

@@ -16,7 +16,7 @@ private[server] final class MessageValidator(config: Config) {
   private val spamFilter = config.getStringList("nanoboard.scheduler.spam-filter").toVector
 
   def isMessageValid(message: NanoboardMessage): Boolean = {
-    message.parent.matches(NanoboardMessage.hashRegex.regex) &&
+    message.parent.matches(NanoboardMessage.hashFormat.regex) &&
       message.text.nonEmpty &&
       message.text.length <= maxPostSize &&
       spamFilter.forall(!message.text.matches(_))

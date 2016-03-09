@@ -10,7 +10,7 @@ import akka.util.ByteString
 import com.karasiq.nanoboard.encoding.DataEncodingStage._
 import com.karasiq.nanoboard.encoding.stages.{GzipCompression, PngEncoding, SalsaCipher}
 import com.karasiq.nanoboard.model._
-import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
+import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage, NanoboardMessageGenerator}
 import com.typesafe.config.{Config, ConfigFactory}
 import slick.driver.H2Driver.api._
 
@@ -24,6 +24,7 @@ object NanoboardSlickDispatcher {
 }
 
 private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: Config, postSink: Sink[NanoboardMessage, _])(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer) extends NanoboardDispatcher {
+  private val messageGenerator = NanoboardMessageGenerator.fromConfig(config)
   private val postQueue = Source.queue(20, OverflowStrategy.dropHead)
     .to(postSink)
     .run()
@@ -96,7 +97,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
   }
 
   override def reply(parent: String, text: String): Future[NanoboardMessageData] = {
-    val newMessage: NanoboardMessage = NanoboardMessage.newMessage(parent, text)
+    val newMessage: NanoboardMessage = messageGenerator.newMessage(parent, text)
     postQueue.offer(newMessage)
     db.run(Post.addReply(newMessage)).map(_ ⇒ NanoboardMessageData(Some(parent), newMessage.hash, newMessage.text, 0))
   }

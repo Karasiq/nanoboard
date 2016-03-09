@@ -6,8 +6,8 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
+import akka.stream._
 import akka.stream.scaladsl._
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
 import com.karasiq.nanoboard.model.{Place, Post, _}
 import com.karasiq.nanoboard.server.cache.MapDbNanoboardCache
@@ -107,14 +107,17 @@ object Main extends App {
     val messageSource = UrlPngSource.fromConfig(config)
     val updateInterval = FiniteDuration(config.getDuration("nanoboard.scheduler.update-interval", TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS)
 
-    actorSystem.scheduler.schedule(10 seconds, updateInterval) {
-      Source.fromPublisher(db.stream(Place.list()))
-        .flatMapMerge(4, messageSource.imagesFromPage)
-        .filterNot(cache.contains)
-        .alsoTo(Sink.foreach(image ⇒ cache += image))
-        .flatMapMerge(8, messageSource.messagesFromImage)
-        .runWith(dbMessageSink)
-    }
+    val placeFlow = Flow[String]
+      .flatMapMerge(4, messageSource.imagesFromPage)
+      .filterNot(cache.contains)
+      .alsoTo(Sink.foreach(image ⇒ cache += image))
+      .flatMapMerge(8, messageSource.messagesFromImage)
+      .withAttributes(ActorAttributes.supervisionStrategy(Supervision.resumingDecider))
+
+    Source.tick(10 seconds, updateInterval, ())
+      .flatMapConcat(_ ⇒ Source.fromPublisher(db.stream(Place.list())))
+      .via(placeFlow)
+      .runWith(dbMessageSink)
 
     // REST server
     val server = NanoboardServer(dispatcher)
