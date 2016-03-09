@@ -106,13 +106,15 @@ object Main extends App {
     // Imageboards PNG
     val messageSource = UrlPngSource.fromConfig(config)
     val updateInterval = FiniteDuration(config.getDuration("nanoboard.scheduler.update-interval", TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS)
-    Source.tick(10 seconds, updateInterval, ())
-      .flatMapConcat(_ ⇒ Source.fromPublisher(db.stream(Place.list())))
-      .flatMapMerge(8, messageSource.imagesFromPage)
-      .filterNot(cache.contains)
-      .alsoTo(Sink.foreach(image ⇒ cache += image))
-      .flatMapMerge(8, messageSource.messagesFromImage)
-      .runWith(dbMessageSink)
+
+    actorSystem.scheduler.schedule(10 seconds, updateInterval) {
+      Source.fromPublisher(db.stream(Place.list()))
+        .flatMapMerge(4, messageSource.imagesFromPage)
+        .filterNot(cache.contains)
+        .alsoTo(Sink.foreach(image ⇒ cache += image))
+        .flatMapMerge(8, messageSource.messagesFromImage)
+        .runWith(dbMessageSink)
+    }
 
     // REST server
     val server = NanoboardServer(dispatcher)

@@ -68,7 +68,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
   }
 
   def deletePending(post: NanoboardMessageData): Unit = {
-    pngGenerationPanel.deletePost(post)
+    pngGenerationPanel.posts() = pngGenerationPanel.posts.now.filterNot(_.hash == post.hash)
   }
 
   override def context: Rx[NanoboardContext] = thread.context

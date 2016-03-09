@@ -39,34 +39,36 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
         msg
     }
 
-    context.now match {
+    val newPosts = context.now match {
       case NanoboardContext.Recent(0) ⇒
         if (posts.now.length == postsPerPage) {
-          posts() = post +: posts.now.dropRight(1)
+          post +: posts.now.dropRight(1)
         } else {
-          posts() = post +: posts.now
+          post +: posts.now
         }
 
       case NanoboardContext.Thread(hash, 0) if post.parent.contains(hash) ⇒
         val (opPost, answers) = posts.now.partition(_.hash == hash)
         if (answers.length >= postsPerPage) {
-          posts() = opPost ++ Some(post) ++ answers.dropRight(1)
+          opPost ++ Some(post) ++ answers.dropRight(1)
         } else {
-          posts() = opPost ++ Some(post) ++ answers
+          opPost ++ Some(post) ++ answers
         }
 
       case NanoboardContext.Thread(post.hash, _) ⇒
         val (_, answers) = posts.now.partition(_.hash == post.hash)
-        posts() = post +: answers
+        post +: answers
 
       case _ ⇒
-        posts() = posts.now.collect {
-          case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(hash) ⇒
-            msg.copy(answers = answers + 1)
+        posts.now
+    }
 
-          case msg ⇒
-            msg
-        }
+    posts() = newPosts.collect {
+      case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(hash) ⇒
+        msg.copy(answers = answers + 1)
+
+      case msg ⇒
+        msg
     }
   }
 

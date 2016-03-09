@@ -2,6 +2,7 @@ package com.karasiq.nanoboard.frontend.components
 
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.form.{Form, FormInput}
+import com.karasiq.bootstrap.grid.GridSystem
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardMessageData}
 import com.karasiq.nanoboard.frontend.components.post.NanoboardPost
@@ -55,7 +56,7 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
     if (posts.nonEmpty) Bootstrap.well(
       marginTop := 20.px,
       h3("Pending posts"),
-      for (p ← posts) yield NanoboardPost(showParent = true, showAnswers = false, p)
+      for (p ← posts) yield GridSystem.mkRow(NanoboardPost(showParent = true, showAnswers = false, p))
     ) else ()
   }
 

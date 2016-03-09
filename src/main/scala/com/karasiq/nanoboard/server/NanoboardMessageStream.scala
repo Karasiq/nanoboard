@@ -10,9 +10,9 @@ private[server] final class NanoboardMessageStream extends GraphStage[FanInShape
   val messages: Inlet[NanoboardMessage] = Inlet("MessageStream")
   val output: Outlet[NanoboardMessage] = Outlet("MessageOutput")
 
-  override def shape: FanInShape2[Set[String], NanoboardMessage, NanoboardMessage] = new FanInShape2(input, messages, output)
+  override def shape = new FanInShape2(input, messages, output)
 
-  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) {
+  override def createLogic(inheritedAttributes: Attributes) = new GraphStageLogic(shape) {
     private var subscription = Set.empty[String]
 
     def request(): Unit = {
