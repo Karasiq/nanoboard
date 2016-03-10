@@ -26,7 +26,7 @@ object PngGenerationPanel {
 }
 
 final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
-  import controller.locale
+  import controller.{locale, style}
 
   val model = ThreadModel(Var(NanoboardContext.Pending()), 100)
 
@@ -34,7 +34,7 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
 
   private val pendingContainer = Rx[Frag] {
     val posts = model.posts()
-    if (posts.nonEmpty) Bootstrap.well(
+    if (posts.nonEmpty) div(
       marginTop := 20.px,
       h3(locale.pendingPosts),
       for (p ← posts) yield GridSystem.mkRow(NanoboardPost(showParent = true, showAnswers = false, p))
@@ -42,11 +42,11 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
   }
 
   private val form = Form(
-    FormInput.number(locale.pendingPosts, name := "pending", value := 10, min := 0),
-    FormInput.number(locale.randomPosts, name := "random", value := 30, min := 0),
-    FormInput.text(locale.imageFormat, name := "format", value := "png"),
-    FormInput.file(locale.dataContainer, name := "container"),
-    Form.submit(locale.generateContainer)("disabled".classIf(loading)),
+    FormInput.number(locale.pendingPosts, style.input, name := "pending", value := 10, min := 0),
+    FormInput.number(locale.randomPosts, style.input, name := "random", value := 30, min := 0),
+    FormInput.text(locale.imageFormat, style.input, name := "format", value := "png"),
+    FormInput.file(locale.dataContainer, style.input, name := "container"),
+    Form.submit(locale.generateContainer)(style.submit, "disabled".classIf(loading)),
     onsubmit := Bootstrap.jsSubmit { frm ⇒
       if (!loading.now) {
         loading() = true

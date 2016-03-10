@@ -27,6 +27,7 @@ trait BoardLocale {
   def embeddedImage: String
   def writeYourMessage: String
   def bytes: String
+  def style: String
   def postingError: String
   def updateError: String
   def containerGenerationError: String

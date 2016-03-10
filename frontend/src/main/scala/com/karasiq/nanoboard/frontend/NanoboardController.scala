@@ -2,6 +2,8 @@ package com.karasiq.nanoboard.frontend
 
 import com.karasiq.bootstrap.Bootstrap
 import com.karasiq.bootstrap.BootstrapImplicits._
+import com.karasiq.bootstrap.form.FormInput
+import com.karasiq.bootstrap.grid.GridSystem
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.navbar.{NavigationBar, NavigationBarStyle, NavigationTab}
 import com.karasiq.nanoboard.frontend.api.streaming.NanoboardSubscription.{PostHashes, Unfiltered}
@@ -39,14 +41,25 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
 
   private val title = ThreadPageTitle(thread.model)
 
+  private val styleField = FormInput.select(locale.style, BoardStyle.styles.map(_.toString):_*)
+
+  styleField.selected() = Seq(style.toString)
+
+  styleField.selected.map(_.head).foreach { style ⇒
+    styleSelector.style() = BoardStyle.fromString(style)
+  }
+
   private val navigationBar = NavigationBar()
     .withBrand("Nanoboard", onclick := Bootstrap.jsClick { _ ⇒
       setContext(NanoboardContext.Categories)
     })
     .withTabs(
-      NavigationTab(locale.nanoboard, "thread", "server".fontAwesome(FontAwesome.fixedWidth), div("container-fluid".addClass, thread)),
-      NavigationTab(locale.settings, "server-settings", "wrench".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, settingsPanel)),
-      NavigationTab(locale.containerGeneration, "png-gen", "camera-retro".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, pngGenerationPanel))
+      NavigationTab(locale.nanoboard, "thread", "server".fontAwesome(FontAwesome.fixedWidth), GridSystem.containerFluid(thread)),
+      NavigationTab(locale.settings, "server-settings", "wrench".fontAwesome(FontAwesome.fixedWidth), GridSystem.container(
+        GridSystem.mkRow(styleField.renderTag(style.input)),
+        GridSystem.mkRow(settingsPanel)
+      )),
+      NavigationTab(locale.containerGeneration, "png-gen", "camera-retro".fontAwesome(FontAwesome.fixedWidth), GridSystem.container(GridSystem.mkRow(pngGenerationPanel)))
     )
     .withStyles(NavigationBarStyle.staticTop, NavigationBarStyle.inverse)
     .withContentContainer(md ⇒ div(md))
@@ -67,7 +80,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
 
   def initialize(): Unit = {
     document.head.appendChild(controller.title.renderTag().render)
-    Seq[Modifier](navigationBar, controller.styleSelector.renderTag(id := "nanoboard-style"))
+    Seq[Modifier](navigationBar, style.body, controller.styleSelector.renderTag(id := "nanoboard-style"))
       .foreach(_.applyTo(document.body))
   }
 

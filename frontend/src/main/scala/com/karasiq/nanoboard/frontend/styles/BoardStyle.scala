@@ -13,17 +13,31 @@ import scalatags.stylesheet.{StyleSheet, _}
 
 trait BoardStyle extends StyleSheet {
   override final def customSheetName: Option[String] = Some("nanoboard")
+
+  def body: Cls
   def post: Cls
   def postInner: Cls
   def postId: Cls
   def postLink: Cls
+  def input: Cls
+  def submit: Cls
 
   def spoiler: Cls
   def greenText: Cls
+
+  def hiddenScroll: StyleTree = {
+    new Selector(Seq("::-webkit-scrollbar")).apply(display.none)
+  }
 }
 
 object BoardStyle {
   val Makaba = Sheet[Makaba]
+  val Neutron = Sheet[Neutron]
+  val Muon = Sheet[Muon]
+
+  def styles: Seq[BoardStyle] = Vector(Makaba, Neutron, Muon)
+
+  def fromString(style: String): BoardStyle = styles.find(_.toString == style).getOrElse(Makaba)
 
   def selector(implicit ctx: Ctx.Owner): Selector = {
     new Selector()
@@ -32,17 +46,11 @@ object BoardStyle {
   final class Selector(implicit ctx: Ctx.Owner) extends BootstrapHtmlComponent[dom.html.Style] {
     val style: Var[BoardStyle] = Var {
       val styleName: UndefOr[String] = window.localStorage.getItem("nanoboard-style")
-      styleName.collect {
-        case "Makaba" ⇒
-          Makaba
-      }.getOrElse(Makaba)
+      styleName.map(fromString).getOrElse(Makaba)
     }
 
     style.foreach { style ⇒
-      window.localStorage.setItem("nanoboard-style", style match {
-        case _ ⇒
-          "Makaba"
-      })
+      window.localStorage.setItem("nanoboard-style", style.toString)
     }
 
 

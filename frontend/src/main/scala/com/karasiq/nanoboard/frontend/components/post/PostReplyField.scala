@@ -33,7 +33,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
 
   override def renderTag(md: Modifier*) = {
     val field = Form(
-      FormInput.textArea((), placeholder := locale.writeYourMessage, rows := 5, replyText.reactiveInput, "has-errors".classIf(lengthIsValid.map(!_)))
+      FormInput.textArea((), style.input, placeholder := locale.writeYourMessage, rows := 5, replyText.reactiveInput, "has-errors".classIf(lengthIsValid.map(!_)))
     )
 
     val attachmentLink = ButtonBuilder(ButtonStyle.primary)("file-image-o".fontAwesome(FontAwesome.fixedWidth), locale.insertImage, onclick := Bootstrap.jsClick { _ ⇒

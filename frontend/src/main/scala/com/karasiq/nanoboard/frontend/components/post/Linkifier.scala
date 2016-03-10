@@ -25,7 +25,7 @@ case class InlineText(str: String) extends LinkifierNode {
 object Linkifier {
   private val videoRegex = """\b(https?|ftp)://([-a-zA-Z0-9.]+)(/[-a-zA-Z0-9+&@#/%=~_|!:,.;]*\.(webm|mp4|ogv|3gp|avi|mov))(\?[a-zA-Z0-9+&@#/%=~_|!:,.;]*)?""".r
   private val youtubeRegex = """https?://(?:www\.)?youtu(?:be\.com/watch\?v=|\.be/)([\w\-]+)(&(amp;)?[\w\?=]*)?""".r
-  private val urlRegex = """\b(?:(?:https?|ftp|file)://|www\.|ftp\.)[-a-zA-Z0-9+&@#/%=~_|$?!:,.]*[A-Za-z0-9+&@#/%=~_|$]""".r
+  private val urlRegex = """\b(?:(?:https?|ftp|file)://|www\.|ftp\.)[-а-яА-Яa-zA-Z0-9+&@#/%=~_|$?!:,.]*[а-яА-ЯA-Za-z0-9+&@#/%=~_|$]""".r
   private val postLinkRegex = """(?:>>|/expand/)([A-Za-z0-9]{32})""".r
   private val quoteRegex = """(^|\n)>[^\r\n]+""".r
 

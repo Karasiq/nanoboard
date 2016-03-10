@@ -27,6 +27,7 @@ object Russian extends BoardLocale {
   def containerGenerationError = "Ошибка создания контейнера"
   def attachmentGenerationError = "Ошибка вставки изображения"
   def bytes = "байт"
+  def style = "Стиль оформления"
   def postingError = "Ошибка отправки"
   def updateError = "Ошибка обновления"
   def fromTo(from: Int, to: Int) = s"С $from по $to"

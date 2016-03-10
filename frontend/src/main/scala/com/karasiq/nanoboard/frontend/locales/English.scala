@@ -27,6 +27,7 @@ object English extends BoardLocale {
   def containerGenerationError = "Container generation failure"
   def attachmentGenerationError = "Attachment generation error"
   def bytes = "bytes"
+  def style = "Style"
   def postingError = "Posting error"
   def updateError = "Update error"
   def fromTo(from: Int, to: Int) = s"From $from to $to"

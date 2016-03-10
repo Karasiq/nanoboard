@@ -12,6 +12,7 @@ import org.scalajs.dom.raw.File
 import rx._
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.Try
 import scalatags.JsDom.all._
 
 private[components] object AttachmentGenerationDialog {
@@ -23,21 +24,21 @@ private[components] object AttachmentGenerationDialog {
 private[components] final class AttachmentGenerationDialog(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) {
   import controller.locale
   val format = Var("jpeg")
-  val size = Var(500)
-  val quality = Var(70)
+  val size = Var("500")
+  val quality = Var("70")
   val file = Var[Option[File]](None)
 
   val ready = Rx {
-    format().nonEmpty && size() > 0 && file().nonEmpty && (1 to 100).contains(quality())
+    format().nonEmpty && Try(size().toInt).getOrElse(0) > 0 && file().nonEmpty && (1 to 100).contains(Try(quality().toInt).getOrElse(0))
   }
 
   def generate(): Future[String] = {
     val promise = Promise[String]
     val modal = Modal(locale.insertImage)
       .withBody(Form(
-        FormInput.text(locale.imageFormat, name := "format", format.reactiveInput, placeholder := "Java ImageIO supported format name"),
-        FormInput.number(locale.imageSize, name := "size", min := 10, size.reactiveInput, placeholder := "Max height/width in pixels"),
-        FormInput.number(locale.imageQuality, name := "quality", min := 1, max := 100, quality.reactiveInput, placeholder := "Image quality"),
+        FormInput.text(locale.imageFormat, name := "format", format.reactiveInput, placeholder := "jpeg"),
+        FormInput.number(locale.imageSize, name := "size", min := 10, size.reactiveInput, placeholder := 500),
+        FormInput.number(locale.imageQuality, name := "quality", min := 1, max := 100, quality.reactiveInput, placeholder := 70),
         FormInput.file(locale.dataContainer, name := "image", file.reactiveRead("change", e ⇒ e.asInstanceOf[Input].files.headOption)),
         onsubmit := Bootstrap.jsSubmit(_ ⇒ ())
       ))
@@ -46,7 +47,7 @@ private[components] final class AttachmentGenerationDialog(implicit ctx: Ctx.Own
           promise.failure(CancelledException)
         }),
         Modal.button(locale.submit, Modal.dismiss, ready.reactiveShow, onclick := Bootstrap.jsClick { _ ⇒
-          promise.completeWith(NanoboardApi.generateAttachment(format.now, size.now, quality.now, file.now.get))
+          promise.completeWith(NanoboardApi.generateAttachment(format.now, size.now.toInt, quality.now.toInt, file.now.get))
         })
       )
     modal.show(backdrop = false)

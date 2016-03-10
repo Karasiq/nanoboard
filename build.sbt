@@ -107,6 +107,9 @@ lazy val backendSettings = Seq(
       Html from NanoboardAssets.index,
       Style from NanoboardAssets.style,
       Image("favicon.ico") from file("frontend") / "files" / "favicon.ico",
+      Image("img/muon_bg.jpg") from file("frontend") / "files" / "muon_bg.jpg",
+      Image("img/muon_posts.jpg") from file("frontend") / "files" / "muon_posts.jpg",
+      Image("img/muon_inputs.jpg") from file("frontend") / "files" / "muon_inputs.jpg",
 
       // Scala.js app
       Script from file("frontend") / "target" / "scala-2.11" / "nanoboard-frontend-opt.js",

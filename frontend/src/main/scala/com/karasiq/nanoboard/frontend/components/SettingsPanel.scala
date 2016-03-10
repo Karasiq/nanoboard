@@ -20,7 +20,7 @@ object SettingsPanel {
 }
 
 final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
-  import controller.locale
+  import controller.{locale, style}
 
   private val placesText = Var("")
   private val categoriesText = Var("")
@@ -53,10 +53,10 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
   override def renderTag(md: Modifier*) = {
     div(
       Form(
-        FormInput.textArea(locale.places, rows := 15, placesText.reactiveInput)("has-error".classIf(places.map(_.isEmpty))),
-        FormInput.textArea(locale.categories, rows := 15, categoriesText.reactiveInput)("has-error".classIf(categories.map(_.isEmpty)))
+        FormInput.textArea(locale.places, style.input, rows := 15, placesText.reactiveInput)("has-error".classIf(places.map(_.isEmpty))),
+        FormInput.textArea(locale.categories, style.input, rows := 15, categoriesText.reactiveInput)("has-error".classIf(categories.map(_.isEmpty)))
       ),
-      ButtonBuilder(block = true)(locale.submit, "disabled".classIf(buttonDisabled), onclick := Bootstrap.jsClick { _ ⇒
+      ButtonBuilder(block = true)(locale.submit, style.submit, "disabled".classIf(buttonDisabled), onclick := Bootstrap.jsClick { _ ⇒
         if (!buttonDisabled.now) {
           loading() = true
           Future.sequence(Seq(NanoboardApi.setCategories(categories.now), NanoboardApi.setPlaces(places.now))).onComplete {
