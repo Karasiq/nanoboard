@@ -1,6 +1,6 @@
 #define OutputName "nanoboard-server"
 #define MyAppName "Nanoboard"
-#define MyAppVersion "1.0.5"
+#define MyAppVersion "1.0.6"
 #define MyAppPublisher "Karasiq, Inc."
 #define MyAppURL "http://www.github.com/Karasiq/nanoboard"
 #define MyAppExeName "nanoboard.exe"

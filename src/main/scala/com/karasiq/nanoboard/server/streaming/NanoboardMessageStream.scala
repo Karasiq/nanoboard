@@ -66,8 +66,9 @@ private[server] final class NanoboardMessageStream extends GraphStage[FanInShape
 }
 
 private[server] object NanoboardMessageStream {
+  import NanoboardEvent._
   import NanoboardSubscription._
-
+  
   def flow = Flow.fromGraph(GraphDSL.create() { implicit b: GraphDSL.Builder[akka.NotUsed] ⇒
     import GraphDSL.Implicits._
     val in = b.add {
