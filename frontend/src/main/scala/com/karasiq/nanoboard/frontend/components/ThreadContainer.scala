@@ -33,44 +33,45 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
 
   // Controller
   override def addPost(post: NanoboardMessageData): Unit = {
-    categories() = categories.now.collect {
-      case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(hash) ⇒
-        msg.copy(answers = answers + 1)
+    if (!posts.now.exists(_.hash == post.hash)) {
+      categories() = categories.now.collect {
+        case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(hash) ⇒
+          msg.copy(answers = answers + 1)
 
-      case msg ⇒
-        msg
-    }
+        case msg ⇒
+          msg
+      }
 
-    val newPosts = context.now match {
-      case NanoboardContext.Recent(0) ⇒
-        if (posts.now.length == postsPerPage) {
-          post +: posts.now.dropRight(1)
-        } else {
-          post +: posts.now
-        }
+      val updated = context.now match {
+        case NanoboardContext.Recent(0) ⇒
+          if (posts.now.length == postsPerPage) {
+            post +: posts.now.dropRight(1)
+          } else {
+            post +: posts.now
+          }
 
-      case NanoboardContext.Thread(hash, 0) if post.parent.contains(hash) ⇒
-        val (opPost, answers) = posts.now.partition(_.hash == hash)
-        if (answers.length >= postsPerPage) {
-          opPost ++ Some(post) ++ answers.dropRight(1)
-        } else {
-          opPost ++ Some(post) ++ answers
-        }
+        case NanoboardContext.Thread(hash, 0) if post.parent.contains(hash) ⇒
+          val (opPost, answers) = posts.now.partition(_.hash == hash)
+          if (answers.length >= postsPerPage) {
+            opPost ++ Some(post) ++ answers.dropRight(1)
+          } else {
+            opPost ++ Some(post) ++ answers
+          }
 
-      case NanoboardContext.Thread(post.hash, _) ⇒
-        val (_, answers) = posts.now.partition(_.hash == post.hash)
-        post +: answers
+        case NanoboardContext.Thread(post.hash, _) ⇒
+          val (_, answers) = posts.now.partition(_.hash == post.hash)
+          post +: answers
 
-      case _ ⇒
-        posts.now
-    }
+        case _ ⇒
+          posts.now
+      }
+      posts() = updated.collect {
+        case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(hash) ⇒
+          msg.copy(answers = answers + 1)
 
-    posts() = newPosts.collect {
-      case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(hash) ⇒
-        msg.copy(answers = answers + 1)
-
-      case msg ⇒
-        msg
+        case msg ⇒
+          msg
+      }
     }
   }
 
@@ -89,6 +90,14 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
         val current = posts.now
         posts() = current.filterNot(p ⇒ p.hash == post.hash || p.parent.contains(post.hash))
         deletedPosts() = deletedPosts.now + (current.length - posts.now.length)
+    }
+
+    posts() = posts.now.collect {
+      case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(post.hash) ⇒
+        msg.copy(answers = answers - 1)
+
+      case msg ⇒
+        msg
     }
   }
 

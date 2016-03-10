@@ -34,11 +34,20 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
   private val loading = Var(false)
 
   override def addPost(post: NanoboardMessageData): Unit = {
-    posts() = posts.now :+ post
+    if (!posts.now.exists(_.hash == post.hash)) {
+      posts() = posts.now :+ post
+    }
   }
 
   override def deletePost(post: NanoboardMessageData): Unit = {
-    posts() = posts.now.filterNot(p ⇒ p.hash == post.hash || p.parent.contains(post.hash))
+    val filtered = posts.now.filterNot(p ⇒ p.hash == post.hash || p.parent.contains(post.hash))
+    posts() = filtered.collect {
+      case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(hash) ⇒
+        msg.copy(answers = answers - 1)
+
+      case msg ⇒
+        msg
+    }
   }
 
   override def update(): Unit = {

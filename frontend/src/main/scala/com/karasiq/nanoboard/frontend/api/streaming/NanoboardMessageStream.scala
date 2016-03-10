@@ -1,8 +1,10 @@
-package com.karasiq.nanoboard.frontend.api
+package com.karasiq.nanoboard.frontend.api.streaming
 
 import java.nio.ByteBuffer
 
 import boopickle.Default._
+import com.karasiq.nanoboard.frontend.api.BinaryMarshaller
+import com.karasiq.nanoboard.frontend.api.streaming.NanoboardSubscription._
 import com.karasiq.nanoboard.frontend.utils.Notifications
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import org.scalajs.dom.raw._
@@ -24,29 +26,29 @@ object NanoboardMessageStream {
     }
   }
 
-  private[api] def asMessage(response: Any): NanoboardMessageData = {
-    Unpickle[NanoboardMessageData].fromBytes(TypedArrayBuffer.wrap(response.asInstanceOf[ArrayBuffer]))
+  private[api] def asEvent(response: Any): NanoboardEvent = {
+    Unpickle[NanoboardEvent].fromBytes(TypedArrayBuffer.wrap(response.asInstanceOf[ArrayBuffer]))
   }
 
-  def apply(f: NanoboardMessageData ⇒ Unit): NanoboardMessageStream = {
+  def apply(f: NanoboardEvent ⇒ Unit): NanoboardMessageStream = {
     new NanoboardMessageStream(f)
   }
 }
 
 // WebSocket wrapper
-final class NanoboardMessageStream(f: NanoboardMessageData ⇒ Unit) {
+final class NanoboardMessageStream(f: NanoboardEvent ⇒ Unit) {
   private var webSocket: Option[WebSocket] = None
-  private var last = Set.empty[String]
+  private var last: NanoboardSubscription = Unfiltered
   private var lastSet = false
 
-  def setContext(hashes: Set[String]): Unit = {
-    if (!lastSet || hashes != last) {
+  def setContext(context: NanoboardSubscription): Unit = {
+    if (!lastSet || context != last) {
       webSocket.foreach { webSocket ⇒
-        val buffer = NanoboardMessageStream.asArrayBuffer(BinaryMarshaller.write(hashes))
+        val buffer = NanoboardMessageStream.asArrayBuffer(BinaryMarshaller.write(context))
         webSocket.send(buffer)
       }
     }
-    last = hashes
+    last = context
     lastSet = webSocket.isDefined
   }
 
@@ -56,7 +58,7 @@ final class NanoboardMessageStream(f: NanoboardMessageData ⇒ Unit) {
     webSocket.binaryType = "arraybuffer"
 
     webSocket.onmessage = { (m: MessageEvent) ⇒
-      val message = NanoboardMessageStream.asMessage(m.data)
+      val message = NanoboardMessageStream.asEvent(m.data)
       f(message)
     }
 

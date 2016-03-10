@@ -56,8 +56,9 @@ object NanoboardApi {
     Ajax.delete(s"/pending/$hash").map(_ ⇒ ())
   }
 
-  def delete(hash: String)(implicit ec: ExecutionContext): Future[Unit] = {
-    Ajax.delete(s"/post/$hash").map(_ ⇒ ())
+  def delete(hash: String)(implicit ec: ExecutionContext): Future[Seq[String]] = {
+    Ajax.delete(s"/post/$hash", responseType = marshaller.responseType)
+      .map(readResponse[Seq[String]])
   }
 
   def places()(implicit ec: ExecutionContext): Future[Seq[String]] = {

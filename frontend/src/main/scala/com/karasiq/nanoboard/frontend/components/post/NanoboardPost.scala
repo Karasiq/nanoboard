@@ -68,8 +68,11 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
 
   def delete(): Unit = {
     Notifications.confirmation(locale.deleteConfirmation(data.hash), Layout.topLeft) {
-      NanoboardApi.delete(data.hash).foreach { _ ⇒
+      NanoboardApi.delete(data.hash).foreach { hashes ⇒
         controller.deletePost(data)
+        hashes.foreach { hash ⇒
+          controller.deletePost(NanoboardMessageData(None, hash, "", 0))
+        }
       }
     }
   }

@@ -120,16 +120,18 @@ package object model {
     }
 
     def delete(hash: String)(implicit ec: ExecutionContext) = {
-      def deleteCascade(hash: String): DBIOAction[Unit, NoStream, Effect.Write with Effect.Read] = {
+      def deleteCascade(hash: String): DBIOAction[Seq[String], NoStream, Effect.Write with Effect.Read] = {
         val query = posts.filter(_.parent === hash)
-        DBIO.seq(
-          query.map(_.hash).result.flatMap(ps ⇒ DBIO.sequence[Unit, Seq, Effect.Write with Effect.Read](ps.map(deleteCascade))),
-          query.delete,
-          pendingPosts.filter(_.hash === hash).delete,
-          Category.delete(hash),
-          deletedPosts.insertOrUpdate(hash),
-          posts.filter(_.hash === hash).delete
-        )
+        for {
+          deleted ← query.map(_.hash).result
+          descendants ← DBIO.sequence(deleted.map(deleteCascade))
+          _ ← DBIO.seq(
+            pendingPosts.filter(_.hash === hash).delete,
+            Category.delete(hash),
+            deletedPosts.insertOrUpdate(hash),
+            posts.filter(_.hash === hash).delete
+          )
+        } yield Seq(hash) ++ deleted ++ descendants.flatten
       }
 
       deleteCascade(hash)

@@ -9,8 +9,10 @@ import akka.http.scaladsl.Http.ServerBinding
 import akka.stream._
 import akka.stream.scaladsl._
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
+import com.karasiq.nanoboard.model.NanoboardMessageData._
 import com.karasiq.nanoboard.model.{Place, Post, _}
 import com.karasiq.nanoboard.server.cache.MapDbNanoboardCache
+import com.karasiq.nanoboard.server.streaming.NanoboardEvent
 import com.karasiq.nanoboard.server.util.MessageValidator
 import com.karasiq.nanoboard.sources.bitmessage.BitMessageTransport
 import com.karasiq.nanoboard.sources.png.UrlPngSource
@@ -50,16 +52,24 @@ object Main extends App {
     if (messageValidator.isMessageValid(message)) {
       db.run(Post.insertMessage(message)).foreach { inserted ⇒
         if (inserted > 0) {
-          actorSystem.eventStream.publish(message)
+          actorSystem.eventStream.publish(NanoboardEvent.PostAdded(message))
         }
       }
     }
   }
 
   val bitMessage = BitMessageTransport(config)
-  val dispatcher = NanoboardSlickDispatcher(db, config, Sink.foreach { message ⇒
-    bitMessage.sendMessage(message).foreach { response ⇒
-      actorSystem.log.info("Message was sent to BM transport: {}", response)
+  val dispatcher = NanoboardSlickDispatcher(db, config, Sink.foreach { event ⇒
+    actorSystem.eventStream.publish(event)
+
+    event match {
+      case NanoboardEvent.PostAdded(message, true) ⇒
+        bitMessage.sendMessage(message).foreach { response ⇒
+          actorSystem.log.info("Message was sent to BM transport: {}", response)
+        }
+
+      case _ ⇒
+        // Pass
     }
   })
 

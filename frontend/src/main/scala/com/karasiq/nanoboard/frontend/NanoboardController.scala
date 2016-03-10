@@ -1,9 +1,12 @@
 package com.karasiq.nanoboard.frontend
 
+import com.karasiq.bootstrap.Bootstrap
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.icons.FontAwesome
-import com.karasiq.bootstrap.navbar.{NavigationBar, NavigationTab}
-import com.karasiq.nanoboard.frontend.api.{NanoboardCategory, NanoboardMessageData, NanoboardMessageStream}
+import com.karasiq.bootstrap.navbar.{NavigationBar, NavigationBarStyle, NavigationTab}
+import com.karasiq.nanoboard.frontend.api.streaming.NanoboardSubscription.{PostHashes, Unfiltered}
+import com.karasiq.nanoboard.frontend.api.streaming.{NanoboardEvent, NanoboardMessageStream, NanoboardSubscription}
+import com.karasiq.nanoboard.frontend.api.{NanoboardCategory, NanoboardMessageData}
 import com.karasiq.nanoboard.frontend.components._
 import com.karasiq.nanoboard.frontend.locales.BoardLocale
 import com.karasiq.nanoboard.frontend.styles.BoardStyle
@@ -36,20 +39,35 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
 
   private val title = ThreadPageTitle(thread)
 
-  private val navigationBar = NavigationBar(
-    NavigationTab(locale.nanoboard, "thread", "server".fontAwesome(FontAwesome.fixedWidth), div("container-fluid".addClass, thread)),
-    NavigationTab(locale.settings, "server-settings", "wrench".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, settingsPanel)),
-    NavigationTab(locale.containerGeneration, "png-gen", "camera-retro".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, pngGenerationPanel))
-  )
+  private val navigationBar = NavigationBar()
+    .withBrand("Nanoboard", onclick := Bootstrap.jsClick { _ ⇒
+      setContext(NanoboardContext.Categories)
+    })
+    .withTabs(
+      NavigationTab(locale.nanoboard, "thread", "server".fontAwesome(FontAwesome.fixedWidth), div("container-fluid".addClass, thread)),
+      NavigationTab(locale.settings, "server-settings", "wrench".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, settingsPanel)),
+      NavigationTab(locale.containerGeneration, "png-gen", "camera-retro".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, pngGenerationPanel))
+    )
+    .withStyles(NavigationBarStyle.staticTop, NavigationBarStyle.inverse)
+    .withContentContainer(div(marginTop := 70.px))
+    .build()
 
-  private val messageChannel = NanoboardMessageStream { message ⇒
-    // Notifications.info(s"New message: ${message.text}", Layout.topRight)
-    thread.addPost(message)
+  private val messageChannel = NanoboardMessageStream {
+    case NanoboardEvent.PostAdded(message, pending) ⇒
+      // Notifications.info(s"New message: ${message.text}", Layout.topRight)
+      thread.addPost(message)
+      if (pending) {
+        pngGenerationPanel.addPost(message)
+      }
+
+    case NanoboardEvent.PostDeleted(hash) ⇒
+      // Notifications.warning(s"Post was deleted: $hash", Layout.topRight)
+      deletePost(NanoboardMessageData(None, hash, "", 0))
   }
 
   def initialize(): Unit = {
     document.head.appendChild(controller.title.renderTag().render)
-    Seq[Frag](navigationBar.navbar(locale.nanoboard), div(marginTop := 70.px, navigationBar.content), controller.styleSelector.renderTag(id := "nanoboard-style"))
+    Seq[Modifier](navigationBar, controller.styleSelector.renderTag(id := "nanoboard-style"))
       .foreach(_.applyTo(document.body))
   }
 
@@ -90,10 +108,17 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
     Seq(thread, pngGenerationPanel).foreach(_.deletePost(post))
   }
 
-  private val messageChannelContext = Rx {
-    posts().map(_.hash).toSet ++ thread.categories().map(_.hash).toSet ++ Some(thread.context()).collect {
-      case NanoboardContext.Thread(hash, _) ⇒
-        hash
+  private val messageChannelContext = Rx[NanoboardSubscription] {
+    thread.context() match {
+      case NanoboardContext.Recent(0) ⇒
+        // Accept all posts
+        Unfiltered
+
+      case context ⇒
+        PostHashes(posts().map(_.hash).toSet ++ thread.categories().map(_.hash).toSet ++ Some(context).collect {
+          case NanoboardContext.Thread(hash, _) ⇒
+            hash
+        })
     }
   }
 

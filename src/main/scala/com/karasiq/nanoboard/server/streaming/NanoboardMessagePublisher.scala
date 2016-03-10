@@ -1,15 +1,14 @@
-package com.karasiq.nanoboard.server
+package com.karasiq.nanoboard.server.streaming
 
 import akka.stream.actor.ActorPublisher
 import akka.stream.actor.ActorPublisherMessage.{Cancel, Request}
-import com.karasiq.nanoboard.NanoboardMessage
 
 import scala.annotation.tailrec
 
-private[server] class NanoboardMessagePublisher extends ActorPublisher[NanoboardMessage] {
+private[server] class NanoboardMessagePublisher extends ActorPublisher[NanoboardEvent] {
   override def preStart(): Unit = {
     super.preStart()
-    context.system.eventStream.subscribe(self, classOf[NanoboardMessage])
+    context.system.eventStream.subscribe(self, classOf[NanoboardEvent])
   }
 
   override def postStop(): Unit = {
@@ -18,10 +17,10 @@ private[server] class NanoboardMessagePublisher extends ActorPublisher[Nanoboard
   }
 
   val maxBufferSize = 20
-  var messageBuffer = Vector.empty[NanoboardMessage]
+  var messageBuffer = Vector.empty[NanoboardEvent]
 
   override def receive: Receive = {
-    case m: NanoboardMessage ⇒
+    case m: NanoboardEvent ⇒
       if (messageBuffer.isEmpty && totalDemand > 0) {
         onNext(m)
       } else {

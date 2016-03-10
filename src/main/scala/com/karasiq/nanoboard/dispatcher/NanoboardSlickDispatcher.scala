@@ -10,6 +10,7 @@ import akka.util.ByteString
 import com.karasiq.nanoboard.encoding.DataEncodingStage._
 import com.karasiq.nanoboard.encoding.stages.{GzipCompression, PngEncoding, SalsaCipher}
 import com.karasiq.nanoboard.model._
+import com.karasiq.nanoboard.server.streaming.NanoboardEvent
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage, NanoboardMessageGenerator}
 import com.typesafe.config.{Config, ConfigFactory}
 import slick.driver.H2Driver.api._
@@ -18,15 +19,15 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 object NanoboardSlickDispatcher {
-  def apply(db: Database, config: Config = ConfigFactory.load(), postSink: Sink[NanoboardMessage, _] = Sink.ignore)(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer): NanoboardDispatcher = {
-    new NanoboardSlickDispatcher(db, config, postSink)
+  def apply(db: Database, config: Config = ConfigFactory.load(), eventSink: Sink[NanoboardEvent, _] = Sink.ignore)(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer): NanoboardDispatcher = {
+    new NanoboardSlickDispatcher(db, config, eventSink)
   }
 }
 
-private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: Config, postSink: Sink[NanoboardMessage, _])(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer) extends NanoboardDispatcher {
+private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: Config, eventSink: Sink[NanoboardEvent, _])(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer) extends NanoboardDispatcher {
   private val messageGenerator = NanoboardMessageGenerator.fromConfig(config)
-  private val postQueue = Source.queue(20, OverflowStrategy.dropHead)
-    .to(postSink)
+  private val eventQueue = Source.queue(20, OverflowStrategy.dropHead)
+    .to(eventSink)
     .run()
 
   override def createContainer(pendingCount: Int, randomCount: Int, format: String, container: ByteString) = {
@@ -92,13 +93,17 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
     db.run(DBIO.seq(pendingPosts.insertOrUpdate(message)))
   }
 
-  override def delete(message: String): Future[Unit] = {
-    db.run(Post.delete(message))
+  override def delete(message: String): Future[Seq[String]] = {
+    val future = db.run(Post.delete(message))
+    future.foreach { deleted ⇒
+      deleted.foreach(hash ⇒ eventQueue.offer(NanoboardEvent.PostDeleted(hash)))
+    }
+    future
   }
 
   override def reply(parent: String, text: String): Future[NanoboardMessageData] = {
     val newMessage: NanoboardMessage = messageGenerator.newMessage(parent, text)
-    postQueue.offer(newMessage)
+    eventQueue.offer(NanoboardEvent.PostAdded(newMessage, true))
     db.run(Post.addReply(newMessage)).map(_ ⇒ NanoboardMessageData(Some(parent), newMessage.hash, newMessage.text, 0))
   }
 

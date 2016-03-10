@@ -6,8 +6,6 @@ import com.karasiq.nanoboard.model.NanoboardMessageData
 
 import scala.concurrent.Future
 
-
-
 trait NanoboardDispatcher {
   def createContainer(pending: Int, random: Int, format: String, container: ByteString): Future[ByteString]
   def recent(offset: Int, count: Int): Future[Seq[NanoboardMessageData]]
@@ -19,7 +17,7 @@ trait NanoboardDispatcher {
   def reply(parent: String, text: String): Future[NanoboardMessageData]
   def markAsNotPending(message: String): Future[Unit]
   def markAsPending(message: String): Future[Unit]
-  def delete(message: String): Future[Unit]
+  def delete(message: String): Future[Seq[String]]
   def updatePlaces(places: Seq[String]): Future[Unit]
   def updateCategories(categories: Seq[NanoboardCategory]): Future[Unit]
 }
