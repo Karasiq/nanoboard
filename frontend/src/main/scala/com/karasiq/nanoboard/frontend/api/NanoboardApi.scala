@@ -76,8 +76,8 @@ object NanoboardApi {
       .map(_ ⇒ ())
   }
 
-  def pending()(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
-    Ajax.get("/pending", responseType = marshaller.responseType)
+  def pending(offset: Int, count: Int)(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
+    Ajax.get(s"/pending?offset=$offset&count=$count", responseType = marshaller.responseType)
       .map(readResponse[Vector[NanoboardMessageData]])
   }
 

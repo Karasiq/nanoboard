@@ -126,7 +126,7 @@ lazy val frontendSettings = Seq(
   name := "nanoboard-frontend",
   resolvers += Resolver.sonatypeRepo("snapshots"),
   libraryDependencies ++= Seq(
-    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.4-SNAPSHOT",
+    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.4",
     "me.chrons" %%% "boopickle" % "1.1.2",
     "com.github.karasiq" %%% "parboiled" % "2.1.1-SNAPSHOT",
     "com.chuusai" %%% "shapeless" % "2.2.5",

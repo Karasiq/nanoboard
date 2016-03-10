@@ -4,8 +4,9 @@ import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.grid.GridSystem
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
-import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardMessageData}
+import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.components.post.NanoboardPost
+import com.karasiq.nanoboard.frontend.model.ThreadModel
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Blobs, Notifications}
 import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardController}
@@ -24,46 +25,15 @@ object PngGenerationPanel {
   }
 }
 
-final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] with PostsContainer {
+final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
   import controller.locale
 
-  override val posts = Var(Vector.empty[NanoboardMessageData])
-
-  override val context: Var[NanoboardContext] = Var(NanoboardContext.Categories)
+  val model = ThreadModel(Var(NanoboardContext.Pending()), 100)
 
   private val loading = Var(false)
 
-  override def addPost(post: NanoboardMessageData): Unit = {
-    if (!posts.now.exists(_.hash == post.hash)) {
-      posts() = posts.now :+ post
-    }
-  }
-
-  override def deletePost(post: NanoboardMessageData): Unit = {
-    val filtered = posts.now.filterNot(p ⇒ p.hash == post.hash || p.parent.contains(post.hash))
-    posts() = filtered.collect {
-      case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(hash) ⇒
-        msg.copy(answers = answers - 1)
-
-      case msg ⇒
-        msg
-    }
-  }
-
-  override def update(): Unit = {
-    loading() = true
-    NanoboardApi.pending().onComplete {
-      case Success(posts) ⇒
-        this.posts() = posts
-        loading() = false
-
-      case Failure(_) ⇒
-        loading() = false
-    }
-  }
-
   private val pendingContainer = Rx[Frag] {
-    val posts = this.posts()
+    val posts = model.posts()
     if (posts.nonEmpty) Bootstrap.well(
       marginTop := 20.px,
       h3(locale.pendingPosts),
@@ -91,7 +61,7 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
               case Success(blob) ⇒
                 loading() = false
                 Blobs.saveBlob(blob, s"${js.Date.now()}.$format")
-                update()
+                model.updatePosts()
 
               case Failure(exc) ⇒
                 loading() = false
@@ -109,6 +79,4 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
   override def renderTag(md: Modifier*) = {
     div(form, pendingContainer)
   }
-
-  update()
 }

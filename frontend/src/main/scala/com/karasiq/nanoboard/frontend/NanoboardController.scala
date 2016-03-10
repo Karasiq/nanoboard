@@ -22,7 +22,7 @@ object NanoboardController {
   }
 }
 
-final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) extends PostsContainer {
+final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
   private implicit def controller: NanoboardController = this
 
   private val styleSelector = BoardStyle.selector
@@ -37,7 +37,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
 
   private val pngGenerationPanel = PngGenerationPanel()
 
-  private val title = ThreadPageTitle(thread)
+  private val title = ThreadPageTitle(thread.model)
 
   private val navigationBar = NavigationBar()
     .withBrand("Nanoboard", onclick := Bootstrap.jsClick { _ ⇒
@@ -55,14 +55,14 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
   private val messageChannel = NanoboardMessageStream {
     case NanoboardEvent.PostAdded(message, pending) ⇒
       // Notifications.info(s"New message: ${message.text}", Layout.topRight)
-      thread.addPost(message)
+      thread.model.addPost(message)
       if (pending) {
-        pngGenerationPanel.addPost(message)
+        pngGenerationPanel.model.addPost(message)
       }
 
     case NanoboardEvent.PostDeleted(hash) ⇒
       // Notifications.warning(s"Post was deleted: $hash", Layout.topRight)
-      deletePost(NanoboardMessageData(None, hash, "", 0))
+      deleteSingle(NanoboardMessageData(None, hash, "", 0))
   }
 
   def initialize(): Unit = {
@@ -72,7 +72,11 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
   }
 
   def updateCategories(newList: Seq[NanoboardCategory]): Unit = {
-    thread.updateCategories()
+    thread.model.updateCategories()
+  }
+
+  def updatePosts(): Unit = {
+    Seq(thread.model, pngGenerationPanel.model).foreach(_.updatePosts())
   }
 
   def setContext(context: NanoboardContext): Unit = {
@@ -81,41 +85,33 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) e
   }
 
   def isPending(hash: String): Rx[Boolean] = {
-    pngGenerationPanel.posts.map(_.exists(_.hash == hash))
+    pngGenerationPanel.model.posts.map(_.exists(_.hash == hash))
   }
 
   def addPending(post: NanoboardMessageData): Unit = {
-    pngGenerationPanel.addPost(post)
+    pngGenerationPanel.model.addPost(post)
   }
 
   def deletePending(post: NanoboardMessageData): Unit = {
-    pngGenerationPanel.posts() = pngGenerationPanel.posts.now.filterNot(_.hash == post.hash)
+    pngGenerationPanel.model.deleteSingle(post)
   }
 
-  override def context: Rx[NanoboardContext] = thread.context
-
-  override def posts: Rx[Vector[NanoboardMessageData]] = thread.posts
-
-  override def update(): Unit = {
-    Seq(thread, pngGenerationPanel).foreach(_.update())
+  def addPost(post: NanoboardMessageData): Unit = {
+    Seq(thread.model, pngGenerationPanel.model).foreach(_.addPost(post))
   }
 
-  override def addPost(post: NanoboardMessageData): Unit = {
-    Seq(thread, pngGenerationPanel).foreach(_.addPost(post))
-  }
-
-  override def deletePost(post: NanoboardMessageData): Unit = {
-    Seq(thread, pngGenerationPanel).foreach(_.deletePost(post))
+  def deleteSingle(post: NanoboardMessageData): Unit = {
+    Seq(thread.model, pngGenerationPanel.model).foreach(_.deleteSingle(post))
   }
 
   private val messageChannelContext = Rx[NanoboardSubscription] {
-    thread.context() match {
-      case NanoboardContext.Recent(0) ⇒
+    thread.model.context() match {
+      case NanoboardContext.Recent(0) | NanoboardContext.Pending(0) ⇒
         // Accept all posts
         Unfiltered
 
       case context ⇒
-        PostHashes(posts().map(_.hash).toSet ++ thread.categories().map(_.hash).toSet ++ Some(context).collect {
+        PostHashes(thread.model.posts().map(_.hash).toSet ++ thread.model.categories().map(_.hash).toSet ++ Some(context).collect {
           case NanoboardContext.Thread(hash, _) ⇒
             hash
         })

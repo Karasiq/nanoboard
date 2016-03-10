@@ -3,6 +3,7 @@ package com.karasiq.nanoboard.frontend.components
 import com.karasiq.bootstrap.BootstrapHtmlComponent
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.nanoboard.frontend.components.post.PostRenderer
+import com.karasiq.nanoboard.frontend.model.ThreadModel
 import com.karasiq.nanoboard.frontend.utils.PostParser
 import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardController}
 import org.scalajs.dom
@@ -12,12 +13,12 @@ import scalatags.JsDom.all._
 import scalatags.JsDom.tags2
 
 object ThreadPageTitle {
-  def apply(thread: PostsContainer)(implicit ctx: Ctx.Owner, controller: NanoboardController): ThreadPageTitle = {
+  def apply(thread: ThreadModel)(implicit ctx: Ctx.Owner, controller: NanoboardController): ThreadPageTitle = {
     new ThreadPageTitle(thread)
   }
 }
 
-private[components] final class ThreadPageTitle(thread: PostsContainer)(implicit ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Title] {
+private[components] final class ThreadPageTitle(thread: ThreadModel)(implicit ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Title] {
   import controller.locale
 
   val title = Rx[String] {
@@ -38,6 +39,9 @@ private[components] final class ThreadPageTitle(thread: PostsContainer)(implicit
 
       case NanoboardContext.Categories ⇒
         s"${locale.nanoboard} - ${locale.categories}"
+
+      case _ ⇒
+        locale.nanoboard
     }
 
   }
