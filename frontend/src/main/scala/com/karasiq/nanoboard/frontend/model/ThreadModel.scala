@@ -40,6 +40,9 @@ private[frontend] final class ThreadModel(val context: Var[NanoboardContext], po
             post +: posts.now
           }
 
+        case NanoboardContext.Pending(_) if posts.now.length < postsPerPage ⇒
+          posts.now :+ post
+
         case NanoboardContext.Thread(hash, 0) if post.parent.contains(hash) ⇒
           val (opPost, answers) = posts.now.partition(_.hash == hash)
           if (answers.length >= postsPerPage) {

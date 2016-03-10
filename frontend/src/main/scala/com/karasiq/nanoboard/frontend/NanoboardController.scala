@@ -49,7 +49,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
       NavigationTab(locale.containerGeneration, "png-gen", "camera-retro".fontAwesome(FontAwesome.fixedWidth), div("container".addClass, pngGenerationPanel))
     )
     .withStyles(NavigationBarStyle.staticTop, NavigationBarStyle.inverse)
-    .withContentContainer(div(marginTop := 70.px))
+    .withContentContainer(md ⇒ div(md))
     .build()
 
   private val messageChannel = NanoboardMessageStream {

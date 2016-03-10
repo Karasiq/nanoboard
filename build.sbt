@@ -130,7 +130,7 @@ lazy val frontendSettings = Seq(
     "me.chrons" %%% "boopickle" % "1.1.2",
     "com.github.karasiq" %%% "parboiled" % "2.1.1-SNAPSHOT",
     "com.chuusai" %%% "shapeless" % "2.2.5",
-    "com.github.karasiq" %%% "scalajs-videojs" % "1.0.1"
+    "com.github.karasiq" %%% "scalajs-videojs" % "1.0.2"
   )
 )
 

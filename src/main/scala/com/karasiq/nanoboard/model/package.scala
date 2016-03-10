@@ -73,12 +73,18 @@ package object model {
       DBIO.sequence(messages.map(insertMessage))
     }
 
-    def recent(offset: Int, count: Int)(implicit ec: ExecutionContext) = {
+    private def recentQuery(offset: ConstColumn[Long], count: ConstColumn[Long]) = {
       posts
         .sortBy(_.firstSeen.desc)
         .drop(offset)
         .take(count)
         .map(post ⇒ (post, posts.filter(_.parent === post.hash).length))
+    }
+
+    private val recentCompiled = Compiled(recentQuery _)
+
+    def recent(offset: Long, count: Long)(implicit ec: ExecutionContext) = {
+      recentCompiled(offset, count)
         .result
         .map(_.map {
           case (post, answers) ⇒
@@ -86,33 +92,43 @@ package object model {
         })
     }
 
-    def pending(offset: Int, count: Int)(implicit ec: ExecutionContext) = {
+    private def pendingQuery(offset: ConstColumn[Long], count: ConstColumn[Long]) = {
       pendingPosts
         .flatMap(_.post)
         .sortBy(_.firstSeen.asc)
         .drop(offset)
         .take(count)
+    }
+
+    private val pendingCompiled = Compiled(pendingQuery _)
+
+    def pending(offset: Long, count: Long)(implicit ec: ExecutionContext) = {
+      pendingCompiled(offset, count)
         .result
         .map(_.map(_.asThread(0)))
     }
 
-    def thread(hash: String, offset: Int, count: Int)(implicit ec: ExecutionContext) = {
-      val query = posts.filter(_.parent === hash)
-        .sortBy(_.firstSeen.desc)
-        .drop(offset)
-        .take(count)
+    private def threadQuery(hash: Rep[String], offset: ConstColumn[Long], count: ConstColumn[Long]) = {
+      val query = posts.filter(_.parent === hash).drop(offset)
 
       def withAnswerCount(query: Query[Post, DBPost, Seq]) = query.map { post ⇒
         (post, posts.filter(_.parent === post.hash).length)
       }
 
-      for {
-        originalPost ← withAnswerCount(posts.filter(_.hash === hash)).result
-        answers ← withAnswerCount(query).result
-      } yield (originalPost ++ answers).map {
-        case (post, answersCount) ⇒
-          post.asThread(answersCount)
-      }
+      (withAnswerCount(posts.filter(_.hash === hash)) ++ withAnswerCount(query))
+        .sortBy(p ⇒ ((p._1.hash === hash).desc, p._1.firstSeen.desc))
+        .take(count)
+    }
+
+    private val threadCompiled = Compiled(threadQuery _)
+
+    def thread(hash: String, offset: Long, count: Long)(implicit ec: ExecutionContext) = {
+      threadCompiled(hash, offset, count + 1)
+        .result
+        .map(_.map {
+          case (post, answersCount) ⇒
+            post.asThread(answersCount)
+        })
     }
 
     def get(hash: String)(implicit ec: ExecutionContext) = {
