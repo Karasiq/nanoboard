@@ -108,31 +108,47 @@ package object model {
         .map(_.map(_.asThread(0)))
     }
 
+    private def getQuery(hash: Rep[String]) = {
+      posts
+        .filter(_.hash === hash)
+        .map(post ⇒ (post, posts.filter(_.parent === post.hash).length))
+    }
+
+    private val getCompiled = Compiled(getQuery _)
+
+    def get(hash: String)(implicit ec: ExecutionContext) = {
+      getCompiled(hash)
+        .result
+        .headOption
+        .map(_.map {
+          case (post, answers) ⇒
+            post.asThread(answers)
+        })
+    }
+
     private def threadQuery(hash: Rep[String], offset: ConstColumn[Long], count: ConstColumn[Long]) = {
-      val query = posts.filter(_.parent === hash).drop(offset)
+      val query = posts.filter(_.parent === hash)
+        .sortBy(_.firstSeen.desc)
+        .drop(offset)
+        .take(count)
 
       def withAnswerCount(query: Query[Post, DBPost, Seq]) = query.map { post ⇒
         (post, posts.filter(_.parent === post.hash).length)
       }
 
-      (withAnswerCount(posts.filter(_.hash === hash)) ++ withAnswerCount(query))
-        .sortBy(p ⇒ ((p._1.hash === hash).desc, p._1.firstSeen.desc))
-        .take(count)
+      withAnswerCount(query)
     }
 
     private val threadCompiled = Compiled(threadQuery _)
 
     def thread(hash: String, offset: Long, count: Long)(implicit ec: ExecutionContext) = {
-      threadCompiled(hash, offset, count + 1)
-        .result
-        .map(_.map {
-          case (post, answersCount) ⇒
-            post.asThread(answersCount)
-        })
-    }
-
-    def get(hash: String)(implicit ec: ExecutionContext) = {
-      thread(hash, 0, 0).map(_.headOption)
+      for {
+        opPost ← get(hash)
+        answers ← threadCompiled(hash, offset, count).result
+      } yield opPost.toVector ++ answers.map {
+        case (post, answersCount) ⇒
+          post.asThread(answersCount)
+      }
     }
 
     def delete(hash: String)(implicit ec: ExecutionContext) = {
