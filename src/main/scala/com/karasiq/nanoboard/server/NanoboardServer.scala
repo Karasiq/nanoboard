@@ -87,6 +87,9 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       } ~
       path("pending" / NanoboardMessage.hashFormat) { hash ⇒
         complete(StatusCodes.OK, dispatcher.markAsNotPending(hash))
+      } ~
+      (path("posts") & parameters('offset.as[Int].?(0), 'count.as[Int])) { (offset, count) ⇒ // Batch delete
+        complete(StatusCodes.OK, dispatcher.delete(offset, count))
       }
     } ~
     put {

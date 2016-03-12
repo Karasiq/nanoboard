@@ -55,7 +55,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
     })
     .withTabs(
       NavigationTab(locale.nanoboard, "thread", "server".fontAwesome(FontAwesome.fixedWidth), GridSystem.containerFluid(thread)),
-      NavigationTab(locale.settings, "server-settings", "wrench".fontAwesome(FontAwesome.fixedWidth), GridSystem.container(
+      NavigationTab(locale.settings, "server-settings", "cogs".fontAwesome(FontAwesome.fixedWidth), GridSystem.container(
         GridSystem.mkRow(styleField.renderTag(style.input)),
         GridSystem.mkRow(settingsPanel)
       )),

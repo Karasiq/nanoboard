@@ -28,11 +28,20 @@ trait BoardLocale {
   def writeYourMessage: String
   def bytes: String
   def style: String
+  def preferences: String
+  def control: String
+  def offset: String
+  def count: String
+  def batchDelete: String
+  def batchDeleteConfirmation(offset: Int, count: Int): String
+  def batchDeleteSuccess(count: Int): String
   def postingError: String
   def updateError: String
   def containerGenerationError: String
   def fileNotSelected: String
   def attachmentGenerationError: String
+  def settingsUpdateError: String
+  def batchDeleteError: String
 }
 
 object BoardLocale {

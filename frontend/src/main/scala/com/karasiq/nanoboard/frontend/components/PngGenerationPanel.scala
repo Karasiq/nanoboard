@@ -77,6 +77,6 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
   )
 
   override def renderTag(md: Modifier*) = {
-    div(form, pendingContainer)
+    div(form, pendingContainer, marginBottom := 50.px)
   }
 }

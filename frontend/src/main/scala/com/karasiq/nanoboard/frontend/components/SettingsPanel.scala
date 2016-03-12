@@ -1,11 +1,16 @@
 package com.karasiq.nanoboard.frontend.components
 
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.buttons.ButtonBuilder
+import com.karasiq.bootstrap.buttons.{ButtonBuilder, ButtonStyle}
 import com.karasiq.bootstrap.form.{Form, FormInput}
+import com.karasiq.bootstrap.grid.GridSystem
+import com.karasiq.bootstrap.icons.FontAwesome
+import com.karasiq.bootstrap.navbar.{Navigation, NavigationTab}
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardCategory}
+import com.karasiq.nanoboard.frontend.utils.Notifications
+import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import org.scalajs.dom
 import rx._
 
@@ -51,25 +56,67 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
   }
 
   override def renderTag(md: Modifier*) = {
-    div(
+    val batchDelete = {
+      val offset, count = Var("0")
+      val loading = Var(false)
+      val disabled = Rx {
+        loading() || Try(offset().toInt).filter(_ >= 0).isFailure || Try(count().toInt).filter(_ > 0).isFailure
+      }
       Form(
-        FormInput.textArea(locale.places, style.input, rows := 15, placesText.reactiveInput)("has-error".classIf(places.map(_.isEmpty))),
-        FormInput.textArea(locale.categories, style.input, rows := 15, categoriesText.reactiveInput)("has-error".classIf(categories.map(_.isEmpty)))
-      ),
-      ButtonBuilder(block = true)(locale.submit, style.submit, "disabled".classIf(buttonDisabled), onclick := Bootstrap.jsClick { _ ⇒
-        if (!buttonDisabled.now) {
-          loading() = true
-          Future.sequence(Seq(NanoboardApi.setCategories(categories.now), NanoboardApi.setPlaces(places.now))).onComplete {
-            case Success(_) ⇒
-              loading() = false
-              controller.updateCategories(categories.now)
+        FormInput.number(locale.offset, style.input, min := 0, offset.reactiveInput),
+        FormInput.number(locale.count, style.input, min := 0, count.reactiveInput),
+        ButtonBuilder(ButtonStyle.danger)(locale.batchDelete, "disabled".classIf(disabled), onclick := Bootstrap.jsClick { _ ⇒
+          if (!disabled.now) {
+            Notifications.confirmation(locale.batchDeleteConfirmation(offset.now.toInt, count.now.toInt), Layout.topLeft) {
+              loading() = true
+              NanoboardApi.delete(offset.now.toInt, count.now.toInt).onComplete {
+                case Success(hashes) ⇒
+                  controller.updatePosts()
+                  controller.updateCategories(Nil)
+                  count() = ""
+                  loading() = false
+                  Notifications.success(locale.batchDeleteSuccess(hashes.length), Layout.topRight)
 
-            case Failure(exc) ⇒
-              println(s"Settings update error: $exc")
-              loading() = false
+                case Failure(exc) ⇒
+                  loading() = false
+                  Notifications.error(exc)(locale.batchDeleteError, Layout.topRight)
+              }
+            }
           }
-        }
-      })
+        })
+      )
+    }
+
+    val navigation = Navigation.pills(
+      NavigationTab(locale.preferences, "server", "wrench".fontAwesome(FontAwesome.fixedWidth), div(
+        GridSystem.mkRow(Form(
+          FormInput.textArea(locale.places, style.input, rows := 15, placesText.reactiveInput)("has-error".classIf(places.map(_.isEmpty))),
+          FormInput.textArea(locale.categories, style.input, rows := 15, categoriesText.reactiveInput)("has-error".classIf(categories.map(_.isEmpty)))
+        )),
+        GridSystem.mkRow(ButtonBuilder(block = true)(locale.submit, style.submit, "disabled".classIf(buttonDisabled), onclick := Bootstrap.jsClick { _ ⇒
+          if (!buttonDisabled.now) {
+            loading() = true
+            Future.sequence(Seq(NanoboardApi.setCategories(categories.now), NanoboardApi.setPlaces(places.now))).onComplete {
+              case Success(_) ⇒
+                loading() = false
+                controller.updateCategories(categories.now)
+
+              case Failure(exc) ⇒
+                Notifications.error(exc)(locale.settingsUpdateError, Layout.topRight)
+                loading() = false
+            }
+          }
+        }))
+      )),
+      NavigationTab(locale.control, "control", "warning".fontAwesome(FontAwesome.fixedWidth), div(
+        GridSystem.mkRow(h3(locale.batchDelete)),
+        GridSystem.mkRow(batchDelete)
+      ))
+    )
+
+    div(
+      navigation,
+      marginBottom := 50.px
     )
   }
 
