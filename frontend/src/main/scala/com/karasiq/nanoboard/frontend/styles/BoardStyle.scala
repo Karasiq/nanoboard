@@ -32,10 +32,13 @@ trait BoardStyle extends StyleSheet {
 
 object BoardStyle {
   val Makaba = Sheet[Makaba]
-  val Neutron = Sheet[Neutron]
+  val Futaba = Sheet[Futaba]
+  val Burichan = Sheet[Burichan]
   val Muon = Sheet[Muon]
+  val Neutron = Sheet[Neutron]
+  val Gurochan = Sheet[Gurochan]
 
-  def styles: Seq[BoardStyle] = Vector(Makaba, Neutron, Muon)
+  def styles: Seq[BoardStyle] = Vector(Makaba, Futaba, Burichan, Muon, Neutron, Gurochan)
 
   def fromString(style: String): BoardStyle = styles.find(_.toString == style).getOrElse(Makaba)
 
