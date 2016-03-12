@@ -46,7 +46,7 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
     FormInput.number(locale.randomPosts, style.input, name := "random", value := 30, min := 0),
     FormInput.text(locale.imageFormat, style.input, name := "format", value := "png"),
     FormInput.file(locale.dataContainer, style.input, name := "container"),
-    Form.submit(locale.generateContainer)(style.submit, "disabled".classIf(loading)),
+    Form.submit(locale.generateContainer)(style.submit, "disabled".classIf(loading), "btn-block".addClass),
     onsubmit := Bootstrap.jsSubmit { frm ⇒
       if (!loading.now) {
         loading() = true

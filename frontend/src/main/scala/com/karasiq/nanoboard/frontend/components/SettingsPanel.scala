@@ -65,7 +65,7 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
       Form(
         FormInput.number(locale.offset, style.input, min := 0, offset.reactiveInput),
         FormInput.number(locale.count, style.input, min := 0, count.reactiveInput),
-        ButtonBuilder(ButtonStyle.danger)(locale.batchDelete, "disabled".classIf(disabled), onclick := Bootstrap.jsClick { _ ⇒
+        ButtonBuilder(ButtonStyle.danger, block = true)("eraser".fontAwesome(FontAwesome.fixedWidth), locale.batchDelete, "disabled".classIf(disabled), onclick := Bootstrap.jsClick { _ ⇒
           if (!disabled.now) {
             Notifications.confirmation(locale.batchDeleteConfirmation(offset.now.toInt, count.now.toInt), Layout.topLeft) {
               loading() = true
@@ -85,6 +85,26 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
           }
         })
       )
+    }
+
+    val clearDeleted = {
+      val loading = Var(false)
+      ButtonBuilder(ButtonStyle.warning, block = true)("eye-slash".fontAwesome(FontAwesome.fixedWidth), locale.clearDeleted, "disabled".classIf(loading), onclick := Bootstrap.jsClick { _ ⇒
+        if (!loading.now) {
+          Notifications.confirmation(locale.clearDeletedConfirmation, Layout.topLeft) {
+            loading() = true
+            NanoboardApi.clearDeleted().onComplete {
+              case Success(count) ⇒
+                loading() = false
+                Notifications.success(locale.clearDeletedSuccess(count), Layout.topRight)
+
+              case Failure(exc) ⇒
+                loading() = false
+                Notifications.error(exc)(locale.clearDeletedError, Layout.topRight)
+            }
+          }
+        }
+      })
     }
 
     val navigation = Navigation.pills(
@@ -110,7 +130,9 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
       )),
       NavigationTab(locale.control, "control", "warning".fontAwesome(FontAwesome.fixedWidth), div(
         GridSystem.mkRow(h3(locale.batchDelete)),
-        GridSystem.mkRow(batchDelete)
+        GridSystem.mkRow(batchDelete),
+        GridSystem.mkRow(h3(locale.clearDeleted)),
+        GridSystem.mkRow(clearDeleted)
       ))
     )
 

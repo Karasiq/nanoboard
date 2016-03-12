@@ -114,6 +114,10 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
     future
   }
 
+  override def clearDeleted(): Future[Int] = {
+    db.run(deletedPosts.delete)
+  }
+
   override def addPost(message: NanoboardMessage): Future[Int] = {
     db.run(Post.insertMessage(message))
   }

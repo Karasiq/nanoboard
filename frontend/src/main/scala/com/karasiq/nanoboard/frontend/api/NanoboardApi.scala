@@ -61,6 +61,11 @@ object NanoboardApi {
       .map(readResponse[Seq[String]])
   }
 
+  def clearDeleted()(implicit ec: ExecutionContext): Future[Int] = {
+    Ajax.delete("/deleted", responseType = marshaller.responseType)
+      .map(readResponse[Int])
+  }
+
   def delete(offset: Int, count: Int)(implicit ec: ExecutionContext): Future[Seq[String]] = {
     Ajax.delete(s"/posts?offset=$offset&count=$count", responseType = marshaller.responseType)
       .map(readResponse[Seq[String]])

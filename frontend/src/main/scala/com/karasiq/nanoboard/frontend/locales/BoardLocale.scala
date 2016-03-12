@@ -35,6 +35,10 @@ trait BoardLocale {
   def batchDelete: String
   def batchDeleteConfirmation(offset: Int, count: Int): String
   def batchDeleteSuccess(count: Int): String
+  def clearDeleted: String
+  def clearDeletedConfirmation: String
+  def clearDeletedSuccess(count: Int): String
+  def clearDeletedError: String
   def postingError: String
   def updateError: String
   def containerGenerationError: String

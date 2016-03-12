@@ -85,6 +85,9 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       } ~
       (path("posts") & parameters('offset.as[Int].?(0), 'count.as[Int])) { (offset, count) ⇒ // Batch delete
         complete(StatusCodes.OK, dispatcher.delete(offset, count))
+      } ~
+      path("deleted") {
+        complete(StatusCodes.OK, dispatcher.clearDeleted())
       }
     } ~
     put {

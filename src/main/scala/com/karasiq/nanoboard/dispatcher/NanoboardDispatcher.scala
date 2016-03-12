@@ -20,6 +20,7 @@ trait NanoboardDispatcher {
   def markAsPending(message: String): Future[Unit]
   def delete(hash: String): Future[Seq[String]]
   def delete(offset: Int, count: Int): Future[Seq[String]]
+  def clearDeleted(): Future[Int]
   def updatePlaces(places: Seq[String]): Future[Unit]
   def updateCategories(categories: Seq[NanoboardCategory]): Future[Unit]
 }
