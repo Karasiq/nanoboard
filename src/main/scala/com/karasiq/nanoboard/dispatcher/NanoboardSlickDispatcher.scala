@@ -101,6 +101,10 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
     future
   }
 
+  override def addPost(message: NanoboardMessage): Future[Int] = {
+    db.run(Post.insertMessage(message))
+  }
+
   override def reply(parent: String, text: String): Future[NanoboardMessageData] = {
     val newMessage: NanoboardMessage = messageGenerator.newMessage(parent, text)
     eventQueue.offer(NanoboardEvent.PostAdded(newMessage, true))

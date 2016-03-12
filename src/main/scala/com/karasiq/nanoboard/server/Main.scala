@@ -10,7 +10,7 @@ import akka.stream._
 import akka.stream.scaladsl._
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
 import com.karasiq.nanoboard.model.NanoboardMessageData._
-import com.karasiq.nanoboard.model.{Place, Post, _}
+import com.karasiq.nanoboard.model.{Place, _}
 import com.karasiq.nanoboard.server.cache.MapDbNanoboardCache
 import com.karasiq.nanoboard.server.streaming.NanoboardEvent
 import com.karasiq.nanoboard.server.util.MessageValidator
@@ -50,7 +50,7 @@ object Main extends App {
   // Initialize transport
   def dbMessageSink = Sink.foreach { (message: NanoboardMessage) ⇒
     if (messageValidator.isMessageValid(message)) {
-      db.run(Post.insertMessage(message)).foreach { inserted ⇒
+      dispatcher.addPost(message).foreach { inserted ⇒
         if (inserted > 0) {
           actorSystem.eventStream.publish(NanoboardEvent.PostAdded(message))
         }

@@ -1,8 +1,8 @@
 package com.karasiq.nanoboard.dispatcher
 
 import akka.util.ByteString
-import com.karasiq.nanoboard.NanoboardCategory
 import com.karasiq.nanoboard.model.NanoboardMessageData
+import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 
 import scala.concurrent.Future
 
@@ -14,6 +14,7 @@ trait NanoboardDispatcher {
   def categories(): Future[Seq[NanoboardMessageData]]
   def post(hash: String): Future[Option[NanoboardMessageData]]
   def thread(hash: String, offset: Int, count: Int): Future[Seq[NanoboardMessageData]]
+  def addPost(message: NanoboardMessage): Future[Int]
   def reply(parent: String, text: String): Future[NanoboardMessageData]
   def markAsNotPending(message: String): Future[Unit]
   def markAsPending(message: String): Future[Unit]
