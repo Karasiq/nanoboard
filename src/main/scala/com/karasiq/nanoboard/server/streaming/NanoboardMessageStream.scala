@@ -73,6 +73,7 @@ private[server] object NanoboardMessageStream {
     import GraphDSL.Implicits._
     val in = b.add {
       Flow[Message]
+        .named("websocket-input")
         .flatMapConcat {
           case bm: BinaryMessage ⇒
             bm.dataStream.fold(ByteString.empty)(_ ++ _)
@@ -85,6 +86,7 @@ private[server] object NanoboardMessageStream {
 
     val out = b.add {
       Flow[NanoboardEvent]
+        .named("websocket-output")
         .map(event ⇒ BinaryMessage(ByteString(Pickle.intoBytes(event))))
     }
 

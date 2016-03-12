@@ -46,7 +46,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
 
   private val pagination = Rx[Frag] {
     val posts = model.posts()
-    val deleted = model.deletedPosts()
+    val deleted = model.deletedPosts().size
 
     def previousButton(ofs: NanoboardContextWithOffset, prevOffset: Int): Tag  = {
       ButtonBuilder(ButtonStyle.danger)(

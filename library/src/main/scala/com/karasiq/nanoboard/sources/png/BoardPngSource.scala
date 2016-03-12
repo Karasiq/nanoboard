@@ -39,7 +39,6 @@ class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: 
   protected def imagesFromPage(page: Document): Source[String, akka.NotUsed] = {
     val urls = page.select("a").flatMap(getUrl(_, "href"))
     Source(urls.toVector)
-      .log("page-image")
   }
 
   protected def getUrl(e: Element, attr: String): Option[String] = {

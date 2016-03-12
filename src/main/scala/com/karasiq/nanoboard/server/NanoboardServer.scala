@@ -29,32 +29,27 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
 
   val route = {
     get {
-      encodeResponse {
-        path("post" / NanoboardMessage.hashFormat) { hash ⇒
-          complete(StatusCodes.OK, dispatcher.post(hash))
-        } ~
-        (pathPrefix("posts") & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (offset, count) ⇒
-          path(NanoboardMessage.hashFormat) { hash ⇒
-            complete(StatusCodes.OK, dispatcher.thread(hash, offset, count))
-          } ~
-          pathEndOrSingleSlash {
-            complete(StatusCodes.OK, dispatcher.recent(offset, count))
-          }
-        } ~
-        (path("pending") & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (offset, count) ⇒
-          complete(StatusCodes.OK, dispatcher.pending(offset, count))
-        } ~
-        path("categories") {
-          complete(StatusCodes.OK, dispatcher.categories())
-        } ~
-        path("places") {
-          complete(StatusCodes.OK, dispatcher.places())
+      path("post" / NanoboardMessage.hashFormat) { hash ⇒
+        complete(StatusCodes.OK, dispatcher.post(hash))
+      } ~
+      (pathPrefix("posts") & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (offset, count) ⇒
+        path(NanoboardMessage.hashFormat) { hash ⇒
+          complete(StatusCodes.OK, dispatcher.thread(hash, offset, count))
         } ~
         pathEndOrSingleSlash {
-          getFromResource("webapp/index.html")
-        } ~
-        getFromResourceDirectory("webapp")
-      }
+          complete(StatusCodes.OK, dispatcher.recent(offset, count))
+        }
+      } ~
+      (path("pending") & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (offset, count) ⇒
+        complete(StatusCodes.OK, dispatcher.pending(offset, count))
+      } ~
+      path("categories") {
+        complete(StatusCodes.OK, dispatcher.categories())
+      } ~
+      path("places") {
+        complete(StatusCodes.OK, dispatcher.places())
+      } ~
+      encodeResponse(pathEndOrSingleSlash(getFromResource("webapp/index.html")) ~ getFromResourceDirectory("webapp"))
     } ~
     post {
       (path("post") & entity(as[NanoboardReply])) { case NanoboardReply(parent, message) ⇒

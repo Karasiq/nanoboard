@@ -4,6 +4,7 @@ import java.nio.file.{Files, Paths}
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import akka.stream._
@@ -118,11 +119,14 @@ object Main extends App {
     val updateInterval = FiniteDuration(config.getDuration("nanoboard.scheduler.update-interval", TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS)
 
     val placeFlow = Flow[String]
+      .named("board-png-flow")
       .flatMapMerge(4, messageSource.imagesFromPage)
       .filterNot(cache.contains)
+      .log("board-png-source")
       .alsoTo(Sink.foreach(image ⇒ cache += image))
       .flatMapMerge(8, messageSource.messagesFromImage)
-      .withAttributes(ActorAttributes.supervisionStrategy(Supervision.resumingDecider))
+      .withAttributes(ActorAttributes.supervisionStrategy(Supervision.resumingDecider) and
+        Attributes.logLevels(Logging.InfoLevel, onFailure = Logging.WarningLevel))
 
     Source.tick(10 seconds, updateInterval, ())
       .flatMapConcat(_ ⇒ Source.fromPublisher(db.stream(Place.list())))
