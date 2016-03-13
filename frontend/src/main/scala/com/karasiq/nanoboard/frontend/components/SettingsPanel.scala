@@ -7,8 +7,9 @@ import com.karasiq.bootstrap.grid.GridSystem
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.navbar.{Navigation, NavigationTab}
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
+import com.karasiq.nanoboard.api.NanoboardCategory
 import com.karasiq.nanoboard.frontend.NanoboardController
-import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardCategory}
+import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.utils.Notifications
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import org.scalajs.dom
@@ -72,7 +73,7 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
               NanoboardApi.delete(offset.now.toInt, count.now.toInt).onComplete {
                 case Success(hashes) ⇒
                   controller.updatePosts()
-                  controller.updateCategories(Nil)
+                  controller.updateCategories()
                   count() = ""
                   loading() = false
                   Notifications.success(locale.batchDeleteSuccess(hashes.length), Layout.topRight)
@@ -119,7 +120,7 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
             Future.sequence(Seq(NanoboardApi.setCategories(categories.now), NanoboardApi.setPlaces(places.now))).onComplete {
               case Success(_) ⇒
                 loading() = false
-                controller.updateCategories(categories.now)
+                controller.updateCategories()
 
               case Failure(exc) ⇒
                 Notifications.error(exc)(locale.settingsUpdateError, Layout.topRight)

@@ -1,7 +1,8 @@
 package com.karasiq.nanoboard.frontend.model
 
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.nanoboard.frontend.api.{NanoboardApi, NanoboardMessageData}
+import com.karasiq.nanoboard.api.NanoboardMessageData
+import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.utils.Notifications
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardController}

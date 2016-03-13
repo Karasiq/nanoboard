@@ -1,7 +1,7 @@
 package com.karasiq.nanoboard.dispatcher
 
 import akka.util.ByteString
-import com.karasiq.nanoboard.model.NanoboardMessageData
+import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 
 import scala.concurrent.Future

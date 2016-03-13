@@ -4,9 +4,10 @@ import java.nio.ByteBuffer
 
 import boopickle.Default._
 import com.karasiq.nanoboard.frontend.api.BinaryMarshaller
-import com.karasiq.nanoboard.frontend.api.streaming.NanoboardSubscription._
 import com.karasiq.nanoboard.frontend.utils.Notifications
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
+import com.karasiq.nanoboard.streaming.NanoboardSubscription.Unfiltered
+import com.karasiq.nanoboard.streaming.{NanoboardEvent, NanoboardSubscription}
 import org.scalajs.dom.raw._
 import org.scalajs.dom.window
 

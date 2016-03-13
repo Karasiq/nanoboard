@@ -1,4 +1,5 @@
 import com.karasiq.nanoboard.NanoboardMessageGenerator
+import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.model._
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import slick.driver.H2Driver.api._

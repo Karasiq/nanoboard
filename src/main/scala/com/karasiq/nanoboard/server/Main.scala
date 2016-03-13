@@ -10,13 +10,13 @@ import akka.http.scaladsl.Http.ServerBinding
 import akka.stream._
 import akka.stream.scaladsl._
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
-import com.karasiq.nanoboard.model.NanoboardMessageData._
+import com.karasiq.nanoboard.model.MessageConversions._
 import com.karasiq.nanoboard.model.{Place, _}
 import com.karasiq.nanoboard.server.cache.MapDbNanoboardCache
-import com.karasiq.nanoboard.server.streaming.NanoboardEvent
 import com.karasiq.nanoboard.server.util.MessageValidator
 import com.karasiq.nanoboard.sources.bitmessage.BitMessageTransport
 import com.karasiq.nanoboard.sources.png.UrlPngSource
+import com.karasiq.nanoboard.streaming.NanoboardEvent
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardLegacy, NanoboardMessage}
 import com.typesafe.config.ConfigFactory
 import slick.driver.H2Driver.api._

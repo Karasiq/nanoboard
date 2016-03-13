@@ -2,15 +2,12 @@ package com.karasiq.nanoboard.frontend.api
 
 
 import boopickle.Default._
+import com.karasiq.nanoboard.api.{NanoboardCategory, NanoboardMessageData, NanoboardReply}
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.{File, XMLHttpRequest}
 import org.scalajs.dom.{Blob, console}
 
 import scala.concurrent.{ExecutionContext, Future}
-
-case class NanoboardCategory(hash: String, name: String)
-case class NanoboardReply(parent: String, message: String)
-case class NanoboardMessageData(parent: Option[String], hash: String, text: String, answers: Int)
 
 /**
   * Nanoboard REST API

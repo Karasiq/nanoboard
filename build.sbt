@@ -54,7 +54,6 @@ lazy val backendSettings = Seq(
   libraryDependencies ++= Seq(
     "com.github.karasiq" %% "mapdbutils" % "1.1.1",
     "org.mapdb" % "mapdb" % "2.0-beta12",
-    "me.chrons" %% "boopickle" % "1.1.2",
     "com.typesafe.slick" %% "slick" % "3.1.1",
     "com.h2database" % "h2" % "1.4.191",
     "org.slf4j" % "slf4j-nop" % "1.6.4",
@@ -129,22 +128,42 @@ lazy val frontendSettings = Seq(
   name := "nanoboard-frontend",
   resolvers += Resolver.sonatypeRepo("snapshots"),
   libraryDependencies ++= Seq(
-    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.4",
-    "me.chrons" %%% "boopickle" % "1.1.2",
-    "com.github.karasiq" %%% "parboiled" % "2.1.1-SNAPSHOT",
     "com.chuusai" %%% "shapeless" % "2.2.5",
+    "com.github.karasiq" %%% "parboiled" % "2.1.1-SNAPSHOT",
+    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.4",
     "com.github.karasiq" %%% "scalajs-videojs" % "1.0.2"
   )
 )
+
+lazy val shared = crossProject.in(file("shared"))
+  .settings(commonSettings:_*)
+  .settings(
+    name := "nanoboard-shared"
+  )
+  .jvmSettings(
+    libraryDependencies ++= Seq(
+      "me.chrons" %% "boopickle" % "1.1.2"
+    )
+  )
+  .jsSettings(
+    libraryDependencies ++= Seq(
+      "me.chrons" %%% "boopickle" % "1.1.2"
+    )
+  )
+
+lazy val sharedJVM = shared.jvm
+
+lazy val sharedJS = shared.js
 
 lazy val library = Project("nanoboard", file("library"))
   .settings(commonSettings, librarySettings)
 
 lazy val backend = Project("nanoboard-server", file("."))
-  .dependsOn(library)
+  .dependsOn(library, sharedJVM)
   .settings(assemblySettings, commonSettings, backendSettings)
   .enablePlugins(ScalaJSBundlerPlugin, JavaAppPackaging)
 
 lazy val frontend = Project("nanoboard-frontend", file("frontend"))
+  .dependsOn(sharedJS)
   .settings(commonSettings, frontendSettings)
   .enablePlugins(ScalaJSPlugin)

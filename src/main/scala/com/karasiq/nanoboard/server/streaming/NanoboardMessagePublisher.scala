@@ -2,6 +2,7 @@ package com.karasiq.nanoboard.server.streaming
 
 import akka.stream.actor.ActorPublisher
 import akka.stream.actor.ActorPublisherMessage.{Cancel, Request}
+import com.karasiq.nanoboard.streaming.NanoboardEvent
 
 import scala.annotation.tailrec
 

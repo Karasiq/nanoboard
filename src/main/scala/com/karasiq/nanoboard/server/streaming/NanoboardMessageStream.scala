@@ -7,7 +7,8 @@ import akka.stream.scaladsl.{Flow, GraphDSL, Source}
 import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
 import akka.util.ByteString
 import boopickle.Default._
-import com.karasiq.nanoboard.server.streaming.NanoboardSubscription.{PostHashes, Unfiltered}
+import com.karasiq.nanoboard.streaming.NanoboardSubscription.{PostHashes, Unfiltered}
+import com.karasiq.nanoboard.streaming.{NanoboardEvent, NanoboardSubscription}
 
 private[server] final class NanoboardMessageStream extends GraphStage[FanInShape2[NanoboardSubscription, NanoboardEvent, NanoboardEvent]] {
   val input: Inlet[NanoboardSubscription] = Inlet("SubscriptionInput")
@@ -66,9 +67,9 @@ private[server] final class NanoboardMessageStream extends GraphStage[FanInShape
 }
 
 private[server] object NanoboardMessageStream {
-  import NanoboardEvent._
-  import NanoboardSubscription._
-  
+  import com.karasiq.nanoboard.streaming.NanoboardEvent._
+  import com.karasiq.nanoboard.streaming.NanoboardSubscription._
+
   def flow = Flow.fromGraph(GraphDSL.create() { implicit b: GraphDSL.Builder[akka.NotUsed] ⇒
     import GraphDSL.Implicits._
     val in = b.add {

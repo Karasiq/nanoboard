@@ -5,7 +5,7 @@ import com.karasiq.bootstrap.buttons.{ButtonBuilder, ButtonGroup, ButtonGroupSiz
 import com.karasiq.bootstrap.grid.GridSystem
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
-import com.karasiq.nanoboard.frontend.api.NanoboardMessageData
+import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.frontend.components.post.{NanoboardPost, PostRenderer}
 import com.karasiq.nanoboard.frontend.model.ThreadModel
 import com.karasiq.nanoboard.frontend.utils.PostParser

@@ -1,6 +1,7 @@
 package com.karasiq.nanoboard.model
 
 import com.karasiq.nanoboard.NanoboardCategory
+import com.karasiq.nanoboard.api.NanoboardMessageData
 import slick.driver.H2Driver.api._
 
 import scala.concurrent.ExecutionContext

@@ -1,12 +1,11 @@
 package com.karasiq.nanoboard.model
 
 import com.karasiq.nanoboard.NanoboardMessage
+import com.karasiq.nanoboard.api.NanoboardMessageData
 
 import scala.language.implicitConversions
 
-case class NanoboardMessageData(parent: Option[String], hash: String, text: String, answers: Int)
-
-object NanoboardMessageData {
+object MessageConversions {
   implicit def messageToMessageData(message: NanoboardMessage): NanoboardMessageData = {
     NanoboardMessageData(Some(message.parent), message.hash, message.text, 0)
   }

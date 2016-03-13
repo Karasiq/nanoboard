@@ -6,6 +6,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import boopickle.Default._
+import com.karasiq.nanoboard.api.NanoboardReply
 import com.karasiq.nanoboard.dispatcher.NanoboardDispatcher
 import com.karasiq.nanoboard.server.streaming.NanoboardMessageStream
 import com.karasiq.nanoboard.server.util.AttachmentGenerator
@@ -19,8 +20,6 @@ object NanoboardServer {
     new NanoboardServer(dispatcher)
   }
 }
-
-private[server] case class NanoboardReply(parent: String, message: String)
 
 private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(implicit actorSystem: ActorSystem, actorMaterializer: ActorMaterializer) extends BinaryMarshaller {
   private implicit def ec: ExecutionContext = actorSystem.dispatcher

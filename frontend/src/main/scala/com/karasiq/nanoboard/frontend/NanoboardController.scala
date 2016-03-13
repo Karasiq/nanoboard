@@ -6,12 +6,13 @@ import com.karasiq.bootstrap.form.FormInput
 import com.karasiq.bootstrap.grid.GridSystem
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.navbar.{NavigationBar, NavigationBarStyle, NavigationTab}
-import com.karasiq.nanoboard.frontend.api.streaming.NanoboardSubscription.{PostHashes, Unfiltered}
-import com.karasiq.nanoboard.frontend.api.streaming.{NanoboardEvent, NanoboardMessageStream, NanoboardSubscription}
-import com.karasiq.nanoboard.frontend.api.{NanoboardCategory, NanoboardMessageData}
+import com.karasiq.nanoboard.api.NanoboardMessageData
+import com.karasiq.nanoboard.frontend.api.streaming.NanoboardMessageStream
 import com.karasiq.nanoboard.frontend.components._
 import com.karasiq.nanoboard.frontend.locales.BoardLocale
 import com.karasiq.nanoboard.frontend.styles.BoardStyle
+import com.karasiq.nanoboard.streaming.NanoboardSubscription.{PostHashes, Unfiltered}
+import com.karasiq.nanoboard.streaming.{NanoboardEvent, NanoboardSubscription}
 import org.scalajs.dom._
 import rx._
 
@@ -84,7 +85,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
       .foreach(_.applyTo(document.body))
   }
 
-  def updateCategories(newList: Seq[NanoboardCategory]): Unit = {
+  def updateCategories(): Unit = {
     thread.model.updateCategories()
   }
 
