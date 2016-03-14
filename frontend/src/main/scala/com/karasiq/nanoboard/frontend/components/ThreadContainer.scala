@@ -90,7 +90,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
     val categories = Rx[Frag] {
       span(
         model.categories().map[Frag, Seq[Frag]] {
-          case NanoboardMessageData(_, hash, text, answers) ⇒
+          case NanoboardMessageData(_, _, hash, text, answers) ⇒
             val plainText = PostRenderer.asPlainText(PostParser.parse(text))
             val answersSpan = span(marginLeft := 0.25.em, "envelope-o".fontAwesome(FontAwesome.fixedWidth), answers)
             a(href := s"#$hash", margin := 0.25.em, "[", span(fontWeight.bold, plainText), answersSpan, "]", onclick := Bootstrap.jsClick { _ ⇒

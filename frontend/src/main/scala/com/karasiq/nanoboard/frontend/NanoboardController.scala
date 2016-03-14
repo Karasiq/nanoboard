@@ -76,7 +76,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
 
     case NanoboardEvent.PostDeleted(hash) ⇒
       // Notifications.warning(s"Post was deleted: $hash", Layout.topRight)
-      deleteSingle(NanoboardMessageData(None, hash, "", 0))
+      deleteSingle(NanoboardMessageData(None, None, hash, "", 0))
   }
 
   def initialize(): Unit = {

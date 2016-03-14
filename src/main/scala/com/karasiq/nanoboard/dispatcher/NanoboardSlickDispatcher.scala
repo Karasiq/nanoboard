@@ -7,10 +7,9 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.util.ByteString
-import com.karasiq.nanoboard.api.NanoboardMessageData
+import com.karasiq.nanoboard.api.{NanoboardContainer, NanoboardMessageData}
 import com.karasiq.nanoboard.encoding.DataEncodingStage._
 import com.karasiq.nanoboard.encoding.stages.{GzipCompression, PngEncoding, SalsaCipher}
-import com.karasiq.nanoboard.model.MessageConversions._
 import com.karasiq.nanoboard.model._
 import com.karasiq.nanoboard.streaming.NanoboardEvent
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage, NanoboardMessageGenerator}
@@ -63,11 +62,11 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
     }
   }
 
-  override def recent(offset: Int, count: Int): Future[Seq[NanoboardMessageData]] = {
+  override def recent(offset: Long, count: Long): Future[Seq[NanoboardMessageData]] = {
     db.run(Post.recent(offset, count))
   }
 
-  def pending(offset: Int, count: Int): Future[Seq[NanoboardMessageData]] = {
+  override def pending(offset: Long, count: Long): Future[Seq[NanoboardMessageData]] = {
     db.run(Post.pending(offset, count))
   }
 
@@ -83,7 +82,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
     db.run(Post.get(hash))
   }
 
-  override def thread(hash: String, offset: Int, count: Int): Future[Seq[NanoboardMessageData]] = {
+  override def thread(hash: String, offset: Long, count: Long): Future[Seq[NanoboardMessageData]] = {
     db.run(Post.thread(hash, offset, count))
   }
 
@@ -103,7 +102,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
     future
   }
 
-  override def delete(offset: Int, count: Int): Future[Seq[String]] = {
+  override def delete(offset: Long, count: Long): Future[Seq[String]] = {
     val query = for {
       ps ← posts.sortBy(_.firstSeen.desc).drop(offset).take(count).result
       deleted ← DBIO.sequence(ps.map(p ⇒ Post.delete(p.hash)))
@@ -120,14 +119,21 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
     db.run(deletedPosts.delete)
   }
 
-  override def addPost(message: NanoboardMessage): Future[Int] = {
-    db.run(Post.insertMessage(message))
+  override def addPost(source: String, message: NanoboardMessage): Future[Int] = {
+    val query = for {
+      container ← Container.forUrl(source)
+      inserted ← Post.insertMessage(container, message)
+    } yield inserted
+    db.run(query)
   }
 
   override def reply(parent: String, text: String): Future[NanoboardMessageData] = {
     val newMessage: NanoboardMessage = messageGenerator.newMessage(parent, text)
-    eventQueue.offer(NanoboardEvent.PostAdded(newMessage, pending = true))
-    db.run(Post.addReply(newMessage)).map(_ ⇒ NanoboardMessageData(Some(parent), newMessage.hash, newMessage.text, 0))
+    val future = db.run(Post.addReply(newMessage))
+    future.foreach { msg ⇒
+      eventQueue.offer(NanoboardEvent.PostAdded(msg, pending = true))
+    }
+    future
   }
 
   override def updatePlaces(places: Seq[String]): Future[Unit] = {
@@ -136,5 +142,13 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
 
   override def updateCategories(categories: Seq[NanoboardCategory]): Future[Unit] = {
     db.run(Category.update(categories))
+  }
+
+  override def containers(offset: Long, count: Long): Future[Seq[NanoboardContainer]] = {
+    db.run(Container.list(offset, count))
+  }
+
+  override def clearContainer(id: Long): Future[Seq[String]] = {
+    db.run(Container.clearPosts(id))
   }
 }

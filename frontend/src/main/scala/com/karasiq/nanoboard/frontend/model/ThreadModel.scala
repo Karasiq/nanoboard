@@ -27,7 +27,7 @@ private[frontend] final class ThreadModel(val context: Var[NanoboardContext], po
   def addPost(post: NanoboardMessageData): Unit = {
     if (!addedPosts.now.contains(post.hash) && !posts.now.exists(_.hash == post.hash)) {
       categories() = categories.now.collect {
-        case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(hash) ⇒
+        case msg @ NanoboardMessageData(_, _, hash, _, answers) if post.parent.contains(hash) ⇒
           msg.copy(answers = answers + 1)
 
         case msg ⇒
@@ -61,7 +61,7 @@ private[frontend] final class ThreadModel(val context: Var[NanoboardContext], po
           posts.now
       }
       posts() = updated.collect {
-        case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(hash) ⇒
+        case msg @ NanoboardMessageData(_, _, hash, _, answers) if post.parent.contains(hash) ⇒
           msg.copy(answers = answers + 1)
 
         case msg ⇒
@@ -92,7 +92,7 @@ private[frontend] final class ThreadModel(val context: Var[NanoboardContext], po
       }
 
       posts() = posts.now.collect {
-        case msg @ NanoboardMessageData(_, hash, _, answers) if post.parent.contains(post.hash) ⇒
+        case msg @ NanoboardMessageData(_, _, hash, _, answers) if post.parent.contains(post.hash) ⇒
           msg.copy(answers = answers - 1)
 
         case msg ⇒

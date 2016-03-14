@@ -72,7 +72,7 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
       NanoboardApi.delete(data.hash).foreach { hashes ⇒
         controller.deleteSingle(data)
         hashes.foreach { hash ⇒
-          controller.deleteSingle(NanoboardMessageData(None, hash, "", 0))
+          controller.deleteSingle(NanoboardMessageData(None, None, hash, "", 0))
         }
       }
     }

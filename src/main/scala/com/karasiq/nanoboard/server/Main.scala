@@ -1,6 +1,7 @@
 package com.karasiq.nanoboard.server
 
 import java.nio.file.{Files, Paths}
+import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
@@ -49,9 +50,9 @@ object Main extends App {
   val cache = MapDbNanoboardCache(config)
 
   // Initialize transport
-  def dbMessageSink = Sink.foreach { (message: NanoboardMessage) ⇒
+  def dbMessageSink(source: ⇒ String) = Sink.foreach { (message: NanoboardMessage) ⇒
     if (messageValidator.isMessageValid(message)) {
-      dispatcher.addPost(message).foreach { inserted ⇒
+      dispatcher.addPost(source, message).foreach { inserted ⇒
         if (inserted > 0) {
           actorSystem.eventStream.publish(NanoboardEvent.PostAdded(message))
         }
@@ -86,6 +87,7 @@ object Main extends App {
 
   // Initialize database
   def createSchema = DBIO.seq(
+    containers.schema.create,
     posts.schema.create,
     deletedPosts.schema.create,
     pendingPosts.schema.create,
@@ -111,7 +113,7 @@ object Main extends App {
     if (config.getBoolean("nanoboard.bitmessage.receive")) {
       val host = config.getString("nanoboard.bitmessage.listen-host")
       val port = config.getInt("nanoboard.bitmessage.listen-port")
-      bitMessage.receiveMessages(host, port, dbMessageSink)
+      bitMessage.receiveMessages(host, port, dbMessageSink(s"bitmessage://${LocalDate.now()}"))
     }
 
     // Imageboards PNG
@@ -124,14 +126,17 @@ object Main extends App {
       .filterNot(cache.contains)
       .log("board-png-source")
       .alsoTo(Sink.foreach(image ⇒ cache += image))
-      .flatMapMerge(8, messageSource.messagesFromImage)
+      .map(url ⇒ (url, messageSource.messagesFromImage(url)))
       .withAttributes(ActorAttributes.supervisionStrategy(Supervision.resumingDecider) and
         Attributes.logLevels(Logging.InfoLevel, onFailure = Logging.WarningLevel))
 
     Source.tick(10 seconds, updateInterval, ())
       .flatMapConcat(_ ⇒ Source.fromPublisher(db.stream(Place.list())))
       .via(placeFlow)
-      .runWith(dbMessageSink)
+      .runForeach {
+        case (url, messages) ⇒
+          messages.runWith(dbMessageSink(url))
+      }
 
     // REST server
     val server = NanoboardServer(dispatcher)

@@ -17,16 +17,19 @@ class DatabaseTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     assert(testMessage.parent.length == testMessage.hash.length)
 
     val query = for {
-      _ ← DBIO.seq(posts.schema.create, deletedPosts.schema.create, pendingPosts.schema.create, categories.schema.create, Post.insertMessage(testMessage))
+      _ ← DBIO.seq(containers.schema.create, posts.schema.create, deletedPosts.schema.create, pendingPosts.schema.create, categories.schema.create)
+      c ← Container.forUrl("local://test")
+      _ ← Post.insertMessage(c, testMessage)
       message ← Post.get(testMessage.hash)
     } yield message
 
     val result: Option[NanoboardMessageData] = Await.result(db.run(query), Duration.Inf)
-    val testMessageData = NanoboardMessageData(Some(testMessage.parent), testMessage.hash, testMessage.text, 0)
-    result shouldBe Some(testMessageData)
+    println(result)
 
+    val testMessageData = NanoboardMessageData(None, Some(testMessage.parent), testMessage.hash, testMessage.text, 0)
+    result.map(_.copy(None)) shouldBe Some(testMessageData)
     val answers: Vector[NanoboardMessageData] = Await.result(db.run(Post.thread("8b8cfb7574741838450e286909e8fd1f", 0, 10)), Duration.Inf).toVector
-    answers shouldBe Vector(testMessageData)
+    answers.map(_.copy(None)) shouldBe Vector(testMessageData)
   }
 
   it should "delete entry" in {

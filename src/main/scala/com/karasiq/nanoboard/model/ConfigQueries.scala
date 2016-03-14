@@ -25,7 +25,7 @@ trait ConfigQueries { self: Tables ⇒
       }
       query.result.map(_.map {
         case (hash, name, answers) ⇒
-          NanoboardMessageData(None, hash, name, answers)
+          NanoboardMessageData(None, None, hash, name, answers)
       })
     }
 

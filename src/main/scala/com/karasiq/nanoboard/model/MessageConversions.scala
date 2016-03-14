@@ -7,7 +7,7 @@ import scala.language.implicitConversions
 
 object MessageConversions {
   implicit def messageToMessageData(message: NanoboardMessage): NanoboardMessageData = {
-    NanoboardMessageData(Some(message.parent), message.hash, message.text, 0)
+    NanoboardMessageData(None, Some(message.parent), message.hash, message.text, 0)
   }
 
   implicit def messageDataToMessage(messageData: NanoboardMessageData): NanoboardMessage = {
