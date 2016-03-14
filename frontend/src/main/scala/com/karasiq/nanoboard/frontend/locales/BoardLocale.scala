@@ -1,5 +1,7 @@
 package com.karasiq.nanoboard.frontend.locales
 
+import com.karasiq.nanoboard.api.NanoboardContainer
+
 trait BoardLocale {
   def nanoboard: String
   def settings: String
@@ -33,7 +35,7 @@ trait BoardLocale {
   def offset: String
   def count: String
   def batchDelete: String
-  def batchDeleteConfirmation(offset: Int, count: Int): String
+  def batchDeleteConfirmation(count: Int): String
   def batchDeleteSuccess(count: Int): String
   def clearDeleted: String
   def clearDeletedConfirmation: String
@@ -46,6 +48,8 @@ trait BoardLocale {
   def attachmentGenerationError: String
   def settingsUpdateError: String
   def batchDeleteError: String
+  def containers: String
+  def container(c: NanoboardContainer): String
 }
 
 object BoardLocale {

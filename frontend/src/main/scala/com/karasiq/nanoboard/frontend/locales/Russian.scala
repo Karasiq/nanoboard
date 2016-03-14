@@ -1,12 +1,14 @@
 package com.karasiq.nanoboard.frontend.locales
 
+import com.karasiq.nanoboard.api.NanoboardContainer
+
 object Russian extends BoardLocale {
   def nanoboard = "Наноборда"
   def generateContainer = "Создать контейнер"
   def cancel = "Отмена"
   def dataContainer = "Исходный файл"
   def dequeue = "Из очереди"
-  def insertImage = "Вставить изображение"
+  def insertImage = "Изображение"
   def recentPostsFrom(post: Int) = s"Недавние посты, начиная с $post"
   def categories = "Категории"
   def pendingPosts = "Ожидающие отправления посты"
@@ -22,7 +24,7 @@ object Russian extends BoardLocale {
   def submit = "Отправить"
   def randomPosts = "Случайные посты"
   def imageQuality = "Качество изображения"
-  def deleteConfirmation(hash: String) = s"Удалить сообщение $hash?"
+  def deleteConfirmation(hash: String) = s"Вы уверены, что хотите навсегда удалить сообщение #$hash?"
   def writeYourMessage = "Введите сообщение"
   def bytes = "байт"
   def style = "Стиль оформления"
@@ -34,7 +36,7 @@ object Russian extends BoardLocale {
   def offset = "Начиная с"
   def count = "Количество"
   def batchDelete = "Массовое удаление"
-  def batchDeleteConfirmation(offset: Int, count: Int) = s"Удалить $count постов, начиная с $offset?"
+  def batchDeleteConfirmation(count: Int) = s"Вы уверены, что хотите навсегда удалить $count постов?"
   def batchDeleteSuccess(count: Int) = s"$count постов успешно удалено"
   def clearDeleted = "Очистка удалённых постов"
   def clearDeletedConfirmation = "Очистить кэш удалённых постов?"
@@ -46,4 +48,6 @@ object Russian extends BoardLocale {
   def attachmentGenerationError = "Ошибка вставки изображения"
   def batchDeleteError = "Ошибка массового удаления"
   def settingsUpdateError = "Ошибка применения настроек"
+  def containers = "Принятые контейнеры"
+  def container(c: NanoboardContainer) = s"№${c.id}, ${c.posts} сообщений"
 }

@@ -125,8 +125,7 @@ object Main extends App {
       .flatMapMerge(4, messageSource.imagesFromPage)
       .filterNot(cache.contains)
       .log("board-png-source")
-      .alsoTo(Sink.foreach(image ⇒ cache += image))
-      .map(url ⇒ (url, messageSource.messagesFromImage(url)))
+      .flatMapMerge(4, url ⇒ messageSource.messagesFromImage(url).fold(Vector.empty[NanoboardMessage])(_ :+ _).map((url, _)))
       .withAttributes(ActorAttributes.supervisionStrategy(Supervision.resumingDecider) and
         Attributes.logLevels(Logging.InfoLevel, onFailure = Logging.WarningLevel))
 
@@ -135,7 +134,12 @@ object Main extends App {
       .via(placeFlow)
       .runForeach {
         case (url, messages) ⇒
-          messages.runWith(dbMessageSink(url))
+          cache += url
+          for (message ← messages if messageValidator.isMessageValid(message)) {
+            dispatcher.addPost(url, message).foreach { inserted ⇒
+              if (inserted > 0) actorSystem.eventStream.publish(NanoboardEvent.PostAdded(message))
+            }
+          }
       }
 
     // REST server

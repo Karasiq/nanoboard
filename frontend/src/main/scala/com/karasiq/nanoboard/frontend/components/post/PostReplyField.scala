@@ -76,7 +76,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
 
       // Input field
       div(field,
-        ButtonGroup(ButtonGroupSize.default, attachmentLink, submitButton),
+        ButtonGroup(ButtonGroupSize.small, attachmentLink, submitButton),
         postLength,
         expanded.reactiveShow
       ),

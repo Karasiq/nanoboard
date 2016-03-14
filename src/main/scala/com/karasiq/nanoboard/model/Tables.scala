@@ -23,6 +23,7 @@ trait Tables {
     def container = foreignKey("post_container", containerId, containers)(_.id, ForeignKeyAction.Restrict, ForeignKeyAction.Cascade)
     def threadIdx = index("thread_index", (parent, firstSeen), unique = false)
     def recentIdx = index("recent_index", firstSeen, unique = false)
+    def containerIdx = index("container_index", containerId, unique = false)
     def * = (hash, parent, message, firstSeen, containerId) <> (DBPost.tupled, DBPost.unapply)
   }
 
@@ -60,7 +61,7 @@ trait Tables {
 
   case class DBContainer(id: Long, url: String, time: Long)
   class Container(tag: Tag) extends Table[DBContainer](tag, "containers") {
-    def id = column[Long]("container_id", O.PrimaryKey)
+    def id = column[Long]("container_id", O.PrimaryKey, O.AutoInc)
     def url = column[String]("container_url")
     def time = column[Long]("container_time")
 

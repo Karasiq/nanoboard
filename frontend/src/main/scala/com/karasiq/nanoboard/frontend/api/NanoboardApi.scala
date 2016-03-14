@@ -2,7 +2,7 @@ package com.karasiq.nanoboard.frontend.api
 
 
 import boopickle.Default._
-import com.karasiq.nanoboard.api.{NanoboardCategory, NanoboardMessageData, NanoboardReply}
+import com.karasiq.nanoboard.api.{NanoboardCategory, NanoboardContainer, NanoboardMessageData, NanoboardReply}
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.{File, XMLHttpRequest}
 import org.scalajs.dom.{Blob, console}
@@ -35,7 +35,7 @@ object NanoboardApi {
       .map(readResponse[Option[NanoboardMessageData]])
   }
 
-  def thread(hash: String, offset: Int, count: Int)(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
+  def thread(hash: String, offset: Long, count: Long)(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
     Ajax.get(s"/posts/$hash?offset=$offset&count=$count", responseType = marshaller.responseType)
       .map(readResponse[Vector[NanoboardMessageData]])
   }
@@ -83,12 +83,12 @@ object NanoboardApi {
       .map(_ ⇒ ())
   }
 
-  def pending(offset: Int, count: Int)(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
+  def pending(offset: Long, count: Long)(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
     Ajax.get(s"/pending?offset=$offset&count=$count", responseType = marshaller.responseType)
       .map(readResponse[Vector[NanoboardMessageData]])
   }
 
-  def recent(offset: Int, count: Int)(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
+  def recent(offset: Long, count: Long)(implicit ec: ExecutionContext): Future[Vector[NanoboardMessageData]] = {
     Ajax.get(s"/posts?offset=$offset&count=$count", responseType = marshaller.responseType)
       .map(readResponse[Vector[NanoboardMessageData]])
   }
@@ -107,5 +107,15 @@ object NanoboardApi {
   def generateAttachment(format: String, size: Int, quality: Int, container: File)(implicit ec: ExecutionContext): Future[String] = {
     Ajax.post(s"/attachment?format=$format&size=$size&quality=$quality", container)
       .map(_.responseText)
+  }
+
+  def containers(offset: Long, count: Long)(implicit ec: ExecutionContext): Future[Vector[NanoboardContainer]] = {
+    Ajax.get(s"/containers?offset=$offset&count=$count", responseType = marshaller.responseType)
+      .map(readResponse[Vector[NanoboardContainer]])
+  }
+
+  def clearContainer(id: Long)(implicit ec: ExecutionContext): Future[Vector[String]] = {
+    Ajax.delete(s"/posts?container=$id", responseType = marshaller.responseType)
+      .map(readResponse[Vector[String]])
   }
 }

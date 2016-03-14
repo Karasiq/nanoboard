@@ -95,7 +95,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
   }
 
   override def delete(hash: String): Future[Seq[String]] = {
-    val future = db.run(Post.delete(hash))
+    val future = db.run(Post.deleteCascade(hash))
     future.foreach { deleted ⇒
       deleted.foreach(hash ⇒ eventQueue.offer(NanoboardEvent.PostDeleted(hash)))
     }
@@ -106,7 +106,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
     val query = for {
       ps ← posts.sortBy(_.firstSeen.desc).drop(offset).take(count).result
       deleted ← DBIO.sequence(ps.map(p ⇒ Post.delete(p.hash)))
-    } yield deleted.flatten
+    } yield deleted
 
     val future = db.run(query)
     future.foreach { deleted ⇒

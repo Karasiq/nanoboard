@@ -111,21 +111,27 @@ trait PostQueries { self: Tables with ConfigQueries with ContainerQueries ⇒
     }
 
     def delete(hash: String)(implicit ec: ExecutionContext) = {
-      def deleteCascade(hash: String): DBIOAction[Seq[String], NoStream, Effect.Write with Effect.Read] = {
+      for {
+        _ ← DBIO.seq(
+          pendingPosts.filter(_.hash === hash).delete,
+          Category.delete(hash),
+          deletedPosts.insertOrUpdate(hash),
+          posts.filter(_.hash === hash).delete
+        )
+      } yield hash
+    }
+
+    def deleteCascade(hash: String)(implicit ec: ExecutionContext) = {
+      def deleteCascadeRec(hash: String): DBIOAction[Seq[String], NoStream, Effect.Write with Effect.Read] = {
         val query = posts.filter(_.parent === hash)
         for {
           deleted ← query.map(_.hash).result
-          descendants ← DBIO.sequence(deleted.map(deleteCascade))
-          _ ← DBIO.seq(
-            pendingPosts.filter(_.hash === hash).delete,
-            Category.delete(hash),
-            deletedPosts.insertOrUpdate(hash),
-            posts.filter(_.hash === hash).delete
-          )
+          descendants ← DBIO.sequence(deleted.map(deleteCascadeRec))
+          _ ← delete(hash)
         } yield Seq(hash) ++ deleted ++ descendants.flatten
       }
 
-      deleteCascade(hash)
+      deleteCascadeRec(hash)
     }
   }
 }

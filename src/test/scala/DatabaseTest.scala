@@ -30,6 +30,8 @@ class DatabaseTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     result.map(_.copy(None)) shouldBe Some(testMessageData)
     val answers: Vector[NanoboardMessageData] = Await.result(db.run(Post.thread("8b8cfb7574741838450e286909e8fd1f", 0, 10)), Duration.Inf).toVector
     answers.map(_.copy(None)) shouldBe Vector(testMessageData)
+
+    Await.result(db.run(Container.forUrl("local://test")), Duration.Inf) shouldBe result.get.containerId.get
   }
 
   it should "delete entry" in {

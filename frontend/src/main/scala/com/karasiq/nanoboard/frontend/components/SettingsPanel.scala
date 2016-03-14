@@ -68,7 +68,7 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
         FormInput.number(locale.count, style.input, min := 0, count.reactiveInput),
         ButtonBuilder(ButtonStyle.danger, block = true)("eraser".fontAwesome(FontAwesome.fixedWidth), locale.batchDelete, "disabled".classIf(disabled), onclick := Bootstrap.jsClick { _ ⇒
           if (!disabled.now) {
-            Notifications.confirmation(locale.batchDeleteConfirmation(offset.now.toInt, count.now.toInt), Layout.topLeft) {
+            Notifications.confirmation(locale.batchDeleteConfirmation(count.now.toInt), Layout.topLeft) {
               loading() = true
               NanoboardApi.delete(offset.now.toInt, count.now.toInt).onComplete {
                 case Success(hashes) ⇒
@@ -134,6 +134,9 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
         GridSystem.mkRow(batchDelete),
         GridSystem.mkRow(h3(locale.clearDeleted)),
         GridSystem.mkRow(clearDeleted)
+      )),
+      NavigationTab(locale.containers, "containers", "archive".fontAwesome(FontAwesome.fixedWidth), div(
+        ContainersPanel(30)
       ))
     )
 

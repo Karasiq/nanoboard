@@ -31,7 +31,7 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       path("post" / NanoboardMessage.hashFormat) { hash ⇒
         complete(StatusCodes.OK, dispatcher.post(hash))
       } ~
-      (pathPrefix("posts") & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (offset, count) ⇒
+      (pathPrefix("posts") & parameters('offset.as[Long].?(0), 'count.as[Long].?(100))) { (offset, count) ⇒
         path(NanoboardMessage.hashFormat) { hash ⇒
           complete(StatusCodes.OK, dispatcher.thread(hash, offset, count))
         } ~
@@ -39,7 +39,7 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
           complete(StatusCodes.OK, dispatcher.recent(offset, count))
         }
       } ~
-      (path("pending") & parameters('offset.as[Int].?(0), 'count.as[Int].?(100))) { (offset, count) ⇒
+      (path("pending") & parameters('offset.as[Long].?(0), 'count.as[Long].?(100))) { (offset, count) ⇒
         complete(StatusCodes.OK, dispatcher.pending(offset, count))
       } ~
       path("categories") {
@@ -47,6 +47,9 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       } ~
       path("places") {
         complete(StatusCodes.OK, dispatcher.places())
+      } ~
+      (path("containers") & parameters('offset.as[Long].?(0), 'count.as[Long].?(100))) { (offset, count) ⇒
+        complete(StatusCodes.OK, dispatcher.containers(offset, count))
       } ~
       encodeResponse(pathEndOrSingleSlash(getFromResource("webapp/index.html")) ~ getFromResourceDirectory("webapp"))
     } ~
@@ -79,10 +82,13 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
           complete(StatusCodes.OK, dispatcher.delete(hash))
         }
       } ~
+      (path("posts") & parameter('container.as[Long])) { container ⇒
+        complete(StatusCodes.OK, dispatcher.clearContainer(container))
+      } ~
       path("pending" / NanoboardMessage.hashFormat) { hash ⇒
         complete(StatusCodes.OK, dispatcher.markAsNotPending(hash))
       } ~
-      (path("posts") & parameters('offset.as[Int].?(0), 'count.as[Int])) { (offset, count) ⇒ // Batch delete
+      (path("posts") & parameters('offset.as[Long].?(0), 'count.as[Long])) { (offset, count) ⇒ // Batch delete
         complete(StatusCodes.OK, dispatcher.delete(offset, count))
       } ~
       path("deleted") {

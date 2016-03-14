@@ -1,12 +1,14 @@
 package com.karasiq.nanoboard.frontend.locales
 
+import com.karasiq.nanoboard.api.NanoboardContainer
+
 object English extends BoardLocale {
   def nanoboard = "Nanoboard"
   def generateContainer = "Generate container"
   def cancel = "Cancel"
   def dataContainer = "Source file"
   def dequeue = "Dequeue"
-  def insertImage = "Insert image"
+  def insertImage = "Picture"
   def recentPostsFrom(post: Int) = s"Recent posts (from $post)"
   def categories = "Categories"
   def pendingPosts = "Pending posts"
@@ -22,7 +24,7 @@ object English extends BoardLocale {
   def submit = "Submit"
   def randomPosts = "Random posts"
   def imageQuality = "Image quality"
-  def deleteConfirmation(hash: String) = s"Delete post $hash?"
+  def deleteConfirmation(hash: String) = s"Are you sure you want to permanently delete post #$hash?"
   def writeYourMessage = "Write your message"
   def bytes = "bytes"
   def style = "Style"
@@ -34,7 +36,7 @@ object English extends BoardLocale {
   def offset = "Offset"
   def count = "Count"
   def batchDelete = "Batch delete"
-  def batchDeleteConfirmation(offset: Int, count: Int) = s"Remove $count posts from $offset?"
+  def batchDeleteConfirmation(count: Int) = s"Are you sure you want to permanently delete $count posts?"
   def batchDeleteSuccess(count: Int) = s"$count posts successfully removed"
   def clearDeleted = "Clear deleted posts"
   def clearDeletedConfirmation = "Clear deleted posts cache?"
@@ -46,4 +48,6 @@ object English extends BoardLocale {
   def settingsUpdateError = "Settings update error"
   def postingError = "Posting error"
   def updateError = "Update error"
+  def containers = "Containers"
+  def container(c: NanoboardContainer) = s"№${c.id}, ${c.posts} posts"
 }

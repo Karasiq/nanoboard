@@ -6,28 +6,31 @@ import com.karasiq.nanoboard.api.NanoboardContainer
 import slick.driver.H2Driver.api._
 
 import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success}
 
 trait ContainerQueries { self: Tables with PostQueries ⇒
   object Container {
-    private def insert(url: String) = containers.forceInsertQuery {
-      val exists = (for (c <- containers if c.url === url) yield ()).exists
-      val insert = (0L, url, Instant.now().toEpochMilli) <> (DBContainer.tupled, DBContainer.unapply)
-      for (container ← Query(insert) if !exists) yield container
+    private def create(url: String)(implicit ec: ExecutionContext) = {
+      containers.returning(containers.map(_.id)) += DBContainer(0, url, Instant.now().toEpochMilli)
     }
 
     def forUrl(url: String)(implicit ec: ExecutionContext) = {
-      for {
-        _ ← insert(url)
-        id ← containers.filter(_.url === url).map(_.id).result.head
-      } yield id
+      create(url).asTry.flatMap {
+        case Success(id) ⇒
+          DBIO.successful(id)
+
+        case Failure(_) ⇒
+          containers.filter(_.url === url).map(_.id).result.head
+      }
     }
 
     private def listQuery(offset: ConstColumn[Long], count: ConstColumn[Long]) = {
       containers
-        .sortBy(_.time.desc)
+        .map(c ⇒ (c, posts.filter(_.containerId === c.id).length))
+        .filter(_._2 > 0)
+        .sortBy(_._1.time.desc)
         .drop(offset)
         .take(count)
-        .map(c ⇒ (c, posts.filter(_.containerId === c.id).length))
     }
 
     private val listCompiled = Compiled(listQuery _)
@@ -45,7 +48,7 @@ trait ContainerQueries { self: Tables with PostQueries ⇒
       for {
         hashes ← posts.filter(_.containerId === id).map(_.hash).result
         deleted ← DBIO.sequence(hashes.map(Post.delete))
-      } yield deleted.flatten
+      } yield deleted
     }
   }
 }
