@@ -115,7 +115,7 @@ object Main extends App {
     // Imageboards PNG
     val messageSource = UrlPngSource.fromConfig(config)
     val updateInterval = FiniteDuration(config.getDuration("nanoboard.scheduler.update-interval", TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS)
-
+    val maxNewPosts = config.getInt("nanoboard.scheduler.posts-per-container")
     val placeFlow = Flow[String]
       .named("board-png-flow")
       .flatMapMerge(4, messageSource.imagesFromPage)
@@ -131,9 +131,17 @@ object Main extends App {
       .runForeach {
         case (url, messages) ⇒
           cache += url
-          for (message ← messages if messageValidator.isMessageValid(message)) {
-            dispatcher.addPost(url, message)
+          def insertMessages(messages: Seq[NanoboardMessage], inserted: Int = 0): Unit = messages match {
+            case Seq(message, ms @ _*) if inserted < maxNewPosts ⇒
+              dispatcher.addPost(url, message).foreach(i ⇒ insertMessages(ms, inserted + i))
+
+            case Seq(message) if inserted < maxNewPosts ⇒
+              dispatcher.addPost(url, message)
+
+            case _ ⇒
+              ()
           }
+          insertMessages(messages.filter(messageValidator.isMessageValid))
       }
 
     // REST server

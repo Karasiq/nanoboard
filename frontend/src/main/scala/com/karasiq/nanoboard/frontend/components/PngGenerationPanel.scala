@@ -42,7 +42,7 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
   }
 
   private val form = Form(
-    FormInput.number(locale.pendingPosts, style.input, name := "pending", value := 10, min := 0),
+    FormInput.number(locale.pendingPosts, style.input, name := "pending", value := 3, min := 0),
     FormInput.number(locale.randomPosts, style.input, name := "random", value := 30, min := 0),
     FormInput.text(locale.imageFormat, style.input, name := "format", value := "png"),
     FormInput.file(locale.dataContainer, style.input, name := "container"),
