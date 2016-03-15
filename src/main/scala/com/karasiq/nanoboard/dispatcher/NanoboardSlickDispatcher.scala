@@ -10,6 +10,7 @@ import akka.util.ByteString
 import com.karasiq.nanoboard.api.{NanoboardContainer, NanoboardMessageData}
 import com.karasiq.nanoboard.encoding.DataEncodingStage._
 import com.karasiq.nanoboard.encoding.stages.{GzipCompression, PngEncoding, SalsaCipher}
+import com.karasiq.nanoboard.model.MessageConversions._
 import com.karasiq.nanoboard.model._
 import com.karasiq.nanoboard.streaming.NanoboardEvent
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage, NanoboardMessageGenerator}
@@ -49,7 +50,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
     }))
 
     val future = db.run(query).map { posts ⇒
-      val data: ByteString = ByteString(NanoboardMessage.writeMessages(posts.map(m ⇒ NanoboardMessage(m.parent.get, m.text))))
+      val data: ByteString = ByteString(NanoboardMessage.writeMessages(posts.map(messageDataToMessage)))
       val encoded = stage.encode(data)
       assert(stage.decode(encoded) == data, "Container is broken")
       posts.map(_.hash) → encoded
@@ -123,8 +124,14 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
     val query = for {
       container ← Container.forUrl(source)
       inserted ← Post.insertMessage(container, message)
-    } yield inserted
-    db.run(query)
+    } yield (container, inserted)
+
+    val future = db.run(query)
+    future.foreach {
+      case (container, inserted) ⇒
+        if (inserted > 0) eventQueue.offer(NanoboardEvent.PostAdded(asMessageData(message, Some(container))))
+    }
+    future.map(_._2)
   }
 
   override def reply(parent: String, text: String): Future[NanoboardMessageData] = {

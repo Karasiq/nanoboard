@@ -52,11 +52,7 @@ object Main extends App {
   // Initialize transport
   def dbMessageSink(source: ⇒ String) = Sink.foreach { (message: NanoboardMessage) ⇒
     if (messageValidator.isMessageValid(message)) {
-      dispatcher.addPost(source, message).foreach { inserted ⇒
-        if (inserted > 0) {
-          actorSystem.eventStream.publish(NanoboardEvent.PostAdded(message))
-        }
-      }
+      dispatcher.addPost(source, message)
     }
   }
 
@@ -136,9 +132,7 @@ object Main extends App {
         case (url, messages) ⇒
           cache += url
           for (message ← messages if messageValidator.isMessageValid(message)) {
-            dispatcher.addPost(url, message).foreach { inserted ⇒
-              if (inserted > 0) actorSystem.eventStream.publish(NanoboardEvent.PostAdded(message))
-            }
+            dispatcher.addPost(url, message)
           }
       }
 

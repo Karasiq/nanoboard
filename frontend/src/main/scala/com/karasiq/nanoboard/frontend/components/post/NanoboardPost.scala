@@ -35,7 +35,7 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
         span(
           style.postId,
           if (showParent && data.parent.isDefined) PostLink(data.parent.get).renderTag("level-up".fontAwesome(FontAwesome.fixedWidth)) else (),
-          sup(data.hash, data.containerId.mkString("/", "", ""))
+          sup(data.containerId.fold(data.hash)(cid ⇒ s"${data.hash}/$cid"))
         ),
         span(NanoboardPost.render(data.text))
       ),

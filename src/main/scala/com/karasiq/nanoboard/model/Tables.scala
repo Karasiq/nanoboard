@@ -13,6 +13,8 @@ trait Tables {
       NanoboardMessageData(Some(containerId), Some(parent), hash, message, answers)
     }
   }
+
+  // TODO: Descending recent index
   class Post(tag: Tag) extends Table[DBPost](tag, "posts") {
     def hash = column[String]("hash", O.SqlType("char(32)"), O.PrimaryKey)
     def parent = column[String]("parent_hash", O.SqlType("char(32)"))
