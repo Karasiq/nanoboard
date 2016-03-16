@@ -18,7 +18,12 @@ import scalatags.Text.all._
 
 object BitMessageTransport {
   def apply(config: Config = ConfigFactory.load())(implicit ac: ActorSystem, am: ActorMaterializer) = {
-    new BitMessageTransport(config)
+    val chanAddress = config.getString("nanoboard.bitmessage.chan-address")
+    val apiAddress = config.getString("nanoboard.bitmessage.host")
+    val apiPort = config.getInt("nanoboard.bitmessage.port")
+    val apiUsername = config.getString("nanoboard.bitmessage.username")
+    val apiPassword = config.getString("nanoboard.bitmessage.password")
+    new BitMessageTransport(chanAddress, apiAddress, apiPort, apiUsername, apiPassword)
   }
 
   @inline
@@ -41,14 +46,7 @@ object BitMessageTransport {
   }
 }
 
-final class BitMessageTransport(config: Config)(implicit ac: ActorSystem, am: ActorMaterializer) {
-  // Settings
-  private val apiAddress = config.getString("nanoboard.bitmessage.host")
-  private val apiPort = config.getString("nanoboard.bitmessage.port")
-  private val apiUsername = config.getString("nanoboard.bitmessage.username")
-  private val apiPassword = config.getString("nanoboard.bitmessage.password")
-  private val chanAddress = config.getString("nanoboard.bitmessage.chan-address")
-
+final class BitMessageTransport(chanAddress: String, apiAddress: String, apiPort: Int, apiUsername: String, apiPassword: String)(implicit ac: ActorSystem, am: ActorMaterializer) {
   // Input/output
   def sendMessage(message: NanoboardMessage): Future[HttpResponse] = {
     import XmlRpcTags._
@@ -81,7 +79,7 @@ final class BitMessageTransport(config: Config)(implicit ac: ActorSystem, am: Ac
       .run()
 
     post {
-      (path("api" / "add" / NanoboardMessage.hashFormat) & entity(as[String])) { (parent, message) ⇒
+      (path("api" / "add" / NanoboardMessage.HASH_FORMAT) & entity(as[String])) { (parent, message) ⇒
         queue.offer(NanoboardMessage(parent, BitMessageTransport.fromBase64(message)))
         complete(StatusCodes.OK)
       }

@@ -41,6 +41,9 @@ object English extends BoardLocale {
   def clearDeleted = "Clear deleted posts"
   def clearDeletedConfirmation = "Clear deleted posts cache?"
   def clearDeletedSuccess(count: Int) = s"$count deleted posts evicted"
+  def containers = "Containers"
+  def container(c: NanoboardContainer) = s"№${c.id}, ${c.posts} posts"
+  def webSocketError = "WebSocket error"
   def clearDeletedError = "Clearing deleted posts failure"
   def containerGenerationError = "Container generation failure"
   def attachmentGenerationError = "Attachment generation error"
@@ -48,6 +51,4 @@ object English extends BoardLocale {
   def settingsUpdateError = "Settings update error"
   def postingError = "Posting error"
   def updateError = "Update error"
-  def containers = "Containers"
-  def container(c: NanoboardContainer) = s"№${c.id}, ${c.posts} posts"
 }

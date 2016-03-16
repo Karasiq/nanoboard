@@ -24,17 +24,20 @@ private[frontend] final class ThreadModel(val context: Var[NanoboardContext], po
   val categories = Var(Vector.empty[NanoboardMessageData])
   val posts = Var(Vector.empty[NanoboardMessageData])
 
+  private def updateAnswersCount(i: Int, post: NanoboardMessageData, posts: Var[Vector[NanoboardMessageData]]): Unit = {
+    posts() = posts.now.collect {
+      case msg @ NanoboardMessageData(_, _, hash, _, answers) if post.parent.contains(hash) ⇒
+        msg.copy(answers = answers + i)
+
+      case msg ⇒
+        msg
+    }
+  }
+
   def addPost(post: NanoboardMessageData): Unit = {
     if (!addedPosts.now.contains(post.hash) && !posts.now.exists(_.hash == post.hash)) {
-      categories() = categories.now.collect {
-        case msg @ NanoboardMessageData(_, _, hash, _, answers) if post.parent.contains(hash) ⇒
-          msg.copy(answers = answers + 1)
-
-        case msg ⇒
-          msg
-      }
-
-      val updated = context.now match {
+      updateAnswersCount(+1, post, categories)
+      posts() = context.now match {
         case NanoboardContext.Recent(0) ⇒
           if (posts.now.length == postsPerPage) {
             post +: posts.now.dropRight(1)
@@ -60,14 +63,9 @@ private[frontend] final class ThreadModel(val context: Var[NanoboardContext], po
         case _ ⇒
           posts.now
       }
-      posts() = updated.collect {
-        case msg @ NanoboardMessageData(_, _, hash, _, answers) if post.parent.contains(hash) ⇒
-          msg.copy(answers = answers + 1)
-
-        case msg ⇒
-          msg
-      }
+      updateAnswersCount(+1, post, posts)
       addedPosts() = addedPosts.now + post.hash
+      deletedPosts() = deletedPosts.now - post.hash
     }
   }
 
@@ -77,6 +75,7 @@ private[frontend] final class ThreadModel(val context: Var[NanoboardContext], po
       context.now match {
         case NanoboardContext.Thread(post.hash, _) ⇒
           context() = post.parent.fold[NanoboardContext](NanoboardContext.Categories)(NanoboardContext.Thread(_))
+          deletedPosts() = deletedPosts.now + post.hash
 
         case NanoboardContext.Thread(_, _) ⇒
           val (Vector(opPost), answers) = posts.now.splitAt(1)
@@ -91,13 +90,9 @@ private[frontend] final class ThreadModel(val context: Var[NanoboardContext], po
           deletedPosts() = deletedPosts.now ++ current.diff(filtered).map(_.hash)
       }
 
-      posts() = posts.now.collect {
-        case msg @ NanoboardMessageData(_, _, hash, _, answers) if post.parent.contains(post.hash) ⇒
-          msg.copy(answers = answers - 1)
-
-        case msg ⇒
-          msg
-      }
+      updateAnswersCount(-1, post, categories)
+      updateAnswersCount(-1, post, posts)
+      addedPosts() = addedPosts.now - post.hash
     }
   }
 

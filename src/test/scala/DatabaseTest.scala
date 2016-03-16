@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 class DatabaseTest extends FlatSpec with Matchers with BeforeAndAfterAll {
-  val testMessage = NanoboardMessageGenerator.fromConfig().newMessage("8b8cfb7574741838450e286909e8fd1f", "Hello world!")
+  val testMessage = NanoboardMessageGenerator().newMessage("8b8cfb7574741838450e286909e8fd1f", "Hello world!")
   val db = Database.forConfig("nanoboard.test-database")
 
   "Database" should "add entry" in {

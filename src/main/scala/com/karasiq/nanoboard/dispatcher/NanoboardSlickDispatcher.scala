@@ -8,8 +8,8 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.util.ByteString
 import com.karasiq.nanoboard.api.{NanoboardContainer, NanoboardMessageData}
-import com.karasiq.nanoboard.encoding.DataEncodingStage._
-import com.karasiq.nanoboard.encoding.stages.{GzipCompression, PngEncoding, SalsaCipher}
+import com.karasiq.nanoboard.encoding.NanoboardEncoding
+import com.karasiq.nanoboard.encoding.stages.PngEncoding
 import com.karasiq.nanoboard.model.MessageConversions._
 import com.karasiq.nanoboard.model._
 import com.karasiq.nanoboard.streaming.NanoboardEvent
@@ -18,7 +18,6 @@ import com.typesafe.config.{Config, ConfigFactory}
 import slick.driver.H2Driver.api._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Random
 
 object NanoboardSlickDispatcher {
   def apply(db: Database, config: Config = ConfigFactory.load(), eventSink: Sink[NanoboardEvent, _] = Sink.ignore)(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer): NanoboardDispatcher = {
@@ -27,7 +26,7 @@ object NanoboardSlickDispatcher {
 }
 
 private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: Config, eventSink: Sink[NanoboardEvent, _])(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer) extends NanoboardDispatcher {
-  private val messageGenerator = NanoboardMessageGenerator.fromConfig(config)
+  private val messageGenerator = NanoboardMessageGenerator(config)
   private val eventQueue = Source.queue(20, OverflowStrategy.dropHead)
     .to(eventSink)
     .run()
@@ -35,31 +34,27 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
   override def createContainer(pendingCount: Int, randomCount: Int, format: String, container: ByteString) = {
     val pending = Post.pending(0, pendingCount)
     val rand = SimpleFunction.nullary[Double]("rand")
-    val random = posts.sortBy(_ ⇒ rand).take(randomCount).result.map(_.map(_.asThread(0)))
-    val query = for {
-      p ← pending
-      r ← random
-    } yield Random.shuffle((p ++ r).toVector)
+    val random = for (ps ← posts.sortBy(_ ⇒ rand).take(randomCount).result) yield ps.map(_.asThread(0))
+    val query = for (p ← pending; r ← random) yield (p ++ r).toVector
 
-    val stage = Seq(GzipCompression(), SalsaCipher.fromConfig(config), PngEncoding(data ⇒ {
+    val stage = NanoboardEncoding(config, PngEncoding { data ⇒
       val inputStream = new ByteArrayInputStream(container.toArray)
       val image = try { ImageIO.read(inputStream) } finally inputStream.close()
       assert(image.ne(null), "Invalid image")
-      assert((image.getWidth * image.getHeight * 3) >= data.length, s"Image is too small, ${data.length} bytes required")
+      assert(PngEncoding.imageBytes(image) >= data.length, s"Image is too small, ${data.length} bits required")
       image
-    }))
+    })
 
     val future = db.run(query).map { posts ⇒
-      val data: ByteString = ByteString(NanoboardMessage.writeMessages(posts.map(messageDataToMessage)))
+      val data = ByteString(NanoboardMessage.writeMessages(posts.map(messageDataToMessage)))
       val encoded = stage.encode(data)
-      assert(stage.decode(encoded) == data, "Container is broken")
+      // assert(stage.decode(encoded) == data, "Container is broken")
       posts.map(_.hash) → encoded
     }
 
     future.flatMap {
-      case (posts, result) ⇒
-        db.run(pendingPosts.filter(_.hash inSet posts).delete)
-          .map(_ ⇒ result)
+      case (hashes, result) ⇒
+        db.run(for (_ ← pendingPosts.filter(_.hash inSet hashes).delete) yield result)
     }
   }
 

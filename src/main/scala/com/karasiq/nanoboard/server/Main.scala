@@ -50,12 +50,6 @@ object Main extends App {
   val cache = MapDbNanoboardCache(config)
 
   // Initialize transport
-  def dbMessageSink(source: ⇒ String) = Sink.foreach { (message: NanoboardMessage) ⇒
-    if (messageValidator.isMessageValid(message)) {
-      dispatcher.addPost(source, message)
-    }
-  }
-
   val bitMessage = BitMessageTransport(config)
   val dispatcher = NanoboardSlickDispatcher(db, config, Sink.foreach { event ⇒
     actorSystem.eventStream.publish(event)
@@ -109,11 +103,14 @@ object Main extends App {
     if (config.getBoolean("nanoboard.bitmessage.receive")) {
       val host = config.getString("nanoboard.bitmessage.listen-host")
       val port = config.getInt("nanoboard.bitmessage.listen-port")
-      bitMessage.receiveMessages(host, port, dbMessageSink(s"bitmessage://${LocalDate.now()}"))
+      bitMessage.receiveMessages(host, port, Sink.foreach { (message: NanoboardMessage) ⇒
+        if (messageValidator.isMessageValid(message))
+          dispatcher.addPost(s"bitmessage://${LocalDate.now()}", message)
+      })
     }
 
     // Imageboards PNG
-    val messageSource = UrlPngSource.fromConfig(config)
+    val messageSource = UrlPngSource(config)
     val updateInterval = FiniteDuration(config.getDuration("nanoboard.scheduler.update-interval", TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS)
     val maxNewPosts = config.getInt("nanoboard.scheduler.posts-per-container")
     val placeFlow = Flow[String]

@@ -43,12 +43,10 @@ trait PostQueries { self: Tables with ConfigQueries with ContainerQueries ⇒
     private val recentCompiled = Compiled(recentQuery _)
 
     def recent(offset: Long, count: Long)(implicit ec: ExecutionContext) = {
-      recentCompiled(offset, count)
-        .result
-        .map(_.map {
-          case (post, answers) ⇒
-            post.asThread(answers)
-        })
+      for (ps ← recentCompiled(offset, count).result) yield ps.map {
+        case (post, answers) ⇒
+          post.asThread(answers)
+      }
     }
 
     private def pendingQuery(offset: ConstColumn[Long], count: ConstColumn[Long]) = {
@@ -62,9 +60,7 @@ trait PostQueries { self: Tables with ConfigQueries with ContainerQueries ⇒
     private val pendingCompiled = Compiled(pendingQuery _)
 
     def pending(offset: Long, count: Long)(implicit ec: ExecutionContext) = {
-      pendingCompiled(offset, count)
-        .result
-        .map(_.map(_.asThread(0)))
+      for (ps ← pendingCompiled(offset, count).result) yield ps.map(_.asThread(0))
     }
 
     private def getQuery(hash: Rep[String]) = {
@@ -76,13 +72,10 @@ trait PostQueries { self: Tables with ConfigQueries with ContainerQueries ⇒
     private val getCompiled = Compiled(getQuery _)
 
     def get(hash: String)(implicit ec: ExecutionContext) = {
-      getCompiled(hash)
-        .result
-        .headOption
-        .map(_.map {
-          case (post, answers) ⇒
-            post.asThread(answers)
-        })
+      for (p ← getCompiled(hash).result.headOption) yield p.map {
+        case (post, answers) ⇒
+          post.asThread(answers)
+      }
     }
 
     private def threadQuery(hash: Rep[String], offset: ConstColumn[Long], count: ConstColumn[Long]) = {
@@ -128,7 +121,7 @@ trait PostQueries { self: Tables with ConfigQueries with ContainerQueries ⇒
           deleted ← query.map(_.hash).result
           descendants ← DBIO.sequence(deleted.map(deleteCascadeRec))
           _ ← delete(hash)
-        } yield Seq(hash) ++ deleted ++ descendants.flatten
+        } yield Vector(hash) ++ deleted ++ descendants.flatten
       }
 
       deleteCascadeRec(hash)

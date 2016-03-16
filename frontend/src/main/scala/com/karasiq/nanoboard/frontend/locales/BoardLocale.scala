@@ -40,6 +40,8 @@ trait BoardLocale {
   def clearDeleted: String
   def clearDeletedConfirmation: String
   def clearDeletedSuccess(count: Int): String
+  def containers: String
+  def container(c: NanoboardContainer): String
   def clearDeletedError: String
   def postingError: String
   def updateError: String
@@ -48,8 +50,7 @@ trait BoardLocale {
   def attachmentGenerationError: String
   def settingsUpdateError: String
   def batchDeleteError: String
-  def containers: String
-  def container(c: NanoboardContainer): String
+  def webSocketError: String
 }
 
 object BoardLocale {

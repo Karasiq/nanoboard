@@ -12,8 +12,12 @@ object SalsaCipher {
     new SalsaCipher(key)
   }
 
-  def fromConfig(config: Config = ConfigFactory.load()): SalsaCipher = {
+  def apply(config: Config): SalsaCipher = {
     apply(config.getString("nanoboard.encryption-key"))
+  }
+
+  def apply(): SalsaCipher = {
+    apply(ConfigFactory.load())
   }
 }
 
@@ -21,8 +25,9 @@ final class SalsaCipher(key: String) extends DataEncodingStage {
   private def createCipher(encryption: Boolean): Salsa20Engine = {
     val cipher = new Salsa20Engine()
 
-    val secretKey: KeyParameter = new KeyParameter(DataCipher.sha256.digest(key.getBytes(Charsets.UTF_8)), 0, 32)
-    val iv: Array[Byte] = DataCipher.sha256.digest(key.getBytes("UTF-8").reverse)
+    val keyBytes = key.getBytes(Charsets.UTF_8)
+    val secretKey = new KeyParameter(DataCipher.sha256.digest(keyBytes), 0, 32)
+    val iv: Array[Byte] = DataCipher.sha256.digest(keyBytes.reverse)
     cipher.init(encryption, new ParametersWithIV(secretKey, iv, 0, 8))
     cipher
   }

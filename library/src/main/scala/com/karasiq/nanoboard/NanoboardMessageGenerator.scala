@@ -10,7 +10,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import scala.util.Try
 
 object NanoboardMessageGenerator {
-  def fromConfig(config: Config = ConfigFactory.load()) = {
+  def apply(config: Config = ConfigFactory.load()) = {
     new NanoboardMessageGenerator(config.getString("nanoboard.client-version"), Try(ZoneId.of(config.getString("nanoboard.default-time-zone"))).getOrElse(ZoneId.systemDefault()))
   }
 }

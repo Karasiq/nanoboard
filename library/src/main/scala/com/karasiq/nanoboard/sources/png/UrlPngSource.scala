@@ -4,8 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import com.karasiq.nanoboard.NanoboardMessage
-import com.karasiq.nanoboard.encoding.DataEncodingStage
-import com.karasiq.nanoboard.encoding.stages.{GzipCompression, PngEncoding, SalsaCipher}
+import com.karasiq.nanoboard.encoding.{DataEncodingStage, NanoboardEncoding}
 import com.typesafe.config.{Config, ConfigFactory}
 
 trait UrlPngSource {
@@ -14,8 +13,8 @@ trait UrlPngSource {
 }
 
 object UrlPngSource {
-  def fromConfig(config: Config)(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {
-    new DefaultUrlPngSource(Seq(GzipCompression(), SalsaCipher.fromConfig(config), PngEncoding.decoder))
+  def apply(config: Config)(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {
+    new DefaultUrlPngSource(NanoboardEncoding(config))
   }
 
   def apply(encoding: DataEncodingStage)(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {
@@ -23,6 +22,6 @@ object UrlPngSource {
   }
 
   def apply()(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {
-    fromConfig(ConfigFactory.load())
+    apply(ConfigFactory.load())
   }
 }

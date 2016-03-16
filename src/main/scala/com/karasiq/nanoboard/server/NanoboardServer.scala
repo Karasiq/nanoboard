@@ -28,11 +28,11 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
 
   val route = {
     get {
-      path("post" / NanoboardMessage.hashFormat) { hash ⇒
+      path("post" / NanoboardMessage.HASH_FORMAT) { hash ⇒
         complete(StatusCodes.OK, dispatcher.post(hash))
       } ~
       (pathPrefix("posts") & parameters('offset.as[Long].?(0), 'count.as[Long].?(100))) { (offset, count) ⇒
-        path(NanoboardMessage.hashFormat) { hash ⇒
+        path(NanoboardMessage.HASH_FORMAT) { hash ⇒
           complete(StatusCodes.OK, dispatcher.thread(hash, offset, count))
         } ~
         pathEndOrSingleSlash {
@@ -76,7 +76,7 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       }
     } ~
     delete {
-      path("post" / NanoboardMessage.hashFormat) { hash ⇒
+      path("post" / NanoboardMessage.HASH_FORMAT) { hash ⇒
         extractLog { log ⇒
           log.info("Post permanently deleted: {}", hash)
           complete(StatusCodes.OK, dispatcher.delete(hash))
@@ -85,7 +85,7 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       (path("posts") & parameter('container.as[Long])) { container ⇒
         complete(StatusCodes.OK, dispatcher.clearContainer(container))
       } ~
-      path("pending" / NanoboardMessage.hashFormat) { hash ⇒
+      path("pending" / NanoboardMessage.HASH_FORMAT) { hash ⇒
         complete(StatusCodes.OK, dispatcher.markAsNotPending(hash))
       } ~
       (path("posts") & parameters('offset.as[Long].?(0), 'count.as[Long])) { (offset, count) ⇒ // Batch delete
@@ -104,7 +104,7 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
         log.info("Categories updated: {}", categories)
         complete(StatusCodes.OK, dispatcher.updateCategories(categories))
       } ~
-      path("pending" / NanoboardMessage.hashFormat) { hash ⇒
+      path("pending" / NanoboardMessage.HASH_FORMAT) { hash ⇒
         complete(StatusCodes.OK, dispatcher.markAsPending(hash))
       }
     } ~

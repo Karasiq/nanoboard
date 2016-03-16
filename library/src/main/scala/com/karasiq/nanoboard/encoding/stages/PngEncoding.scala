@@ -17,10 +17,18 @@ object PngEncoding {
 
   // Would fail on encode request
   val decoder = apply(_ ⇒ null)
+
+  def requiredSize(data: ByteString): Int = {
+    (4 + data.length) * 8
+  }
+
+  def imageBytes(image: BufferedImage): Int = {
+    image.getWidth * image.getHeight * 3
+  }
 }
 
 final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataEncodingStage {
-  implicit val byteOrder = ByteOrder.LITTLE_ENDIAN
+  private implicit val byteOrder = ByteOrder.LITTLE_ENDIAN
 
   @inline
   private def asInt(bytes: ByteString): Int = {
@@ -84,7 +92,7 @@ final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataE
     val img = sourceImage(data)
     assert(img.ne(null), "Container image not found")
     val bytes: Array[Int] = asRgbBytes(img)
-    val requiredSize: Int = (4 + data.length) * 8
+    val requiredSize: Int = PngEncoding.requiredSize(data)
     assert(bytes.length >= requiredSize, s"Image is too small, $requiredSize bits required")
     writeBytes(bytes, asBytes(data.length), 0)
     writeBytes(bytes, data, 4)
@@ -101,7 +109,7 @@ final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataE
     val inputStream = new ByteArrayInputStream(data.toArray)
     val img = ImageIO.read(inputStream)
     inputStream.close()
-    assert(img.ne(null), "Cannot decode image")
+    assert(img.ne(null), "Invalid image")
     val bytes: Array[Int] = asRgbBytes(img)
     val length: Int = asInt(readBytes(bytes, 4, 0))
     readBytes(bytes, length, 4)

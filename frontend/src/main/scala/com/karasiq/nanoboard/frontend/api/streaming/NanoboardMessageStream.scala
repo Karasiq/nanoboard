@@ -3,6 +3,7 @@ package com.karasiq.nanoboard.frontend.api.streaming
 import java.nio.ByteBuffer
 
 import boopickle.Default._
+import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.BinaryMarshaller
 import com.karasiq.nanoboard.frontend.utils.Notifications
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
@@ -31,13 +32,13 @@ object NanoboardMessageStream {
     Unpickle[NanoboardEvent].fromBytes(TypedArrayBuffer.wrap(response.asInstanceOf[ArrayBuffer]))
   }
 
-  def apply(f: NanoboardEvent ⇒ Unit): NanoboardMessageStream = {
+  def apply(f: NanoboardEvent ⇒ Unit)(implicit controller: NanoboardController): NanoboardMessageStream = {
     new NanoboardMessageStream(f)
   }
 }
 
 // WebSocket wrapper
-final class NanoboardMessageStream(f: NanoboardEvent ⇒ Unit) {
+final class NanoboardMessageStream(f: NanoboardEvent ⇒ Unit)(implicit controller: NanoboardController) {
   private var webSocket: Option[WebSocket] = None
   private var last: NanoboardSubscription = Unfiltered
   private var lastSet = false
@@ -65,7 +66,7 @@ final class NanoboardMessageStream(f: NanoboardEvent ⇒ Unit) {
 
     webSocket.onclose = { (e: CloseEvent) ⇒
       this.webSocket = None
-      Notifications.warning(s"WebSocket was closed: ${e.code} ${e.reason}", Layout.topRight)
+      Notifications.warning(s"${controller.locale.webSocketError}: ${e.code} ${e.reason}", Layout.topRight)
       window.setTimeout(initWebSocket _, 3000)
     }
 
