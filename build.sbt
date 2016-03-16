@@ -105,6 +105,7 @@ lazy val backendSettings = Seq(
       // Static
       Html from NanoboardAssets.index,
       Style from NanoboardAssets.style,
+      Script from file("frontend") / "files" / "img2base64.js",
       Image("favicon.ico") from file("frontend") / "files" / "favicon.ico",
       Image("img/muon_bg.jpg") from file("frontend") / "files" / "muon_bg.jpg",
       Image("img/muon_posts.jpg") from file("frontend") / "files" / "muon_posts.jpg",

@@ -10,12 +10,12 @@ import rx._
 import scalatags.JsDom.all._
 
 private[components] object PostInlineImage {
-  def apply(base64: String)(implicit ctx: Ctx.Owner, controller: NanoboardController): PostInlineImage = {
-    new PostInlineImage(base64)
+  def apply(base64: String, imageType: String = "image/jpeg")(implicit ctx: Ctx.Owner, controller: NanoboardController): PostInlineImage = {
+    new PostInlineImage(base64, imageType)
   }
 }
 
-private[components] final class PostInlineImage(base64: String)(implicit ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Image] {
+private[components] final class PostInlineImage(val base64: String, val imageType: String)(implicit ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Image] {
   val expanded = Var(false)
 
   private val styleMod = Rx[AutoModifier] {
@@ -28,7 +28,7 @@ private[components] final class PostInlineImage(base64: String)(implicit ctx: Ct
   }
 
   override def renderTag(md: Modifier*) = {
-    val blobUrl = Blobs.asUrl(Blobs.asBlob(base64, "image/jpeg")) // s"data:image/jpeg;base64,$base64"
+    val blobUrl = Blobs.asUrl(Blobs.asBlob(base64, imageType)) // s"data:image/jpeg;base64,$base64"
     img(alt := controller.locale.embeddedImage, src := blobUrl, styleMod, onclick := Bootstrap.jsClick { _ ⇒
       expanded() = !expanded.now
     }, md)

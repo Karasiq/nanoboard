@@ -20,9 +20,11 @@ trait BoardLocale {
   def cancel: String
   def pendingPosts: String
   def randomPosts: String
-  def imageSize: String
+  def imageScale: String
   def imageQuality: String
   def imageFormat: String
+  def imageSharpness: String
+  def preview: String
   def dataContainer: String
   def generateContainer: String
   def fromTo(from: Int, to: Int): String

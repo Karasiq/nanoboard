@@ -2,11 +2,11 @@ package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.Bootstrap
 import com.karasiq.bootstrap.BootstrapImplicits._
+import com.karasiq.bootstrap.buttons.{Button, ButtonStyle}
 import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.modal.Modal
 import com.karasiq.nanoboard.frontend.NanoboardController
-import com.karasiq.nanoboard.frontend.api.NanoboardApi
-import com.karasiq.nanoboard.frontend.utils.CancelledException
+import com.karasiq.nanoboard.frontend.utils.{CancelledException, Images}
 import org.scalajs.dom.html.Input
 import org.scalajs.dom.raw.File
 import rx._
@@ -24,33 +24,48 @@ private[components] object AttachmentGenerationDialog {
 private[components] final class AttachmentGenerationDialog(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) {
   import controller.locale
   val format = Var("jpeg")
-  val size = Var("500")
-  val quality = Var("70")
+  val scale = Var("50")
+  val quality = Var("50")
+  val sharpness = Var("50")
   val file = Var[Option[File]](None)
 
   val ready = Rx {
-    format().nonEmpty && Try(size().toInt).getOrElse(0) > 0 && file().nonEmpty && (1 to 100).contains(Try(quality().toInt).getOrElse(0))
+    def isValid(value: Rx[String]): Boolean = Try(value().toInt).filter((1 to 100).contains).isSuccess
+    format().nonEmpty && file().nonEmpty && isValid(scale) && isValid(quality) && isValid(sharpness)
   }
 
   def generate(): Future[String] = {
     val promise = Promise[String]
+    val preview = Var[Option[PostInlineImage]](None)
     val modal = Modal(locale.insertImage)
       .withBody(Form(
         FormInput.text(locale.imageFormat, name := "format", format.reactiveInput, placeholder := "jpeg"),
-        FormInput.number(locale.imageSize, name := "size", min := 10, size.reactiveInput, placeholder := 500),
-        FormInput.number(locale.imageQuality, name := "quality", min := 1, max := 100, quality.reactiveInput, placeholder := 70),
+        FormInput.number(locale.imageScale, name := "scale", min := 1, max := 100, scale.reactiveInput, placeholder := 50),
+        FormInput.number(locale.imageQuality, name := "quality", min := 1, max := 100, quality.reactiveInput, placeholder := 50),
+        FormInput.number(locale.imageSharpness, name := "sharpness", min := 1, max := 100, sharpness.reactiveInput, placeholder := 50),
         FormInput.file(locale.dataContainer, name := "image", file.reactiveRead("change", e ⇒ e.asInstanceOf[Input].files.headOption)),
+        div(preview.map(_.map(_.base64.length).fold[Frag]("")(length ⇒ s"$length ${locale.bytes}"))),
+        div(preview.map(_.fold[Frag]("")(img ⇒ img))),
         onsubmit := Bootstrap.jsSubmit(_ ⇒ ())
       ))
       .withButtons(
         Modal.closeButton(locale.cancel)(onclick := Bootstrap.jsClick { _ ⇒
           promise.failure(CancelledException)
         }),
-        Modal.button(locale.submit, Modal.dismiss, ready.reactiveShow, onclick := Bootstrap.jsClick { _ ⇒
-          promise.completeWith(NanoboardApi.generateAttachment(format.now, size.now.toInt, quality.now.toInt, file.now.get))
+        Button(ButtonStyle.info)(locale.preview, ready.reactiveShow)(onclick := Bootstrap.jsClick { _ ⇒
+          createBase64Image().foreach { base64 ⇒
+            preview() = Some(PostInlineImage(base64, s"image/${format.now}"))
+          }
+        }),
+        Button(ButtonStyle.success)(locale.submit, Modal.dismiss, ready.reactiveShow, onclick := Bootstrap.jsClick { _ ⇒
+          promise.completeWith(createBase64Image())
         })
       )
     modal.show(backdrop = false)
     promise.future
+  }
+
+  private def createBase64Image(): Future[String] = {
+    Images.compress(file.now.get, s"image/${format.now}", scale.now.toInt, quality.now.toInt, sharpness.now.toInt)
   }
 }
