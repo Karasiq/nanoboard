@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit
 
 import com.typesafe.config.{Config, ConfigFactory}
 
+import scala.util.Try
+
 private[server] object MapDbNanoboardCache {
   def apply(config: Config = ConfigFactory.load()): NanoboardCache = {
     new MapDbNanoboardCache(config)
@@ -23,7 +25,6 @@ private[cache] final class MapDbNanoboardCache(config: Config) extends Nanoboard
         .executorEnable()
         .asyncWriteEnable()
         .asyncWriteFlushDelay(1000)
-        .cacheWeakRefEnable()
     }
   }
 
@@ -31,11 +32,11 @@ private[cache] final class MapDbNanoboardCache(config: Config) extends Nanoboard
 
   private val cache = MapDbWrapper(db).createHashSet[String]("url_cache")(_
     .serializer(Serializer.STRING_XXHASH)
-    .expireAfterAccess(7, TimeUnit.DAYS)
+    .expireAfterAccess(30, TimeUnit.DAYS)
   )
 
   def +=(url: String): Unit = {
-    cache += url
+    Try(cache += url)
   }
 
   def contains(url: String): Boolean = {

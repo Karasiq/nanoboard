@@ -39,8 +39,9 @@ var img2base64 = {
 
         ctx.putImageData(dstData, 0, 0);
     },
-    drawImage: function (file, compress, imgType, imageScale, quality, sharpness, success) {
+    drawImage: function (file, compress, imgType, imageScale, quality, sharpness, success, error) {
         var reader = new FileReader();
+        reader.onerror = error;
         reader.onloadend = function () {
             var res = reader.result;
             if (!compress) {
@@ -50,6 +51,7 @@ var img2base64 = {
             var canvas = document.createElement("canvas");
             var ctx = canvas.getContext("2d");
             img = new Image();
+            img.onerror = error;
             img.onload = function () {
                 canvas.width = img.width;
                 canvas.height = img.height;
@@ -57,6 +59,7 @@ var img2base64 = {
                 img2base64.sharpen(ctx, img.width, img.height, sharpness / 100.0);
                 var scale = 1.0 / (imageScale / 100.0);
                 var shr = new Image();
+                shr.onerror = error;
                 shr.onload = function () {
                     canvas.width = img.width / scale;
                     canvas.height = img.height / scale;

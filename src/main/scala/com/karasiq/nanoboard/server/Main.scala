@@ -119,10 +119,10 @@ object Main extends App {
       .filterNot(cache.contains)
       .log("board-png-source")
       .flatMapMerge(4, url ⇒ messageSource.messagesFromImage(url).fold(Vector.empty[NanoboardMessage])(_ :+ _).map((url, _)))
-      .withAttributes(ActorAttributes.supervisionStrategy(Supervision.resumingDecider) and
+      .withAttributes(ActorAttributes.supervisionStrategy(Supervision.restartingDecider) and
         Attributes.logLevels(Logging.InfoLevel, onFailure = Logging.WarningLevel))
 
-    Source.tick(10 seconds, updateInterval, ())
+    Source.tick(10 seconds, updateInterval, akka.NotUsed)
       .flatMapConcat(_ ⇒ Source.fromPublisher(db.stream(Place.list())))
       .via(placeFlow)
       .runForeach {

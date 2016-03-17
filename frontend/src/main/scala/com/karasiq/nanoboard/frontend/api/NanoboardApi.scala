@@ -104,7 +104,6 @@ object NanoboardApi {
       }
   }
 
-  @deprecated("Use img2base64 script")
   def generateAttachment(format: String, size: Int, quality: Int, container: File)(implicit ec: ExecutionContext): Future[String] = {
     Ajax.post(s"/attachment?format=$format&size=$size&quality=$quality", container)
       .map(_.responseText)
