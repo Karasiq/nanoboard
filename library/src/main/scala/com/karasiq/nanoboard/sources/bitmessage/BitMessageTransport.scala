@@ -3,7 +3,6 @@ package com.karasiq.nanoboard.sources.bitmessage
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, OverflowStrategy}
@@ -14,7 +13,6 @@ import org.apache.commons.codec.binary.Base64
 import upickle.default._
 
 import scala.concurrent.Future
-import scalatags.Text.all._
 
 object BitMessageTransport {
   def apply(config: Config = ConfigFactory.load())(implicit ac: ActorSystem, am: ActorMaterializer) = {
@@ -47,30 +45,17 @@ object BitMessageTransport {
 }
 
 final class BitMessageTransport(chanAddress: String, apiAddress: String, apiPort: Int, apiUsername: String, apiPassword: String)(implicit ac: ActorSystem, am: ActorMaterializer) {
-  // Input/output
+  import XmlRpcProxy._
+  private val http = Http()
+  private val xmlRpcProxy = new XmlRpcProxy(http, apiAddress, apiPort, apiUsername, apiPassword)
+
   def sendMessage(message: NanoboardMessage): Future[HttpResponse] = {
-    import XmlRpcTags._
-    val entity = "<?xml version=\"1.0\"?>" + methodCall(
-      methodName("sendMessage"),
-      params(
-        param(value(chanAddress)),
-        param(value(chanAddress)),
-        param(value()),
-        param(value(BitMessageTransport.asBase64(BitMessageTransport.wrap(message)))),
-        param(value(int(2))),
-        param(value(int(21600)))
-      )
-    )
-    val authentication = Authorization(BasicHttpCredentials(apiUsername, apiPassword))
-    http.singleRequest(HttpRequest(method = HttpMethods.POST, uri = s"http://$apiAddress:$apiPort/", entity = HttpEntity(ContentTypes.`text/xml(UTF-8)`, entity), headers = List(authentication)))
+    xmlRpcProxy.sendMessage(chanAddress, chanAddress, (), BitMessageTransport.asBase64(BitMessageTransport.wrap(message)), 2, 21600)
   }
 
   def receiveMessages(host: String, port: Int, sink: Sink[NanoboardMessage, _]): Future[Http.ServerBinding] = {
     http.bindAndHandle(route(sink), host, port)
   }
-
-  // Handlers
-  private val http = Http()
 
   private def route(sink: Sink[NanoboardMessage, _]) = {
     val queue = Source

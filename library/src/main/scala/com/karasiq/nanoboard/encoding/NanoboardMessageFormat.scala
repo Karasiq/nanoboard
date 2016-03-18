@@ -31,7 +31,9 @@ trait DefaultNanoboardMessageFormat extends NanoboardMessageFormat {
       }
     }
 
-    parse(payload.drop((sizes.length + 1) * 6), sizes)
+    val data = payload.drop((sizes.length + 1) * 6)
+    assert(sizes.forall(_ > 32) && sizes.sum <= data.length, "Invalid message sizes")
+    parse(data, sizes)
   }
 
   final def writeMessages(messages: Seq[NanoboardMessage]): String = {

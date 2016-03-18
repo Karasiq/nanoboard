@@ -25,7 +25,8 @@ private[components] object AttachmentGenerationDialog {
 
 private[components] final class AttachmentGenerationDialog(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) {
   import controller.locale
-  val format = Var("jpeg")
+  val formatSelect = FormInput.select(locale.imageFormat, "jpeg", "webp", "png")
+  def format = formatSelect.selected.map(_.head)
   val scale = Var("50")
   val size = Var("500")
   val quality = Var("50")
@@ -35,8 +36,7 @@ private[components] final class AttachmentGenerationDialog(implicit ctx: Ctx.Own
 
   val ready = Rx {
     def isValidPct(value: Rx[String]): Boolean = Try(value().toInt).filter((1 to 100).contains).isSuccess
-    format().nonEmpty && file().nonEmpty &&
-      ((useServer() && Try(size().toInt).filter(_ > 0).isSuccess) || isValidPct(scale)) &&
+    file().nonEmpty && ((useServer() && Try(size().toInt).filter(_ > 0).isSuccess) || isValidPct(scale)) &&
       isValidPct(quality) && (useServer() || isValidPct(sharpness))
   }
 
@@ -45,7 +45,7 @@ private[components] final class AttachmentGenerationDialog(implicit ctx: Ctx.Own
     val preview = Var[Option[PostInlineImage]](None)
     val modal = Modal(locale.insertImage)
       .withBody(Form(
-        FormInput.text(locale.imageFormat, name := "format", format.reactiveInput, placeholder := "jpeg"),
+        formatSelect,
         Rx {
           if (useServer()) FormInput.number(locale.imageSize, name := "size", min := 1, size.reactiveInput, placeholder := 500)
           else FormInput.number(locale.imageScale, name := "scale", min := 1, max := 100, scale.reactiveInput, placeholder := 50)
