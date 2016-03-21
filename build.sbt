@@ -76,6 +76,8 @@ lazy val backendSettings = Seq(
   scalaJsBundlerAssets in Compile += {
     import com.karasiq.scalajsbundler.dsl._
 
+    val bootstrap = github("twbs", "bootstrap", "3.3.6") / "dist"
+    val fontAwesome = github("FortAwesome", "Font-Awesome", "4.5.0")
     val videoJs = github("videojs", "video.js", "5.8.0") / "dist"
     val notyJs = github("needim", "noty", "2.3.8") / "js" / "noty"
     val jsDeps = Seq(
@@ -83,11 +85,11 @@ lazy val backendSettings = Seq(
       Script from url("https://code.jquery.com/jquery-2.1.4.min.js"),
 
       // Bootstrap
-      Style from url("https://raw.githubusercontent.com/twbs/bootstrap/v3.3.6/dist/css/bootstrap.css"),
-      Script from url("https://raw.githubusercontent.com/twbs/bootstrap/v3.3.6/dist/js/bootstrap.js"),
+      Style from url(bootstrap / "css" % "bootstrap.css"),
+      Script from url(bootstrap / "js" % "bootstrap.js"),
 
       // Font Awesome
-      Style from url("https://raw.githubusercontent.com/FortAwesome/Font-Awesome/v4.5.0/css/font-awesome.css"),
+      Style from url(fontAwesome / "css" % "font-awesome.css"),
 
       // Video.js
       Script from url(videoJs % "video.min.js"),
@@ -98,7 +100,10 @@ lazy val backendSettings = Seq(
       Script from url(github("eXon", "videojs-youtube", "2.0.8") / "dist" % "Youtube.min.js"),
 
       // Noty.js
-      Script from url(notyJs / "packaged" % "jquery.noty.packaged.min.js")
+      Script from url(notyJs / "packaged" % "jquery.noty.packaged.min.js"),
+
+      // Moment.js
+      Script from url("http://momentjs.com/downloads/moment-with-locales.min.js")
     )
 
     val appFiles = Seq(
@@ -116,9 +121,9 @@ lazy val backendSettings = Seq(
       Script from file("frontend") / "target" / "scala-2.11" / "nanoboard-frontend-launcher.js"
     )
 
-    val fonts = fontPackage("glyphicons-halflings-regular", "https://raw.githubusercontent.com/twbs/bootstrap/v3.3.6/dist/fonts/glyphicons-halflings-regular") ++
-      fontPackage("fontawesome-webfont", "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/v4.5.0/fonts/fontawesome-webfont") ++
-      fontPackage("VideoJS", videoJs % "font/VideoJS", "font", Seq("eot", "svg", "ttf", "woff"))
+    val fonts = fontPackage("glyphicons-halflings-regular", bootstrap / "fonts" % "glyphicons-halflings-regular") ++
+      fontPackage("fontawesome-webfont", fontAwesome / "fonts" % "fontawesome-webfont") ++
+      fontPackage("VideoJS", videoJs / "font" % "VideoJS", "font", Seq("eot", "svg", "ttf", "woff"))
 
     Bundle("index", jsDeps ++ appFiles ++ fonts:_*)
   }
@@ -132,7 +137,8 @@ lazy val frontendSettings = Seq(
     "com.chuusai" %%% "shapeless" % "2.2.5",
     "com.github.karasiq" %%% "parboiled" % "2.1.1-SNAPSHOT",
     "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.4",
-    "com.github.karasiq" %%% "scalajs-videojs" % "1.0.2"
+    "com.github.karasiq" %%% "scalajs-videojs" % "1.0.2",
+    "io.github.widok" %%% "scala-js-momentjs" % "0.1.4"
   )
 )
 

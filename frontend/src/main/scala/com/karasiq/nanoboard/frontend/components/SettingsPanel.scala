@@ -1,7 +1,7 @@
 package com.karasiq.nanoboard.frontend.components
 
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.buttons.{ButtonBuilder, ButtonStyle}
+import com.karasiq.bootstrap.buttons.{Button, ButtonStyle}
 import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.grid.GridSystem
 import com.karasiq.bootstrap.icons.FontAwesome
@@ -66,7 +66,7 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
       Form(
         FormInput.number(locale.offset, style.input, min := 0, offset.reactiveInput),
         FormInput.number(locale.count, style.input, min := 0, count.reactiveInput),
-        ButtonBuilder(ButtonStyle.danger, block = true)("eraser".fontAwesome(FontAwesome.fixedWidth), locale.batchDelete, "disabled".classIf(disabled), onclick := Bootstrap.jsClick { _ ⇒
+        Button(ButtonStyle.danger, block = true)("eraser".fontAwesome(FontAwesome.fixedWidth), locale.batchDelete, "disabled".classIf(disabled), onclick := Bootstrap.jsClick { _ ⇒
           if (!disabled.now) {
             Notifications.confirmation(locale.batchDeleteConfirmation(count.now.toInt), Layout.topLeft) {
               loading() = true
@@ -90,7 +90,7 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
 
     val clearDeleted = {
       val loading = Var(false)
-      ButtonBuilder(ButtonStyle.warning, block = true)("eye-slash".fontAwesome(FontAwesome.fixedWidth), locale.clearDeleted, "disabled".classIf(loading), onclick := Bootstrap.jsClick { _ ⇒
+      Button(ButtonStyle.warning, block = true)("eye-slash".fontAwesome(FontAwesome.fixedWidth), locale.clearDeleted, "disabled".classIf(loading), onclick := Bootstrap.jsClick { _ ⇒
         if (!loading.now) {
           Notifications.confirmation(locale.clearDeletedConfirmation, Layout.topLeft) {
             loading() = true
@@ -114,7 +114,7 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
           FormInput.textArea(locale.places, style.input, rows := 15, placesText.reactiveInput)("has-error".classIf(places.map(_.isEmpty))),
           FormInput.textArea(locale.categories, style.input, rows := 15, categoriesText.reactiveInput)("has-error".classIf(categories.map(_.isEmpty)))
         )),
-        GridSystem.mkRow(ButtonBuilder(block = true)(locale.submit, style.submit, "disabled".classIf(buttonDisabled), onclick := Bootstrap.jsClick { _ ⇒
+        GridSystem.mkRow(Button(block = true)(locale.submit, style.submit, "disabled".classIf(buttonDisabled), onclick := Bootstrap.jsClick { _ ⇒
           if (!buttonDisabled.now) {
             loading() = true
             Future.sequence(Seq(NanoboardApi.setCategories(categories.now), NanoboardApi.setPlaces(places.now))).onComplete {

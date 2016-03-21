@@ -1,7 +1,7 @@
 package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.buttons.{ButtonBuilder, ButtonGroup, ButtonGroupSize, ButtonStyle}
+import com.karasiq.bootstrap.buttons._
 import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
@@ -37,7 +37,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
       FormInput.textArea((), style.input, placeholder := locale.writeYourMessage, rows := 5, replyText.reactiveInput, "has-errors".classIf(lengthIsValid.map(!_)))
     )
 
-    val attachmentLink = ButtonBuilder(ButtonStyle.primary)("file-image-o".fontAwesome(FontAwesome.fixedWidth), locale.insertImage, onclick := Bootstrap.jsClick { _ ⇒
+    val attachmentLink = Button(ButtonStyle.primary)("file-image-o".fontAwesome(FontAwesome.fixedWidth), locale.insertImage, onclick := Bootstrap.jsClick { _ ⇒
       AttachmentGenerationDialog().generate().onComplete {
         case Success(base64) ⇒
           replyText() = replyText.now + s"[img=$base64]"
@@ -50,7 +50,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
       }
     })
 
-    val submitButton = ButtonBuilder(ButtonStyle.success)("disabled".classIf(lengthIsValid.map(!_)), "mail-forward".fontAwesome(FontAwesome.fixedWidth), locale.submit, onclick := Bootstrap.jsClick { _ ⇒
+    val submitButton = Button(ButtonStyle.success)("disabled".classIf(lengthIsValid.map(!_)), "mail-forward".fontAwesome(FontAwesome.fixedWidth), locale.submit, onclick := Bootstrap.jsClick { _ ⇒
       if (lengthIsValid.now) {
         NanoboardApi.addReply(post.hash, replyText.now).onComplete {
           case Success(newPost) ⇒

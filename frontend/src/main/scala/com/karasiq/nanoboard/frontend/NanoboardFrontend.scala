@@ -1,7 +1,9 @@
 package com.karasiq.nanoboard.frontend
 
 import com.karasiq.bootstrap.BootstrapImplicits._
+import com.karasiq.nanoboard.frontend.locales.BoardLocale
 import org.scalajs.jquery.jQuery
+import org.widok.moment.Moment
 import rx._
 
 import scala.concurrent.ExecutionContext
@@ -17,7 +19,7 @@ object NanoboardFrontend extends JSApp {
   @JSExport
   override def main(): Unit = {
     jQuery(() ⇒ {
-      // Initializes the application
+      Moment.locale(BoardLocale.browserLanguage)
       NanoboardController().initialize()
     })
   }

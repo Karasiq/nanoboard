@@ -1,7 +1,7 @@
 package com.karasiq.nanoboard.frontend.components
 
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.buttons.{ButtonBuilder, ButtonGroup, ButtonGroupSize, ButtonStyle}
+import com.karasiq.bootstrap.buttons._
 import com.karasiq.bootstrap.grid.GridSystem
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
@@ -49,7 +49,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
     val deleted = model.deletedPosts().size
 
     def previousButton(ofs: NanoboardContextWithOffset, prevOffset: Int): Tag  = {
-      ButtonBuilder(ButtonStyle.danger)(
+      Button(ButtonStyle.danger)(
         "angle-double-left".fontAwesome(FontAwesome.fixedWidth),
         locale.fromTo(prevOffset, prevOffset + postsPerPage),
         onclick := Bootstrap.jsClick { _ ⇒
@@ -58,7 +58,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
     }
 
     def nextButton(ofs: NanoboardContextWithOffset, newOffset: Int): Tag = {
-      ButtonBuilder(ButtonStyle.success)(
+      Button(ButtonStyle.success)(
         locale.fromTo(newOffset, newOffset + postsPerPage),
         "angle-double-right".fontAwesome(FontAwesome.fixedWidth),
         onclick := Bootstrap.jsClick { _ ⇒

@@ -58,9 +58,13 @@ trait BoardLocale {
 }
 
 object BoardLocale {
-  def fromBrowserLanguage(): BoardLocale = {
+  def browserLanguage: String = {
     import org.scalajs.dom.window.navigator
-    navigator.language.toLowerCase match {
+    navigator.language
+  }
+
+  def fromBrowserLanguage(): BoardLocale = {
+    browserLanguage.toLowerCase match {
       case "ru-ru" | "ru" ⇒
         Russian
 

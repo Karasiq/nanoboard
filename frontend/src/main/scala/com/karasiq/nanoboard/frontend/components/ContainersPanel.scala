@@ -1,7 +1,7 @@
 package com.karasiq.nanoboard.frontend.components
 
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.buttons.{ButtonBuilder, ButtonGroup, ButtonGroupSize, ButtonStyle}
+import com.karasiq.bootstrap.buttons._
 import com.karasiq.bootstrap.grid.GridSystem
 import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
@@ -11,6 +11,7 @@ import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.utils.Notifications
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import org.scalajs.dom
+import org.widok.moment.Moment
 import rx._
 
 import scala.concurrent.ExecutionContext
@@ -38,19 +39,20 @@ private[components] final class ContainersPanel(perPage: Int)(implicit ec: Execu
 
   def renderTag(md: Modifier*) = {
     def isEmpty(c: NanoboardContainer): Modifier = if (c.posts == 0) Seq(textDecoration.`line-through`, color.gray) else ()
+    def dateTime(c: NanoboardContainer): Modifier = Moment(c.time.toDouble).format("YYYY, MMMM Do, HH:mm")
     var loading = false
     div(containers.map { cs ⇒
       div(
         GridSystem.mkRow(
           ButtonGroup(ButtonGroupSize.extraSmall,
-            ButtonBuilder(ButtonStyle.danger)(
+            Button(ButtonStyle.danger)(
               "angle-double-left".fontAwesome(FontAwesome.fixedWidth),
               locale.fromTo(math.max(0, currentOffset.now - perPage), currentOffset.now),
               onclick := Bootstrap.jsClick { _ ⇒
                 currentOffset() = math.max(0, currentOffset.now - perPage)
               }
             ),
-            ButtonBuilder(ButtonStyle.success)(
+            Button(ButtonStyle.success)(
               locale.fromTo(currentOffset.now + containers.now.length, currentOffset.now + containers.now.length + perPage),
               "angle-double-right".fontAwesome(FontAwesome.fixedWidth),
               onclick := Bootstrap.jsClick { _ ⇒
@@ -77,7 +79,7 @@ private[components] final class ContainersPanel(perPage: Int)(implicit ec: Execu
               }
             }
           }
-        }), s"${locale.container(c)} (", a(isEmpty(c), href := c.url, c.url, target := "_blank"), ")")
+        }), dateTime(c), " ", s"${locale.container(c)} (", a(isEmpty(c), href := c.url, c.url, target := "_blank"), ")")
       )
     })
   }
