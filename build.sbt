@@ -4,7 +4,7 @@ lazy val commonSettings = Seq(
   organization := "com.github.karasiq",
   version := "1.1.0",
   isSnapshot := version.value.endsWith("SNAPSHOT"),
-  scalaVersion := "2.11.7"
+  scalaVersion := "2.11.8"
 )
 
 lazy val librarySettings = Seq(
@@ -76,56 +76,54 @@ lazy val backendSettings = Seq(
   scalaJsBundlerAssets in Compile += {
     import com.karasiq.scalajsbundler.dsl._
 
-    val bootstrap = github("twbs", "bootstrap", "3.3.6") / "dist"
-    val fontAwesome = github("FortAwesome", "Font-Awesome", "4.5.0")
-    val videoJs = github("videojs", "video.js", "5.8.0") / "dist"
-    val notyJs = github("needim", "noty", "2.3.8") / "js" / "noty"
+    val bootstrap = github("twbs", "bootstrap", "v3.3.6") / "dist"
+    val fontAwesome = github("FortAwesome", "Font-Awesome", "v4.5.0")
+    val videoJs = github("videojs", "video.js", "v5.8.0") / "dist"
+    val videoJsYoutube = github("eXon", "videojs-youtube", "v2.0.8")
+    val notyJs = github("needim", "noty", "v2.3.8") / "js" / "noty" / "packaged"
+    val moment = github("moment", "moment", "2.12.0") / "min"
     val jsDeps = Seq(
       // jQuery
       Script from url("https://code.jquery.com/jquery-2.1.4.min.js"),
 
       // Bootstrap
-      Style from url(bootstrap / "css" % "bootstrap.css"),
-      Script from url(bootstrap / "js" % "bootstrap.js"),
+      Style from bootstrap / "css" / "bootstrap.css",
+      Script from bootstrap / "js" / "bootstrap.js",
 
       // Font Awesome
-      Style from url(fontAwesome / "css" % "font-awesome.css"),
+      Style from fontAwesome / "css" / "font-awesome.css",
 
       // Video.js
-      Script from url(videoJs % "video.min.js"),
-      Style from url(videoJs % "video-js.min.css"),
-      Static("video-js.swf") from url(videoJs % "video-js.swf"),
+      Script from videoJs / "video.min.js",
+      Style from videoJs / "video-js.min.css",
+      Static("video-js.swf") from videoJs / "video-js.swf",
 
       // Plugins
-      Script from url(github("eXon", "videojs-youtube", "2.0.8") / "dist" % "Youtube.min.js"),
+      Script from videoJsYoutube / "dist" / "Youtube.min.js",
 
       // Noty.js
-      Script from url(notyJs / "packaged" % "jquery.noty.packaged.min.js"),
+      Script from notyJs / "jquery.noty.packaged.min.js",
 
       // Moment.js
-      Script from url("http://momentjs.com/downloads/moment-with-locales.min.js")
+      Script from moment / "moment-with-locales.min.js"
     )
 
-    val appFiles = Seq(
-      // Static
+    val staticDir = (baseDirectory in frontend)(_ / "files").value
+    val staticFiles = Seq(
       Html from NanoboardAssets.index,
       Style from NanoboardAssets.style,
-      Script from file("frontend") / "files" / "img2base64.js",
-      Image("favicon.ico") from file("frontend") / "files" / "favicon.ico",
-      Image("img/muon_bg.jpg") from file("frontend") / "files" / "muon_bg.jpg",
-      Image("img/muon_posts.jpg") from file("frontend") / "files" / "muon_posts.jpg",
-      Image("img/muon_inputs.jpg") from file("frontend") / "files" / "muon_inputs.jpg",
-
-      // Scala.js app
-      Script from file("frontend") / "target" / "scala-2.11" / "nanoboard-frontend-opt.js",
-      Script from file("frontend") / "target" / "scala-2.11" / "nanoboard-frontend-launcher.js"
+      Script from staticDir / "img2base64.js",
+      Image("favicon.ico") from staticDir / "favicon.ico",
+      Image("img/muon_bg.jpg") from staticDir / "muon_bg.jpg",
+      Image("img/muon_posts.jpg") from staticDir / "muon_posts.jpg",
+      Image("img/muon_inputs.jpg") from staticDir / "muon_inputs.jpg"
     )
 
-    val fonts = fontPackage("glyphicons-halflings-regular", bootstrap / "fonts" % "glyphicons-halflings-regular") ++
-      fontPackage("fontawesome-webfont", fontAwesome / "fonts" % "fontawesome-webfont") ++
-      fontPackage("VideoJS", videoJs / "font" % "VideoJS", "font", Seq("eot", "svg", "ttf", "woff"))
+    val fonts =
+      (fontAwesome / "fonts" / "fontawesome-webfont").fonts() ++
+      (videoJs / "font" / "VideoJS").fonts(dir = "font", extensions = Seq("eot", "svg", "ttf", "woff"))
 
-    Bundle("index", jsDeps ++ appFiles ++ fonts:_*)
+    Bundle("index", jsDeps, staticFiles, fonts, scalaJsApplication(frontend).value, Image("img/muon_inputs.jpg") from staticDir / "muon_inputs.jpg")
   }
 )
 
