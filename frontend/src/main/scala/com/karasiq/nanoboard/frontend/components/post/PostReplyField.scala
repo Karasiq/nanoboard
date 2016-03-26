@@ -11,6 +11,7 @@ import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{CancelledException, Notifications}
 import org.scalajs.dom
+import org.scalajs.dom.Element
 import rx._
 
 import scala.concurrent.ExecutionContext
@@ -20,6 +21,12 @@ import scalatags.JsDom.all._
 private[components] object PostReplyField {
   def apply(post: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): PostReplyField = {
     new PostReplyField(post)
+  }
+
+  def tabOverride: Modifier = new Modifier {
+    override def applyTo(t: Element): Unit = {
+      scalajs.js.Dynamic.global.tabOverride.set(t)
+    }
   }
 }
 
@@ -34,7 +41,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
 
   override def renderTag(md: Modifier*) = {
     val field = Form(
-      FormInput.textArea((), style.input, placeholder := locale.writeYourMessage, rows := 5, replyText.reactiveInput, "has-errors".classIf(lengthIsValid.map(!_)))
+      FormInput.textArea((), style.input, placeholder := locale.writeYourMessage, rows := 5, replyText.reactiveInput, "has-errors".classIf(lengthIsValid.map(!_)), PostReplyField.tabOverride)
     )
 
     val attachmentLink = Button(ButtonStyle.primary)("file-image-o".fontAwesome(FontAwesome.fixedWidth), locale.insertImage, onclick := Bootstrap.jsClick { _ ⇒

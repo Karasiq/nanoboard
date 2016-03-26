@@ -8,11 +8,41 @@ import com.karasiq.videojs.VideoSource
 import rx._
 
 import scala.concurrent.ExecutionContext
+import scala.scalajs.js
+import scala.scalajs.js.UndefOr
 import scalatags.JsDom.all._
 
 private[components] object PostRenderer {
   def apply()(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): PostRenderer = {
     new PostRenderer
+  }
+
+  def renderMarkdown(source: String): Frag = {
+    val renderer = js.Dynamic.newInstance(js.Dynamic.global.marked.Renderer)()
+    renderer.image = { (url: String, imageTitle: String, text: String) ⇒
+      import scalatags.Text.all._
+      a(href := url, title := text, target := "_blank", imageTitle).render
+    }
+    renderer.code = { (source: String, language: String) ⇒
+      import scalatags.Text.all.{source => _, _}
+      val result = js.Dynamic.global.hljs.highlight(language, source).value.asInstanceOf[UndefOr[String]]
+      code(`class` := s"hljs $language", result.fold[Modifier](source)(raw)).render
+    }
+    renderer.table = { (header: String, body: String) ⇒
+      import scalatags.Text.all.{body => _, header => _, _}
+      div(`class` := "table-responsive", table(`class` := "table", thead(raw(header)), tbody(raw(body)))).render
+    }
+
+    span(raw(js.Dynamic.global.marked(source, js.Dynamic.literal(
+      renderer = renderer,
+      gfm = true,
+      tables = true,
+      breaks = false,
+      pedantic = false,
+      sanitize = true,
+      smartLists = true,
+      smartypants = true
+    )).asInstanceOf[String]))
   }
 
   def asPlainText(parsed: PostDomValue): String = parsed match {
@@ -41,6 +71,9 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
 
     case PostDomValues(values) ⇒
       values.map(render)
+
+    case Markdown(value) ⇒
+      PostRenderer.renderMarkdown(value)
 
     case BBCode("b", value) ⇒
       span(fontWeight.bold, render(value))

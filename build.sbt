@@ -79,9 +79,6 @@ lazy val backendSettings = Seq(
     val bootstrap = github("twbs", "bootstrap", "v3.3.6") / "dist"
     val fontAwesome = github("FortAwesome", "Font-Awesome", "v4.5.0")
     val videoJs = github("videojs", "video.js", "v5.8.0") / "dist"
-    val videoJsYoutube = github("eXon", "videojs-youtube", "v2.0.8")
-    val notyJs = github("needim", "noty", "v2.3.8") / "js" / "noty" / "packaged"
-    val moment = github("moment", "moment", "2.12.0") / "min"
     val jsDeps = Seq(
       // jQuery
       Script from url("https://code.jquery.com/jquery-2.1.4.min.js"),
@@ -99,13 +96,19 @@ lazy val backendSettings = Seq(
       Static("video-js.swf") from videoJs / "video-js.swf",
 
       // Plugins
-      Script from videoJsYoutube / "dist" / "Youtube.min.js",
+      Script from github("eXon", "videojs-youtube", "v2.0.8") / "dist" / "Youtube.min.js",
 
       // Noty.js
-      Script from notyJs / "jquery.noty.packaged.min.js",
+      Script from github("needim", "noty", "v2.3.8") / "js" / "noty" / "packaged" / "jquery.noty.packaged.min.js",
 
       // Moment.js
-      Script from moment / "moment-with-locales.min.js"
+      Script from github("moment", "moment", "2.12.0") / "min" / "moment-with-locales.min.js",
+      
+      // Marked
+      Script from "org.webjars" % "marked" % "0.3.2" / "marked.js",
+
+      // Tab Override
+      Script from github("wjbryant", "taboverride", "4.0.3") / "build" / "output" / "taboverride.min.js"
     )
 
     val staticDir = (baseDirectory in frontend)(_ / "files").value
@@ -113,6 +116,8 @@ lazy val backendSettings = Seq(
       Html from NanoboardAssets.index,
       Style from NanoboardAssets.style,
       Script from staticDir / "img2base64.js",
+      Script from staticDir / "highlightjs" / "highlight.pack.js",
+      Style from staticDir / "highlightjs" / "styles" / "github.css",
       Image("favicon.ico") from staticDir / "favicon.ico",
       Image("img/muon_bg.jpg") from staticDir / "muon_bg.jpg",
       Image("img/muon_posts.jpg") from staticDir / "muon_posts.jpg",
@@ -123,7 +128,7 @@ lazy val backendSettings = Seq(
       (fontAwesome / "fonts" / "fontawesome-webfont").fonts() ++
       (videoJs / "font" / "VideoJS").fonts(dir = "font", extensions = Seq("eot", "svg", "ttf", "woff"))
 
-    Bundle("index", jsDeps, staticFiles, fonts, scalaJsApplication(frontend).value, Image("img/muon_inputs.jpg") from staticDir / "muon_inputs.jpg")
+    Bundle("index", jsDeps, staticFiles, fonts, scalaJsApplication(frontend).value)
   }
 )
 
