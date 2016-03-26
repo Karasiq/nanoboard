@@ -19,16 +19,17 @@ private[components] object NanoboardPost {
     PostRenderer().render(PostParser.parse(text))
   }
 
-  def apply(showParent: Boolean, showAnswers: Boolean, data: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): NanoboardPost = {
-    new NanoboardPost(showParent, showAnswers, data)
+  def apply(showParent: Boolean, showAnswers: Boolean, data: NanoboardMessageData, scrollable: Boolean = false)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): NanoboardPost = {
+    new NanoboardPost(showParent, showAnswers, data, scrollable)
   }
 }
 
-private[components] final class NanoboardPost(showParent: Boolean, showAnswers: Boolean, data: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
+private[components] final class NanoboardPost(showParent: Boolean, showAnswers: Boolean, data: NanoboardMessageData, scrollable: Boolean)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
   import controller.{locale, style}
 
   override def renderTag(md: Modifier*): RenderedTag = {
     div(
+      if (scrollable) id := s"post-${data.hash}" else (),
       style.post,
       div(
         style.postInner,

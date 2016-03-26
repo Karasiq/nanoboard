@@ -2,14 +2,13 @@ package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
+import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
-import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardController}
 import org.scalajs.dom
 import rx._
 import rx.async._
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.{span => _}
 import scala.language.postfixOps
 import scalatags.JsDom.all._
 
@@ -35,11 +34,11 @@ private[components] final class PostLink(hash: String)(implicit ctx: Ctx.Owner, 
 
     span(
       a(updateHover, href := s"#$hash", onclick := Bootstrap.jsClick { _ ⇒
-        controller.setContext(NanoboardContext.Thread(hash))
+        controller.showPost(hash)
       }, md),
       Rx[Frag] {
         if (hover() && post().nonEmpty) {
-          div(position.absolute, top := 60.px, left := 170.px, zIndex := 1, post())
+          div(position.absolute, top := 70.px, left := 170.px, zIndex := 1, post())
         } else {
           ""
         }

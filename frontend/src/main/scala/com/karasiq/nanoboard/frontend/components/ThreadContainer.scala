@@ -33,13 +33,13 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
     val rendered = context.now match {
       case NanoboardContext.Thread(_, _) ⇒
         val (opPost, answers) = thread.splitAt(1)
-        opPost.map(NanoboardPost(true, false, _)) ++ answers.map(NanoboardPost(false, true, _))
+        opPost.map(NanoboardPost(true, false, _, scrollable = true)) ++ answers.map(NanoboardPost(false, true, _, scrollable = true))
 
       case NanoboardContext.Recent(_) | NanoboardContext.Pending(_) ⇒
-        thread.map(NanoboardPost(true, true, _))
+        thread.map(NanoboardPost(true, true, _, scrollable = true))
 
       case NanoboardContext.Categories ⇒
-        thread.map(NanoboardPost(false, true, _))
+        thread.map(NanoboardPost(false, true, _, scrollable = true))
     }
     div(for (p ← rendered) yield GridSystem.mkRow(p))
   }
