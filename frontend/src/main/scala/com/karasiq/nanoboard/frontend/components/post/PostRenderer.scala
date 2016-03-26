@@ -26,14 +26,14 @@ private[components] object PostRenderer {
     renderer.code = { (source: String, language: String) ⇒
       import scalatags.Text.all.{source => _, _}
       val result = js.Dynamic.global.hljs.highlight(language, source).value.asInstanceOf[UndefOr[String]]
-      code(`class` := s"hljs $language", result.fold[Modifier](source)(raw)).render
+      span(whiteSpace.`pre-wrap`, code(`class` := s"hljs $language", result.fold[Modifier](source)(raw))).render
     }
     renderer.table = { (header: String, body: String) ⇒
       import scalatags.Text.all.{body => _, header => _, _}
       div(`class` := "table-responsive", table(`class` := "table", thead(raw(header)), tbody(raw(body)))).render
     }
 
-    span(raw(js.Dynamic.global.marked(source, js.Dynamic.literal(
+    span(whiteSpace.normal, raw(js.Dynamic.global.marked(source, js.Dynamic.literal(
       renderer = renderer,
       gfm = true,
       tables = true,
