@@ -106,7 +106,7 @@ lazy val backendSettings = Seq(
       Script from github("moment", "moment", "2.12.0") / "min" / "moment-with-locales.min.js",
       
       // Marked
-      Script from "org.webjars" % "marked" % "0.3.2" / "marked.js",
+      Script from "org.webjars.bower" % "marked" % "0.3.5" / "marked.min.js",
 
       // Tab Override
       Script from github("wjbryant", "taboverride", "4.0.3") / "build" / "output" / "taboverride.min.js",
@@ -147,6 +147,7 @@ lazy val frontendSettings = Seq(
     "com.github.karasiq" %%% "parboiled" % "2.1.1-SNAPSHOT",
     "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.4",
     "com.github.karasiq" %%% "scalajs-videojs" % "1.0.2",
+    "com.github.karasiq" %%% "scalajs-marked" % "1.0.1",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.4"
   )
 )

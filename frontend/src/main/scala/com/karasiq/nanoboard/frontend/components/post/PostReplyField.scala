@@ -10,8 +10,10 @@ import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{CancelledException, Notifications}
+import com.karasiq.taboverridejs.TabOverride
 import org.scalajs.dom
 import org.scalajs.dom.Element
+import org.scalajs.dom.html.TextArea
 import rx._
 
 import scala.concurrent.ExecutionContext
@@ -25,7 +27,7 @@ private[components] object PostReplyField {
 
   def tabOverride: Modifier = new Modifier {
     override def applyTo(t: Element): Unit = {
-      scalajs.js.Dynamic.global.tabOverride.set(t)
+      TabOverride.set(t.asInstanceOf[TextArea])
     }
   }
 }

@@ -1,6 +1,8 @@
 package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
+import com.karasiq.highlightjs.HighlightJS
+import com.karasiq.markedjs.{Marked, MarkedOptions, MarkedRenderer}
 import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.utils.PostDomValue._
 import com.karasiq.nanoboard.frontend.utils._
@@ -9,7 +11,6 @@ import rx._
 
 import scala.concurrent.ExecutionContext
 import scala.scalajs.js
-import scala.scalajs.js.UndefOr
 import scalatags.JsDom.all._
 
 private[components] object PostRenderer {
@@ -18,31 +19,34 @@ private[components] object PostRenderer {
   }
 
   def renderMarkdown(source: String): Frag = {
-    val renderer = js.Dynamic.newInstance(js.Dynamic.global.marked.Renderer)()
-    renderer.image = { (url: String, imageTitle: String, text: String) ⇒
-      import scalatags.Text.all._
-      a(href := url, title := text, target := "_blank", imageTitle).render
-    }
-    renderer.code = { (source: String, language: String) ⇒
-      import scalatags.Text.all.{source => _, _}
-      val result = js.Dynamic.global.hljs.highlight(language, source).value.asInstanceOf[UndefOr[String]]
-      span(whiteSpace.`pre-wrap`, code(`class` := s"hljs $language", result.fold[Modifier](source)(raw))).render
-    }
-    renderer.table = { (header: String, body: String) ⇒
-      import scalatags.Text.all.{body => _, header => _, _}
-      div(`class` := "table-responsive", table(`class` := "table", thead(raw(header)), tbody(raw(body)))).render
-    }
+    val renderer = MarkedRenderer(
+      image = { (url: String, imageTitle: String, text: String) ⇒
+        import scalatags.Text.all._
+        a(href := url, title := text, target := "_blank", imageTitle).render
+      },
+      code = { (source: String, language: String) ⇒
+        import scalatags.Text.all.{source => _, _}
+        val result = if (js.isUndefined(language)) HighlightJS.highlightAuto(source) else HighlightJS.highlight(language, source)
+        span(whiteSpace.`pre-wrap`, code(`class` := s"hljs ${result.language}", raw(result.value))).render
+      },
+      table = { (header: String, body: String) ⇒
+        import scalatags.Text.all.{body => _, header => _, _}
+        div(`class` := "table-responsive", table(`class` := "table", thead(raw(header)), tbody(raw(body)))).render
+      }
+    )
 
-    span(whiteSpace.normal, raw(js.Dynamic.global.marked(source, js.Dynamic.literal(
+    val options = MarkedOptions(
       renderer = renderer,
       gfm = true,
       tables = true,
-      breaks = false,
+      breaks = true,
       pedantic = false,
       sanitize = true,
       smartLists = true,
       smartypants = true
-    )).asInstanceOf[String]))
+    )
+
+    span(whiteSpace.normal, raw(Marked(source, options)))
   }
 
   def asPlainText(parsed: PostDomValue): String = parsed match {

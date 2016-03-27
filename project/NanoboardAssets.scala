@@ -42,5 +42,5 @@ object NanoboardAssets {
     "swift", "typescript", "css", "xml"
   )
 
-  def highlightJsStyle = "github"
+  def highlightJsStyle = "monokai-sublime"
 }

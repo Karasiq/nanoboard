@@ -2,6 +2,7 @@ package com.karasiq.nanoboard.frontend
 
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.nanoboard.frontend.locales.BoardLocale
+import com.karasiq.taboverridejs.TabOverride
 import org.scalajs.jquery.jQuery
 import org.widok.moment.Moment
 import rx._
@@ -19,7 +20,7 @@ object NanoboardFrontend extends JSApp {
   @JSExport
   override def main(): Unit = {
     jQuery(() ⇒ {
-      scalajs.js.Dynamic.global.tabOverride.tabSize(2)
+      TabOverride.tabSize(2)
       Moment.locale(BoardLocale.browserLanguage)
       NanoboardController().initialize()
     })

@@ -10,6 +10,6 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.11.2")
 
 libraryDependencies ++= Seq(
   "com.lihaoyi" %% "scalatags" % "0.5.4",
-  "org.webjars" % "marked" % "0.3.2",
+  "org.webjars.bower" % "marked" % "0.3.5",
   "org.webjars" % "highlightjs" % "9.2.0"
 )
