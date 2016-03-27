@@ -79,6 +79,7 @@ lazy val backendSettings = Seq(
     val bootstrap = github("twbs", "bootstrap", "v3.3.6") / "dist"
     val fontAwesome = github("FortAwesome", "Font-Awesome", "v4.5.0")
     val videoJs = github("videojs", "video.js", "v5.8.0") / "dist"
+    val highlightJs = "org.webjars" % "highlightjs" % "9.2.0"
     val jsDeps = Seq(
       // jQuery
       Script from url("https://code.jquery.com/jquery-2.1.4.min.js"),
@@ -108,16 +109,21 @@ lazy val backendSettings = Seq(
       Script from "org.webjars" % "marked" % "0.3.2" / "marked.js",
 
       // Tab Override
-      Script from github("wjbryant", "taboverride", "4.0.3") / "build" / "output" / "taboverride.min.js"
+      Script from github("wjbryant", "taboverride", "4.0.3") / "build" / "output" / "taboverride.min.js",
+
+      // Highlight.js
+      Script from highlightJs / "highlight.min.js",
+      Style from highlightJs / s"styles/${NanoboardAssets.highlightJsStyle}.css"
     )
+
+    val highlightJsLanguages = for (lang ← NanoboardAssets.highlightJsLanguages)
+      yield Script from highlightJs / s"languages/$lang.min.js"
 
     val staticDir = (baseDirectory in frontend)(_ / "files").value
     val staticFiles = Seq(
       Html from NanoboardAssets.index,
       Style from NanoboardAssets.style,
       Script from staticDir / "img2base64.js",
-      Script from staticDir / "highlightjs" / "highlight.pack.js",
-      Style from staticDir / "highlightjs" / "styles" / "github.css",
       Image("favicon.ico") from staticDir / "favicon.ico",
       Image("img/muon_bg.jpg") from staticDir / "muon_bg.jpg",
       Image("img/muon_posts.jpg") from staticDir / "muon_posts.jpg",
@@ -128,7 +134,7 @@ lazy val backendSettings = Seq(
       (fontAwesome / "fonts" / "fontawesome-webfont").fonts() ++
       (videoJs / "font" / "VideoJS").fonts(dir = "font", extensions = Seq("eot", "svg", "ttf", "woff"))
 
-    Bundle("index", jsDeps, staticFiles, fonts, scalaJsApplication(frontend).value)
+    Bundle("index", jsDeps, highlightJsLanguages, staticFiles, fonts, scalaJsApplication(frontend).value)
   }
 )
 

@@ -1,7 +1,7 @@
 import scalatags.Text.all._
 
 object NanoboardAssets {
-  def index: String = {
+  def index = {
     "<!DOCTYPE html>" + html(
       head(
         base(href := "/"),
@@ -14,7 +14,7 @@ object NanoboardAssets {
     )
   }
 
-  def style: String = {
+  def style = {
     """
       |td.buttons {
       |    text-align: center;
@@ -34,4 +34,13 @@ object NanoboardAssets {
       |}
     """.stripMargin
   }
+
+  def highlightJsLanguages = Vector(
+    "bash", "clojure", "coffeescript", "cpp", "cs", "d", "delphi", "erlang", "fsharp",
+    "go", "groovy", "haskell", "java", "javascript", "json", "lua", "lisp", "markdown",
+    "objectivec", "perl", "php", "python", "ruby", "rust", "scala", "scheme", "sql",
+    "swift", "typescript", "css", "xml"
+  )
+
+  def highlightJsStyle = "github"
 }
