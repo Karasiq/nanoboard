@@ -46,6 +46,7 @@ trait BoardLocale {
   def clearDeletedSuccess(count: Int): String
   def containers: String
   def container(c: NanoboardContainer): String
+  def file: String
   def clearDeletedError: String
   def postingError: String
   def updateError: String

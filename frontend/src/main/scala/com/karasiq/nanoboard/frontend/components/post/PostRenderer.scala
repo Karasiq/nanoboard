@@ -18,6 +18,13 @@ private[components] object PostRenderer {
     new PostRenderer
   }
 
+  // Returns HTML string
+  def formatCode(source: String, language: Option[String]): String = {
+    import scalatags.Text.all.{source => _, _}
+    val result = language.fold(HighlightJS.highlightAuto(source))(HighlightJS.highlight(_, source))
+    span(whiteSpace.`pre-wrap`, code(`class` := s"hljs ${result.language}", raw(result.value))).render
+  }
+
   def renderMarkdown(source: String): Frag = {
     val renderer = MarkedRenderer(
       image = { (url: String, imageTitle: String, text: String) ⇒
@@ -25,9 +32,7 @@ private[components] object PostRenderer {
         a(href := url, title := text, target := "_blank", imageTitle).render
       },
       code = { (source: String, language: String) ⇒
-        import scalatags.Text.all.{source => _, _}
-        val result = if (js.isUndefined(language)) HighlightJS.highlightAuto(source) else HighlightJS.highlight(language, source)
-        span(whiteSpace.`pre-wrap`, code(`class` := s"hljs ${result.language}", raw(result.value))).render
+        formatCode(source, if (js.isUndefined(language)) None else Some(language))
       },
       table = { (header: String, body: String) ⇒
         import scalatags.Text.all.{body => _, header => _, _}
@@ -49,18 +54,35 @@ private[components] object PostRenderer {
     span(whiteSpace.normal, raw(Marked(source, options)))
   }
 
-  def asPlainText(parsed: PostDomValue): String = parsed match {
+  def asText(parsed: PostDomValue): String = parsed match {
+    case PlainText(value) ⇒
+      value
+
+    case Markdown(value) ⇒
+      s"[md]$value[/md]"
+
+    case PostDomValues(values) ⇒
+      values.map(asText).mkString
+
+    case BBCode(name, parameters, value) ⇒
+      s"[$name${if (parameters.isEmpty) "" else parameters.map(p ⇒ p._1 + "=\"" + p._2 + "\"").mkString(" ", " ", "")}]" + asText(value) + s"[/$name]"
+
+    case ShortBBCode(name, value) ⇒
+      s"[$name=$value]"
+  }
+
+  def strip(parsed: PostDomValue): String = parsed match {
     case PlainText(value) ⇒
       value
 
     case PostDomValues(values) ⇒
-      values.map(asPlainText).mkString
+      values.map(strip).mkString
 
-    case BBCode("g" | "sp" | "spoiler", _) ⇒
+    case BBCode("g" | "sp" | "spoiler", _, _) ⇒
       ""
 
-    case BBCode(_, value) ⇒
-      asPlainText(value)
+    case BBCode(_, _, value) ⇒
+      strip(value)
 
     case _ ⇒
       ""
@@ -79,22 +101,22 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
     case Markdown(value) ⇒
       PostRenderer.renderMarkdown(value)
 
-    case BBCode("b", value) ⇒
+    case BBCode("b", _, value) ⇒
       span(fontWeight.bold, render(value))
 
-    case BBCode("i", value) ⇒
+    case BBCode("i", _, value) ⇒
       span(fontStyle.italic, render(value))
 
-    case BBCode("u", value) ⇒
+    case BBCode("u", _, value) ⇒
       span(textDecoration.underline, render(value))
 
-    case BBCode("s", value) ⇒
+    case BBCode("s", _, value) ⇒
       span(textDecoration.`line-through`, render(value))
 
-    case BBCode("g", value) ⇒
+    case BBCode("g", _, value) ⇒
       span(controller.style.greenText, render(value))
 
-    case BBCode("sp" | "spoiler", value) ⇒
+    case BBCode("sp" | "spoiler", _, value) ⇒
       span(controller.style.spoiler, render(value))
 
     case ShortBBCode("img", base64) ⇒
@@ -109,11 +131,14 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
     case ShortBBCode("fm", music) ⇒
       s"<FM: $music>"
 
-    // Unknown
-    case BBCode(name, value) ⇒
-      span(s"[$name]", render(value), s"[/$name]")
+    case BBCode("code", parameters, source) ⇒
+      span(raw(PostRenderer.formatCode(PostRenderer.asText(source), parameters.get("lang"))))
 
-    case ShortBBCode(name, value) ⇒
-      s"[$name=$value]"
+    case BBCode("file", parameters, value) ⇒
+      PostInlineFile(parameters.getOrElse("name", controller.locale.file), PostRenderer.asText(value), parameters.getOrElse("type", ""))
+
+    // Unknown
+    case value ⇒
+      PostRenderer.asText(value)
   }
 }

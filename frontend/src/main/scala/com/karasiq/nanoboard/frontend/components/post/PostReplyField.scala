@@ -9,7 +9,7 @@ import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
-import com.karasiq.nanoboard.frontend.utils.{CancelledException, Notifications}
+import com.karasiq.nanoboard.frontend.utils.{Blobs, CancelledException, Notifications}
 import com.karasiq.taboverridejs.TabOverride
 import org.scalajs.dom
 import org.scalajs.dom.Element
@@ -46,7 +46,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
       FormInput.textArea((), style.input, placeholder := locale.writeYourMessage, rows := 5, replyText.reactiveInput, "has-errors".classIf(lengthIsValid.map(!_)), PostReplyField.tabOverride)
     )
 
-    val attachmentLink = Button(ButtonStyle.primary)("file-image-o".fontAwesome(FontAwesome.fixedWidth), locale.insertImage, onclick := Bootstrap.jsClick { _ ⇒
+    val imageLink = Button(ButtonStyle.primary)("file-image-o".fontAwesome(FontAwesome.fixedWidth), locale.insertImage, onclick := Bootstrap.jsClick { _ ⇒
       AttachmentGenerationDialog().generate().onComplete {
         case Success(base64) ⇒
           replyText() = replyText.now + s"[img=$base64]"
@@ -57,6 +57,16 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
         case Failure(exc) ⇒
           Notifications.error(exc)(locale.attachmentGenerationError, Layout.topRight)
       }
+    })
+
+    val fileLink = Button(ButtonStyle.info)("file-archive-o".fontAwesome(FontAwesome.fixedWidth), locale.file, onclick := Bootstrap.jsClick { _ ⇒
+      val field = input(`type` := "file", onchange := Bootstrap.jsInput { field ⇒
+        val file = field.files.head
+        Blobs.asBase64(file).foreach { url ⇒
+          replyText() = replyText.now + "\n" + s"[file name=${'"' + file.name + '"'} type=${'"' + file.`type` + '"'}]${url.split(",", 2).last}[/file]"
+        }
+      }).render
+      field.click()
     })
 
     val submitButton = Button(ButtonStyle.success)("disabled".classIf(lengthIsValid.map(!_)), "mail-forward".fontAwesome(FontAwesome.fixedWidth), locale.submit, onclick := Bootstrap.jsClick { _ ⇒
@@ -85,7 +95,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
 
       // Input field
       div(field,
-        ButtonGroup(ButtonGroupSize.small, attachmentLink, submitButton),
+        ButtonGroup(ButtonGroupSize.small, imageLink, fileLink, submitButton),
         postLength,
         expanded.reactiveShow
       ),

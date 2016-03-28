@@ -47,6 +47,7 @@ object English extends BoardLocale {
   def clearDeletedSuccess(count: Int) = s"$count deleted posts evicted"
   def containers = "Containers"
   def container(c: NanoboardContainer) = s"№${c.id}, ${c.posts} posts"
+  def file = "File"
   def webSocketError = "WebSocket error"
   def clearDeletedError = "Clearing deleted posts failure"
   def containerGenerationError = "Container generation failure"
