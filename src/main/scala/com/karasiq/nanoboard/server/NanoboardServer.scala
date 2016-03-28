@@ -54,7 +54,7 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       encodeResponse(pathEndOrSingleSlash(getFromResource("webapp/index.html")) ~ getFromResourceDirectory("webapp"))
     } ~
     post {
-      (path("post") & entity(as[NanoboardReply])) { case NanoboardReply(parent, message) ⇒
+      (path("post") & entity(as[NanoboardReply](defaultUnmarshaller))) { case NanoboardReply(parent, message) ⇒
         if (message.length <= maxPostSize) {
           complete(StatusCodes.OK, dispatcher.reply(parent, message))
         } else {
@@ -96,11 +96,11 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       }
     } ~
     put {
-      (path("places") & entity(as[Seq[String]]) & extractLog) { (places, log) ⇒
+      (path("places") & entity(as[Seq[String]](defaultUnmarshaller)) & extractLog) { (places, log) ⇒
         log.info("Places updated: {}", places)
         complete(StatusCodes.OK, dispatcher.updatePlaces(places))
       } ~
-      (path("categories") & entity(as[Seq[NanoboardCategory]]) & extractLog) { (categories, log) ⇒
+      (path("categories") & entity(as[Seq[NanoboardCategory]](defaultUnmarshaller)) & extractLog) { (categories, log) ⇒
         log.info("Categories updated: {}", categories)
         complete(StatusCodes.OK, dispatcher.updateCategories(categories))
       } ~

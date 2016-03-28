@@ -10,7 +10,7 @@ private[server] trait JsonMarshaller {
     Marshaller.withFixedContentType(ContentTypes.`application/json`)((value: T) ⇒ HttpEntity(ContentTypes.`application/json`, write(value)))
   }
 
-  implicit def defaultUnmarshaller[A, B](implicit ev: Reader[B], m: Unmarshaller[A, String]): Unmarshaller[A, B] = {
+  def defaultUnmarshaller[A, B](implicit ev: Reader[B], m: Unmarshaller[A, String]): Unmarshaller[A, B] = {
     m.map(read[B])
   }
 }

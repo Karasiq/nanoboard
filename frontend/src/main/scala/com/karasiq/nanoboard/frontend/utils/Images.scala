@@ -27,4 +27,8 @@ object Images {
     })
     promise.future
   }
+
+  def isWebpSupported: Boolean = {
+    js.Dynamic.global.Modernizr.webp.toString == "true" // Boolean bug
+  }
 }

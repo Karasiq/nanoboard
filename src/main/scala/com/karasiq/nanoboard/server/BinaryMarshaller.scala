@@ -12,7 +12,7 @@ private[server] trait BinaryMarshaller {
     Marshaller.withFixedContentType(contentType)((value: T) ⇒ HttpEntity(contentType, ByteString(Pickle.intoBytes(value))))
   }
 
-  implicit def defaultUnmarshaller[A, B](implicit ev: Pickler[B], m: Unmarshaller[A, ByteString]): Unmarshaller[A, B] = {
+  def defaultUnmarshaller[A, B](implicit ev: Pickler[B], m: Unmarshaller[A, ByteString]): Unmarshaller[A, B] = {
     m.map(bs ⇒ Unpickle[B].fromBytes(bs.toByteBuffer))
   }
 }

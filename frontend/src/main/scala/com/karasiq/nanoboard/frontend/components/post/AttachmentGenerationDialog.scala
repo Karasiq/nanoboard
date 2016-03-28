@@ -25,14 +25,22 @@ private[components] object AttachmentGenerationDialog {
 
 private[components] final class AttachmentGenerationDialog(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) {
   import controller.locale
-  val formatSelect = FormInput.select(locale.imageFormat, "jpeg", "webp", "png")
-  def format = formatSelect.selected.map(_.head)
   val scale = Var("50")
   val size = Var("500")
   val quality = Var("50")
   val sharpness = Var("50")
   val file = Var[Option[File]](None)
   val useServer = Var(false)
+
+  val formatSelect = FormInput.select(locale.imageFormat, Rx {
+    if (!useServer() && Images.isWebpSupported) {
+      Seq("jpeg", "webp", "png")
+    } else {
+      Seq("jpeg", "png")
+    }
+  })
+
+  def format = formatSelect.selected.map(_.head)
 
   val ready = Rx {
     def isValidPct(value: Rx[String]): Boolean = Try(value().toInt).filter((1 to 100).contains).isSuccess
