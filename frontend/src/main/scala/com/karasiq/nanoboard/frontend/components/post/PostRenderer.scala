@@ -144,6 +144,9 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
     case BBCode("file", parameters, value) ⇒
       PostInlineFile(parameters.getOrElse("name", controller.locale.file), PostRenderer.asText(value), parameters.getOrElse("type", ""))
 
+    case BBCode("link", parameters, value) ⇒
+      a(target := "_blank", href := parameters.getOrElse("url", PostRenderer.asText(value)), render(value))
+
     // Unknown
     case value ⇒
       PostRenderer.asText(value)
