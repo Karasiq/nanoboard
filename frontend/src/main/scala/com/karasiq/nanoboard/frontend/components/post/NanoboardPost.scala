@@ -8,7 +8,7 @@ import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Notifications, PostParser}
 import com.karasiq.nanoboard.frontend.{Icons, NanoboardContext, NanoboardController}
 import org.scalajs.dom
-import rx.Ctx
+import rx._
 
 import scala.concurrent.ExecutionContext
 import scalatags.JsDom.all._
@@ -26,6 +26,8 @@ private[components] object NanoboardPost {
 private[components] final class NanoboardPost(showParent: Boolean, showAnswers: Boolean, data: NanoboardMessageData, scrollable: Boolean)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
   import controller.{locale, style}
 
+  val showSource = Var(false)
+
   override def renderTag(md: Modifier*): RenderedTag = {
     div(
       if (scrollable) id := s"post-${data.hash}" else (),
@@ -37,7 +39,7 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
           if (showParent && data.parent.isDefined) PostLink(data.parent.get).renderTag(Icons.parent) else (),
           sup(data.containerId.fold(data.hash)(cid ⇒ s"${data.hash}/$cid"))
         ),
-        span(NanoboardPost.render(data.text))
+        Rx[Frag](if (showSource()) data.text else span(NanoboardPost.render(data.text)))
       ),
       div(
         if (showAnswers && data.answers > 0) a(style.postLink, href := s"#${data.hash}", Icons.answers, s"${data.answers}", onclick := Bootstrap.jsClick {_ ⇒
@@ -57,6 +59,7 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
             }
           })
         },
+        a(style.postLink, href := "#", Icons.source, locale.source, onclick := Bootstrap.jsClick(_ ⇒ showSource() = !showSource.now)),
         PostReplyField(data)
       ),
       md

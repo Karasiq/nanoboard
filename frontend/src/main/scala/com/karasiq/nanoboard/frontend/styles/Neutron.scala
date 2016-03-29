@@ -33,6 +33,7 @@ trait Neutron extends BoardStyle {
     marginBottom := 0.5.em,
     fontSize := 1.em,
     whiteSpace.`pre-wrap`,
+    wordWrap.`break-word`,
     hiddenScroll
   )
 

@@ -32,6 +32,7 @@ trait Gurochan extends BoardStyle {
     fontSize := 0.9.em,
     fontFamily := "Trebuchet MS, Verdana, sans-serif",
     whiteSpace.`pre-wrap`,
+    wordWrap.`break-word`,
     hiddenScroll
   )
 

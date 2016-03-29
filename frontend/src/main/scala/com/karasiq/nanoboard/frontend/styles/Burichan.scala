@@ -32,6 +32,7 @@ trait Burichan extends BoardStyle {
     fontSize := 0.9.em,
     fontFamily := "Verdana,sans-serif",
     whiteSpace.`pre-wrap`,
+    wordWrap.`break-word`,
     hiddenScroll
   )
 

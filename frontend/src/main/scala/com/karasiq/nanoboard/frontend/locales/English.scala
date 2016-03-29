@@ -48,6 +48,7 @@ object English extends BoardLocale {
   def containers = "Containers"
   def container(c: NanoboardContainer) = s"№${c.id}, ${c.posts} posts"
   def file = "File"
+  def source = "Source"
   def webSocketError = "WebSocket error"
   def clearDeletedError = "Clearing deleted posts failure"
   def containerGenerationError = "Container generation failure"

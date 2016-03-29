@@ -48,7 +48,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
     val imageLink = Button(ButtonStyle.primary)(Icons.image, locale.insertImage, onclick := Bootstrap.jsClick { _ ⇒
       AttachmentGenerationDialog().generate().onComplete {
         case Success(base64) ⇒
-          replyText() = replyText.now + s"[img=$base64]"
+          replyText() = s"${replyText.now}[img=$base64]"
 
         case Failure(CancelledException) ⇒
           // Pass
@@ -62,7 +62,10 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
       val field = input(`type` := "file", onchange := Bootstrap.jsInput { field ⇒
         val file = field.files.head
         Blobs.asBase64(file).foreach { url ⇒
-          replyText() = replyText.now + "\n" + s"[file name=${'"' + file.name + '"'} type=${'"' + file.`type` + '"'}]${url.split(",", 2).last}[/file]"
+          if (file.`type` == "image/svg+xml")
+            replyText() = s"${replyText.now}[img name=${'"' + file.name + '"'} type=${'"' + "svg+xml" + '"'}]${url.split(",", 2).last}[/img]"
+          else
+            replyText() = s"${replyText.now}${if (replyText.now.nonEmpty) "\n" else ""}[file name=${'"' + file.name + '"'} type=${'"' + file.`type` + '"'}]${url.split(",", 2).last}[/file]"
         }
       }).render
       field.click()

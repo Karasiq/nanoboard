@@ -39,6 +39,7 @@ object Russian extends BoardLocale {
   def control = "Управление"
   def offset = "Начиная с"
   def count = "Количество"
+  def source = "Текст"
   def batchDelete = "Массовое удаление"
   def batchDeleteConfirmation(count: Int) = s"Вы уверены, что хотите навсегда удалить $count сообщений?"
   def batchDeleteSuccess(count: Int) = s"$count сообщений успешно удалено"

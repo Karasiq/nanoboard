@@ -30,4 +30,5 @@ object Icons {
   def file = fa("file-archive-o")
   def submit = fa("mail-forward")
   def reply = fa("reply")
+  def source = fa("file-text-o")
 }
