@@ -1,8 +1,8 @@
 package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
+import com.karasiq.nanoboard.frontend.Icons
 import com.karasiq.videojs.{VideoJSBuilder, VideoSource}
 import org.scalajs.dom
 import rx._
@@ -43,7 +43,7 @@ private[components] final class PostExternalVideo(url: String, sources: Seq[Vide
 
   override def renderTag(md: Modifier*) = {
     span(
-      a(href := url, fontWeight.bold, "play-circle".fontAwesome(FontAwesome.fixedWidth), url, onclick := Bootstrap.jsClick(_ ⇒ expanded() = !expanded.now)),
+      a(href := url, fontWeight.bold, Icons.video, url, onclick := Bootstrap.jsClick(_ ⇒ expanded() = !expanded.now)),
       videoPlayer,
       md
     )

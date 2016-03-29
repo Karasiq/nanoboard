@@ -1,8 +1,7 @@
 package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.icons.FontAwesome
-import com.karasiq.nanoboard.frontend.NanoboardController
+import com.karasiq.nanoboard.frontend.{Icons, NanoboardController}
 import com.karasiq.videojs.VideoSource
 import org.scalajs.dom.Element
 import rx._
@@ -60,7 +59,7 @@ object Linkifier {
   def postLinks(text: String)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): Seq[LinkifierNode] = {
     processText(text, postLinkRegex, {
       case postLinkRegex(hash) ⇒
-        PostLink(hash).renderTag("link".fontAwesome(FontAwesome.fixedWidth), hash)
+        PostLink(hash).renderTag(Icons.link, hash)
     })
   }
 

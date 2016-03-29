@@ -3,13 +3,12 @@ package com.karasiq.nanoboard.frontend.components
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.buttons._
 import com.karasiq.bootstrap.grid.GridSystem
-import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.api.NanoboardContainer
-import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.utils.Notifications
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
+import com.karasiq.nanoboard.frontend.{Icons, NanoboardController}
 import org.scalajs.dom
 import org.widok.moment.Moment
 import rx._
@@ -46,7 +45,7 @@ private[components] final class ContainersPanel(perPage: Int)(implicit ec: Execu
         GridSystem.mkRow(
           ButtonGroup(ButtonGroupSize.extraSmall,
             Button(ButtonStyle.danger)(
-              "angle-double-left".fontAwesome(FontAwesome.fixedWidth),
+              Icons.previous,
               locale.fromTo(math.max(0, currentOffset.now - perPage), currentOffset.now),
               onclick := Bootstrap.jsClick { _ ⇒
                 currentOffset() = math.max(0, currentOffset.now - perPage)
@@ -54,14 +53,14 @@ private[components] final class ContainersPanel(perPage: Int)(implicit ec: Execu
             ),
             Button(ButtonStyle.success)(
               locale.fromTo(currentOffset.now + containers.now.length, currentOffset.now + containers.now.length + perPage),
-              "angle-double-right".fontAwesome(FontAwesome.fixedWidth),
+              Icons.next,
               onclick := Bootstrap.jsClick { _ ⇒
                 currentOffset() = currentOffset.now + containers.now.length
               }
             )
           )
         ),
-        for (c ← cs) yield GridSystem.mkRow(isEmpty(c), a(href := "#", "ban".fontAwesome(FontAwesome.fixedWidth), onclick := Bootstrap.jsClick { _ ⇒
+        for (c ← cs) yield GridSystem.mkRow(isEmpty(c), a(href := "#", Icons.removeContainer, onclick := Bootstrap.jsClick { _ ⇒
           if (!loading) {
             Notifications.confirmation(locale.batchDeleteConfirmation(c.posts), Layout.topLeft) {
               loading = true

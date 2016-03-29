@@ -4,7 +4,6 @@ import com.karasiq.bootstrap.Bootstrap
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.form.FormInput
 import com.karasiq.bootstrap.grid.GridSystem
-import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.navbar.{NavigationBar, NavigationBarStyle, NavigationTab}
 import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.frontend.api.streaming.NanoboardMessageStream
@@ -56,12 +55,12 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
       setContext(NanoboardContext.Categories)
     })
     .withTabs(
-      NavigationTab(locale.nanoboard, "thread", "server".fontAwesome(FontAwesome.fixedWidth), GridSystem.containerFluid(thread)),
-      NavigationTab(locale.settings, "server-settings", "cogs".fontAwesome(FontAwesome.fixedWidth), GridSystem.container(
+      NavigationTab(locale.nanoboard, "thread", Icons.thread, GridSystem.containerFluid(thread)),
+      NavigationTab(locale.settings, "server-settings", Icons.settings, GridSystem.container(
         GridSystem.mkRow(styleField.renderTag(style.input)),
         GridSystem.mkRow(settingsPanel)
       )),
-      NavigationTab(locale.containerGeneration, "png-gen", "camera-retro".fontAwesome(FontAwesome.fixedWidth), GridSystem.container(GridSystem.mkRow(pngGenerationPanel)))
+      NavigationTab(locale.containerGeneration, "png-gen", Icons.container, GridSystem.container(GridSystem.mkRow(pngGenerationPanel)))
     )
     .withStyles(NavigationBarStyle.staticTop, NavigationBarStyle.inverse)
     .withContentContainer(md ⇒ div(md))

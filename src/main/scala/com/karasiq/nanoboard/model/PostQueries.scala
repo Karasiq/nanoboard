@@ -22,7 +22,7 @@ trait PostQueries { self: Tables with ConfigQueries with ContainerQueries ⇒
     }
 
     def insertMessage(container: Long, m: NanoboardMessage) = posts.forceInsertQuery {
-      val deleted = (for (p <- deletedPosts if p.hash === m.hash) yield ()).exists
+      val deleted = (for (p <- deletedPosts if p.hash inSet Seq(m.hash, m.parent)) yield ()).exists
       val exists = (for (p <- posts if p.hash === m.hash) yield ()).exists
       val insert = (m.hash, m.parent, m.text, Instant.now().toEpochMilli, container) <> (DBPost.tupled, DBPost.unapply)
       for (message <- Query(insert) if !deleted && !exists) yield message

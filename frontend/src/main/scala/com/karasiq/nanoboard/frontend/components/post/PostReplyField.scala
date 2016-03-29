@@ -3,13 +3,12 @@ package com.karasiq.nanoboard.frontend.components.post
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.buttons._
 import com.karasiq.bootstrap.form.{Form, FormInput}
-import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.api.NanoboardMessageData
-import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Blobs, CancelledException, Notifications}
+import com.karasiq.nanoboard.frontend.{Icons, NanoboardController}
 import com.karasiq.taboverridejs.TabOverride
 import org.scalajs.dom
 import org.scalajs.dom.Element
@@ -46,7 +45,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
       FormInput.textArea((), style.input, placeholder := locale.writeYourMessage, rows := 5, replyText.reactiveInput, "has-errors".classIf(lengthIsValid.map(!_)), PostReplyField.tabOverride)
     )
 
-    val imageLink = Button(ButtonStyle.primary)("file-image-o".fontAwesome(FontAwesome.fixedWidth), locale.insertImage, onclick := Bootstrap.jsClick { _ ⇒
+    val imageLink = Button(ButtonStyle.primary)(Icons.image, locale.insertImage, onclick := Bootstrap.jsClick { _ ⇒
       AttachmentGenerationDialog().generate().onComplete {
         case Success(base64) ⇒
           replyText() = replyText.now + s"[img=$base64]"
@@ -59,7 +58,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
       }
     })
 
-    val fileLink = Button(ButtonStyle.info)("file-archive-o".fontAwesome(FontAwesome.fixedWidth), locale.file, onclick := Bootstrap.jsClick { _ ⇒
+    val fileLink = Button(ButtonStyle.info)(Icons.file, locale.file, onclick := Bootstrap.jsClick { _ ⇒
       val field = input(`type` := "file", onchange := Bootstrap.jsInput { field ⇒
         val file = field.files.head
         Blobs.asBase64(file).foreach { url ⇒
@@ -69,7 +68,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
       field.click()
     })
 
-    val submitButton = Button(ButtonStyle.success)("disabled".classIf(lengthIsValid.map(!_)), "mail-forward".fontAwesome(FontAwesome.fixedWidth), locale.submit, onclick := Bootstrap.jsClick { _ ⇒
+    val submitButton = Button(ButtonStyle.success)("disabled".classIf(lengthIsValid.map(!_)), Icons.submit, locale.submit, onclick := Bootstrap.jsClick { _ ⇒
       if (lengthIsValid.now) {
         NanoboardApi.addReply(post.hash, replyText.now).onComplete {
           case Success(newPost) ⇒
@@ -89,7 +88,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
 
     span(
       // Reply link
-      a(style.postLink, href := "#", "reply".fontAwesome(FontAwesome.fixedWidth), locale.reply, onclick := Bootstrap.jsClick { _ ⇒
+      a(style.postLink, href := "#", Icons.reply, locale.reply, onclick := Bootstrap.jsClick { _ ⇒
         expanded() = !expanded.now
       }),
 

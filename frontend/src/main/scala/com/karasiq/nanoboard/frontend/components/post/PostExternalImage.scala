@@ -1,8 +1,8 @@
 package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
+import com.karasiq.nanoboard.frontend.Icons
 import org.scalajs.dom
 import rx._
 
@@ -37,7 +37,7 @@ private[components] final class PostExternalImage(url: String)(implicit ctx: Ctx
 
   override def renderTag(md: Modifier*) = {
     span(
-      a(href := url, fontWeight.bold, "picture-o".fontAwesome(FontAwesome.fixedWidth), url, onclick := Bootstrap.jsClick(_ ⇒ opened() = !opened.now)),
+      a(href := url, fontWeight.bold, Icons.image, url, onclick := Bootstrap.jsClick(_ ⇒ opened() = !opened.now)),
       image,
       md
     )

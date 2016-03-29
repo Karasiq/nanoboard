@@ -4,14 +4,13 @@ import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.buttons.{Button, ButtonStyle}
 import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.grid.GridSystem
-import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.navbar.{Navigation, NavigationTab}
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.api.NanoboardCategory
-import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.utils.Notifications
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
+import com.karasiq.nanoboard.frontend.{Icons, NanoboardController}
 import org.scalajs.dom
 import rx._
 
@@ -66,7 +65,7 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
       Form(
         FormInput.number(locale.offset, style.input, min := 0, offset.reactiveInput),
         FormInput.number(locale.count, style.input, min := 0, count.reactiveInput),
-        Button(ButtonStyle.danger, block = true)("eraser".fontAwesome(FontAwesome.fixedWidth), locale.batchDelete, "disabled".classIf(disabled), onclick := Bootstrap.jsClick { _ ⇒
+        Button(ButtonStyle.danger, block = true)(Icons.batchDelete, locale.batchDelete, "disabled".classIf(disabled), onclick := Bootstrap.jsClick { _ ⇒
           if (!disabled.now) {
             Notifications.confirmation(locale.batchDeleteConfirmation(count.now.toInt), Layout.topLeft) {
               loading() = true
@@ -90,7 +89,7 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
 
     val clearDeleted = {
       val loading = Var(false)
-      Button(ButtonStyle.warning, block = true)("eye-slash".fontAwesome(FontAwesome.fixedWidth), locale.clearDeleted, "disabled".classIf(loading), onclick := Bootstrap.jsClick { _ ⇒
+      Button(ButtonStyle.warning, block = true)(Icons.clearDeleted, locale.clearDeleted, "disabled".classIf(loading), onclick := Bootstrap.jsClick { _ ⇒
         if (!loading.now) {
           Notifications.confirmation(locale.clearDeletedConfirmation, Layout.topLeft) {
             loading() = true
@@ -109,7 +108,7 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
     }
 
     val navigation = Navigation.pills(
-      NavigationTab(locale.preferences, "server", "wrench".fontAwesome(FontAwesome.fixedWidth), div(
+      NavigationTab(locale.preferences, "server", Icons.preferences, div(
         GridSystem.mkRow(Form(
           FormInput.textArea(locale.places, style.input, rows := 15, placesText.reactiveInput)("has-error".classIf(places.map(_.isEmpty))),
           FormInput.textArea(locale.categories, style.input, rows := 15, categoriesText.reactiveInput)("has-error".classIf(categories.map(_.isEmpty)))
@@ -129,13 +128,13 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
           }
         }))
       )),
-      NavigationTab(locale.control, "control", "warning".fontAwesome(FontAwesome.fixedWidth), div(
+      NavigationTab(locale.control, "control", Icons.control, div(
         GridSystem.mkRow(h3(locale.batchDelete)),
         GridSystem.mkRow(batchDelete),
         GridSystem.mkRow(h3(locale.clearDeleted)),
         GridSystem.mkRow(clearDeleted)
       )),
-      NavigationTab(locale.containers, "containers", "archive".fontAwesome(FontAwesome.fixedWidth), div(
+      NavigationTab(locale.containers, "containers", Icons.containers, div(
         ContainersPanel(30)
       ))
     )

@@ -1,10 +1,9 @@
 package com.karasiq.nanoboard.frontend.components.post
 
 import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
-import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.utils.Blobs
+import com.karasiq.nanoboard.frontend.{Icons, NanoboardController}
 import org.scalajs.dom
 import rx._
 
@@ -20,7 +19,7 @@ private[components] final class PostInlineFile(val fileName: String, val base64:
   val file = Blobs.asBlob(base64, fileType)
 
   override def renderTag(md: Modifier*): RenderedTag = {
-    a(fontWeight.bold, href := "#", "file-archive-o".fontAwesome(FontAwesome.fixedWidth), fileName, onclick := Bootstrap.jsClick { _ ⇒
+    a(fontWeight.bold, href := "#", Icons.file, fileName, onclick := Bootstrap.jsClick { _ ⇒
       Blobs.saveBlob(file, fileName)
     })
   }

@@ -3,13 +3,12 @@ package com.karasiq.nanoboard.frontend.components
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.buttons._
 import com.karasiq.bootstrap.grid.GridSystem
-import com.karasiq.bootstrap.icons.FontAwesome
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.frontend.components.post.{NanoboardPost, PostRenderer}
 import com.karasiq.nanoboard.frontend.model.ThreadModel
 import com.karasiq.nanoboard.frontend.utils.PostParser
-import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardContextWithOffset, NanoboardController}
+import com.karasiq.nanoboard.frontend.{Icons, NanoboardContext, NanoboardContextWithOffset, NanoboardController}
 import org.scalajs.dom
 import rx._
 
@@ -50,7 +49,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
 
     def previousButton(ofs: NanoboardContextWithOffset, prevOffset: Int): Tag  = {
       Button(ButtonStyle.danger)(
-        "angle-double-left".fontAwesome(FontAwesome.fixedWidth),
+        Icons.previous,
         locale.fromTo(prevOffset, prevOffset + postsPerPage),
         onclick := Bootstrap.jsClick { _ ⇒
           context() = ofs.withOffset(prevOffset)
@@ -60,7 +59,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
     def nextButton(ofs: NanoboardContextWithOffset, newOffset: Int): Tag = {
       Button(ButtonStyle.success)(
         locale.fromTo(newOffset, newOffset + postsPerPage),
-        "angle-double-right".fontAwesome(FontAwesome.fixedWidth),
+        Icons.next,
         onclick := Bootstrap.jsClick { _ ⇒
           context() = ofs.withOffset(math.max(0, newOffset))
         })
@@ -92,7 +91,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
         model.categories().map[Frag, Seq[Frag]] {
           case NanoboardMessageData(_, _, hash, text, answers) ⇒
             val plainText = PostRenderer.strip(PostParser.parse(text))
-            val answersSpan = span(marginLeft := 0.25.em, "envelope-o".fontAwesome(FontAwesome.fixedWidth), answers)
+            val answersSpan = span(marginLeft := 0.25.em, Icons.answers, answers)
             a(href := s"#$hash", margin := 0.25.em, "[", span(fontWeight.bold, plainText), answersSpan, "]", onclick := Bootstrap.jsClick { _ ⇒
               controller.setContext(NanoboardContext.Thread(hash))
             })
@@ -101,10 +100,10 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
     }
 
     val navigation = Seq(
-      a(href := "#0", margin := 0.25.em, "newspaper-o".fontAwesome(FontAwesome.fixedWidth), locale.recentPosts, onclick := Bootstrap.jsClick { _ ⇒
+      a(href := "#0", margin := 0.25.em, Icons.recent, locale.recentPosts, onclick := Bootstrap.jsClick { _ ⇒
         controller.setContext(NanoboardContext.Recent())
       }),
-      a(href := "#", margin := 0.25.em, "sitemap".fontAwesome(FontAwesome.fixedWidth), locale.categories, onclick := Bootstrap.jsClick { _ ⇒
+      a(href := "#", margin := 0.25.em, Icons.categories, locale.categories, onclick := Bootstrap.jsClick { _ ⇒
         controller.setContext(NanoboardContext.Categories)
       })
     )
