@@ -6,21 +6,20 @@ import com.karasiq.nanoboard.api.NanoboardContainer
 import slick.driver.H2Driver.api._
 
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
 
 trait ContainerQueries { self: Tables with PostQueries ⇒
   object Container {
-    private def create(url: String)(implicit ec: ExecutionContext) = {
+    def create(url: String)(implicit ec: ExecutionContext) = {
       containers.returning(containers.map(_.id)) += DBContainer(0, url, Instant.now().toEpochMilli)
     }
 
     def forUrl(url: String)(implicit ec: ExecutionContext) = {
-      create(url).asTry.flatMap {
-        case Success(id) ⇒
+      containers.filter(_.url === url).map(_.id).result.headOption.flatMap {
+        case Some(id) ⇒
           DBIO.successful(id)
 
-        case Failure(_) ⇒
-          containers.filter(_.url === url).map(_.id).result.head
+        case None ⇒
+          create(url)
       }
     }
 

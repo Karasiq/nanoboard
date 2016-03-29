@@ -10,6 +10,8 @@ import rx._
 import scalatags.JsDom.all._
 
 private[components] object PostExternalVideo {
+  def defaultType = "webm"
+
   def apply(url: String, sources: VideoSource*)(implicit ctx: Ctx.Owner): PostExternalVideo = {
     new PostExternalVideo(url, sources)
   }

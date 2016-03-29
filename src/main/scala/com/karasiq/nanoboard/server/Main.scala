@@ -13,7 +13,6 @@ import akka.stream.scaladsl._
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
 import com.karasiq.nanoboard.model.MessageConversions._
 import com.karasiq.nanoboard.model.{Place, _}
-import com.karasiq.nanoboard.server.cache.MapDbNanoboardCache
 import com.karasiq.nanoboard.server.util.MessageValidator
 import com.karasiq.nanoboard.sources.bitmessage.BitMessageTransport
 import com.karasiq.nanoboard.sources.png.UrlPngSource
@@ -47,7 +46,6 @@ object Main extends App {
   implicit val actorMaterializer = ActorMaterializer(ActorMaterializerSettings(actorSystem))
   val db = Database.forConfig("nanoboard.database", config)
   val messageValidator = MessageValidator(config)
-  val cache = MapDbNanoboardCache(config)
 
   // Initialize transport
   val bitMessage = BitMessageTransport(config)
@@ -66,7 +64,6 @@ object Main extends App {
   })
 
   actorSystem.registerOnTermination(db.close())
-  actorSystem.registerOnTermination(cache.close())
 
   Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
     override def run(): Unit = {
@@ -116,7 +113,9 @@ object Main extends App {
     val placeFlow = Flow[String]
       .named("board-png-flow")
       .flatMapMerge(4, messageSource.imagesFromPage)
-      .filterNot(cache.contains)
+      .mapAsync(1)(url ⇒ db.run(for (e ← containers.filter(_.url === url).exists.result) yield (e, url)))
+      .filterNot(_._1)
+      .map(_._2)
       .log("board-png-source")
       .flatMapMerge(4, url ⇒ messageSource.messagesFromImage(url).fold(Vector.empty[NanoboardMessage])(_ :+ _).map((url, _)))
       .withAttributes(ActorAttributes.supervisionStrategy(Supervision.restartingDecider) and
@@ -127,7 +126,6 @@ object Main extends App {
       .via(placeFlow)
       .runForeach {
         case (url, messages) ⇒
-          cache += url
           def insertMessages(messages: Seq[NanoboardMessage], inserted: Int = 0): Unit = messages match {
             case Seq(message, ms @ _*) if inserted < maxNewPosts ⇒
               dispatcher.addPost(url, message).foreach(i ⇒ insertMessages(ms, inserted + i))
@@ -138,7 +136,9 @@ object Main extends App {
             case _ ⇒
               ()
           }
-          insertMessages(messages.filter(messageValidator.isMessageValid))
+          db.run(Container.create(url)).foreach { _ ⇒
+            insertMessages(messages.filter(messageValidator.isMessageValid))
+          }
       }
 
     // REST server

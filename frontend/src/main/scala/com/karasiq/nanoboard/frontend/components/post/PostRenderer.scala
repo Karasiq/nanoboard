@@ -122,11 +122,18 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
     case ShortBBCode("img", base64) ⇒
       PostInlineImage(base64)
 
+    case BBCode("img" | "image", parameters, value) ⇒
+      PostInlineImage(PostRenderer.asText(value), s"image/${parameters.getOrElse("type", PostInlineImage.defaultType)}")
+
     case ShortBBCode("simg", url) ⇒
       PostExternalImage(url)
 
+    case BBCode("vid" | "video", parameters, value) ⇒
+      val url = PostRenderer.asText(value)
+      PostExternalVideo(url, VideoSource(s"video/${parameters.getOrElse("type", PostExternalVideo.defaultType)}", url))
+
     case ShortBBCode("svid", url) ⇒
-      PostExternalVideo(url, VideoSource("video/webm", url))
+      PostExternalVideo(url, VideoSource(s"video/${PostExternalVideo.defaultType}", url))
 
     case ShortBBCode("fm", music) ⇒
       s"<FM: $music>"

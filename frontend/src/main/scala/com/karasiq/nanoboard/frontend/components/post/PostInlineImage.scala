@@ -10,7 +10,9 @@ import rx._
 import scalatags.JsDom.all._
 
 private[components] object PostInlineImage {
-  def apply(base64: String, imageType: String = "image/jpeg")(implicit ctx: Ctx.Owner, controller: NanoboardController): PostInlineImage = {
+  def defaultType = "jpeg"
+
+  def apply(base64: String, imageType: String = s"image/$defaultType")(implicit ctx: Ctx.Owner, controller: NanoboardController): PostInlineImage = {
     new PostInlineImage(base64, imageType)
   }
 }
