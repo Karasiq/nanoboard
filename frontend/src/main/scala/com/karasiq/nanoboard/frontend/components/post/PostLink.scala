@@ -4,6 +4,7 @@ import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
+import com.karasiq.nanoboard.frontend.utils.Mouse
 import org.scalajs.dom
 import rx._
 import rx.async._
@@ -33,12 +34,13 @@ private[components] final class PostLink(hash: String)(implicit ctx: Ctx.Owner, 
     )
 
     span(
+      position.relative,
       a(updateHover, href := s"#$hash", onclick := Bootstrap.jsClick { _ ⇒
         controller.showPost(hash)
       }, md),
       Rx[Frag] {
         if (hover() && post().nonEmpty) {
-          div(position.absolute, top := 70.px, left := 170.px, zIndex := 1, post())
+          div(Mouse.relative(xOffset = 12), zIndex := 1, post())
         } else {
           ""
         }

@@ -10,7 +10,7 @@ import com.karasiq.nanoboard.frontend.api.streaming.NanoboardMessageStream
 import com.karasiq.nanoboard.frontend.components._
 import com.karasiq.nanoboard.frontend.locales.BoardLocale
 import com.karasiq.nanoboard.frontend.styles.BoardStyle
-import com.karasiq.nanoboard.frontend.utils.Scroll
+import com.karasiq.nanoboard.frontend.utils.Mouse
 import com.karasiq.nanoboard.streaming.NanoboardSubscription.{PostHashes, Unfiltered}
 import com.karasiq.nanoboard.streaming.{NanoboardEvent, NanoboardSubscription}
 import org.scalajs.dom._
@@ -94,7 +94,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
   }
 
   def showPost(hash: String): Unit = {
-    if (!Scroll.to(s"#post-$hash")) {
+    if (!Mouse.scroll(s"#post-$hash")) {
       setContext(NanoboardContext.Thread(hash))
     }
   }
