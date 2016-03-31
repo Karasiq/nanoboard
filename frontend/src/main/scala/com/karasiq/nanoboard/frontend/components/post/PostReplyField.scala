@@ -6,6 +6,7 @@ import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
+import com.karasiq.nanoboard.frontend.styles.BoardStyle
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Blobs, CancelledException, Notifications}
 import com.karasiq.nanoboard.frontend.{Icons, NanoboardController}
@@ -103,7 +104,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
       ),
 
       // Preview
-      div(marginTop := 20.px, style.post, Rx(span(style.postInner, NanoboardPost.render(replyText()))), Rx(expanded() && replyText().nonEmpty).reactiveShow),
+      div(marginTop := 20.px, style.post, Rx(span(style.postInner, BoardStyle.Common.flatScroll, NanoboardPost.render(replyText()))), Rx(expanded() && replyText().nonEmpty).reactiveShow),
 
       md
     )

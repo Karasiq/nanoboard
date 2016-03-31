@@ -25,15 +25,9 @@ trait Gurochan extends BoardStyle {
   )
 
   override def postInner = cls(
-    maxHeight := 48.em,
-    overflowX.hidden,
-    overflowY.auto,
     marginBottom := 0.5.em,
     fontSize := 0.9.em,
-    fontFamily := "Trebuchet MS, Verdana, sans-serif",
-    whiteSpace.`pre-wrap`,
-    wordWrap.`break-word`,
-    hiddenScroll
+    fontFamily := "Trebuchet MS, Verdana, sans-serif"
   )
 
   override def postId = cls(

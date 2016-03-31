@@ -4,6 +4,7 @@ import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
+import com.karasiq.nanoboard.frontend.styles.BoardStyle
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Notifications, PostParser}
 import com.karasiq.nanoboard.frontend.{Icons, NanoboardContext, NanoboardController}
@@ -26,18 +27,28 @@ private[components] object NanoboardPost {
 private[components] final class NanoboardPost(showParent: Boolean, showAnswers: Boolean, data: NanoboardMessageData, scrollable: Boolean)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
   import controller.{locale, style}
 
+  val expanded = Var(false)
   val showSource = Var(false)
 
   override def renderTag(md: Modifier*): RenderedTag = {
+    val heightMod = Rx[AutoModifier] {
+      if (expanded())
+        maxHeight := 100.pct
+      else
+        maxHeight := 48.em
+    }
+
     div(
       if (scrollable) id := s"post-${data.hash}" else (),
       style.post,
       div(
+        heightMod,
         style.postInner,
+        BoardStyle.Common.flatScroll,
         span(
           style.postId,
           if (showParent && data.parent.isDefined) PostLink(data.parent.get).renderTag(Icons.parent) else (),
-          sup(data.containerId.fold(data.hash)(cid ⇒ s"${data.hash}/$cid"))
+          sup(cursor.pointer, data.containerId.fold(data.hash)(cid ⇒ s"${data.hash}/$cid"), onclick := Bootstrap.jsClick(_ ⇒ expanded() = !expanded.now))
         ),
         Rx[Frag](if (showSource()) data.text else span(NanoboardPost.render(data.text)))
       ),

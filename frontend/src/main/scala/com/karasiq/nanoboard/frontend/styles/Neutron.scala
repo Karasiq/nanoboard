@@ -27,14 +27,8 @@ trait Neutron extends BoardStyle {
 
   override def postInner = cls(
     fontFamily := "Trebuchet MS,Trebuchet,tahoma,serif",
-    maxHeight := 48.em,
-    overflowX.hidden,
-    overflowY.auto,
     marginBottom := 0.5.em,
-    fontSize := 1.em,
-    whiteSpace.`pre-wrap`,
-    wordWrap.`break-word`,
-    hiddenScroll
+    fontSize := 1.em
   )
 
   override def postId = cls(

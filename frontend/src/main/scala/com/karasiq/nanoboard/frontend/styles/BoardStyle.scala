@@ -24,13 +24,10 @@ trait BoardStyle extends StyleSheet {
 
   def spoiler: Cls
   def greenText: Cls
-
-  def hiddenScroll: StyleTree = {
-    new Selector(Seq("::-webkit-scrollbar")).apply(display.none)
-  }
 }
 
 object BoardStyle {
+  val Common = Sheet[CommonStyles]
   val Makaba = Sheet[Makaba]
   val Futaba = Sheet[Futaba]
   val Burichan = Sheet[Burichan]
@@ -58,7 +55,7 @@ object BoardStyle {
 
 
     override def renderTag(md: Modifier*) = {
-      tags2.style(style.map(_.styleSheetText), md)
+      tags2.style(style.map(_.styleSheetText), Common.styleSheetText, md)
     }
   }
 }
