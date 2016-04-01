@@ -5,7 +5,7 @@ import org.scalajs.dom
 import org.scalajs.dom.raw._
 import org.scalajs.dom.{Blob, Event}
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.scalajs.js
 import scala.scalajs.js.UndefOr
 import scala.scalajs.js.typedarray.Uint8Array
@@ -40,7 +40,7 @@ object Blobs {
     urlObject.createObjectURL(blob)
   }
 
-  def asBase64(blob: Blob): Future[String] = {
+  def asDataURL(blob: Blob): Future[String] = {
     val promise = Promise[String]
     val reader = new FileReader
     reader.readAsDataURL(blob)
@@ -53,5 +53,9 @@ object Blobs {
     }
 
     promise.future
+  }
+
+  def asBase64(blob: Blob)(implicit ec: ExecutionContext): Future[String] = {
+    asDataURL(blob).map(_.split(",", 2).last)
   }
 }

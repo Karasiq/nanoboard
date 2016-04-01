@@ -53,7 +53,6 @@ object BoardStyle {
       window.localStorage.setItem("nanoboard-style", style.toString)
     }
 
-
     override def renderTag(md: Modifier*) = {
       tags2.style(style.map(_.styleSheetText), Common.styleSheetText, md)
     }

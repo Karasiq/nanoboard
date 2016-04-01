@@ -123,7 +123,7 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
       PostInlineImage(base64)
 
     case BBCode("img" | "image", parameters, value) ⇒
-      PostInlineImage(PostRenderer.asText(value), s"image/${parameters.getOrElse("type", PostInlineImage.defaultType)}")
+      PostInlineImage(PostRenderer.asText(value), parameters.getOrElse("type", PostInlineImage.defaultType))
 
     case ShortBBCode("simg", url) ⇒
       PostExternalImage(url)

@@ -144,7 +144,7 @@ lazy val frontendSettings = Seq(
   libraryDependencies ++= Seq(
     "com.chuusai" %%% "shapeless" % "2.2.5",
     "com.github.karasiq" %%% "parboiled" % "2.1.1-SNAPSHOT",
-    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.5",
+    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.6-SNAPSHOT",
     "com.github.karasiq" %%% "scalajs-videojs" % "1.0.2",
     "com.github.karasiq" %%% "scalajs-marked" % "1.0.1",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.4"

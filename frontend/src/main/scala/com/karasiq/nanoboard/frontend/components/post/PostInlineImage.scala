@@ -12,7 +12,7 @@ import scalatags.JsDom.all._
 private[components] object PostInlineImage {
   def defaultType = "jpeg"
 
-  def apply(base64: String, imageType: String = s"image/$defaultType")(implicit ctx: Ctx.Owner, controller: NanoboardController): PostInlineImage = {
+  def apply(base64: String, imageType: String = defaultType)(implicit ctx: Ctx.Owner, controller: NanoboardController): PostInlineImage = {
     new PostInlineImage(base64, imageType)
   }
 }
@@ -30,7 +30,7 @@ private[components] final class PostInlineImage(val base64: String, val imageTyp
   }
 
   override def renderTag(md: Modifier*) = {
-    val blobUrl = Blobs.asUrl(Blobs.asBlob(base64, imageType)) // s"data:image/jpeg;base64,$base64"
+    val blobUrl = Blobs.asUrl(Blobs.asBlob(base64, s"image/$imageType")) // s"data:image/jpeg;base64,$base64"
     img(alt := controller.locale.embeddedImage, src := blobUrl, styleMod, onclick := Bootstrap.jsClick { _ ⇒
       expanded() = !expanded.now
     }, md)

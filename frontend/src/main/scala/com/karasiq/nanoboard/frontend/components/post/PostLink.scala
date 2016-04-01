@@ -20,7 +20,8 @@ private[components] object PostLink {
 }
 
 private[components] final class PostLink(hash: String)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Span] {
-  lazy val post = NanoboardApi.post(hash).toRx(None).map(_.map(NanoboardPost(false, true, _).renderTag().render))
+  lazy val post = NanoboardApi.post(hash).toRx(None)
+    .map(_.map(data ⇒ div(Mouse.relative(xOffset = 12), zIndex := 1, NanoboardPost(showParent = false, showAnswers = true, data)).render))
 
   private val hover = Var(false)
 
@@ -35,16 +36,8 @@ private[components] final class PostLink(hash: String)(implicit ctx: Ctx.Owner, 
 
     span(
       position.relative,
-      a(updateHover, href := s"#$hash", onclick := Bootstrap.jsClick { _ ⇒
-        controller.showPost(hash)
-      }, md),
-      Rx[Frag] {
-        if (hover() && post().nonEmpty) {
-          div(Mouse.relative(xOffset = 12), zIndex := 1, post())
-        } else {
-          ""
-        }
-      }
+      a(updateHover, href := s"#$hash", onclick := Bootstrap.jsClick(_ ⇒ controller.showPost(hash)), md),
+      Rx[Frag](if (hover() && post().nonEmpty) post().get else "")
     )
   }
 }

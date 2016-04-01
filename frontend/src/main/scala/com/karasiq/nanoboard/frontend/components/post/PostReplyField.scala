@@ -47,9 +47,10 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
     )
 
     val imageLink = Button(ButtonStyle.primary)(Icons.image, locale.insertImage, onclick := Bootstrap.jsClick { _ ⇒
-      AttachmentGenerationDialog().generate().onComplete {
-        case Success(base64) ⇒
-          replyText() = s"${replyText.now}[img=$base64]"
+      ImageAttachDialog().generate().onComplete {
+        case Success(ImageData(base64, format)) ⇒
+          val data = if (format == "svg+xml") "[img type=\"svg+xml\"]" + base64 + "[/img]" else s"[img=$base64]"
+          replyText() = s"${replyText.now}$data"
 
         case Failure(CancelledException) ⇒
           // Pass
@@ -62,11 +63,8 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
     val fileLink = Button(ButtonStyle.info)(Icons.file, locale.file, onclick := Bootstrap.jsClick { _ ⇒
       val field = input(`type` := "file", onchange := Bootstrap.jsInput { field ⇒
         val file = field.files.head
-        Blobs.asBase64(file).foreach { url ⇒
-          if (file.`type` == "image/svg+xml")
-            replyText() = s"${replyText.now}[img name=${'"' + file.name + '"'} type=${'"' + "svg+xml" + '"'}]${url.split(",", 2).last}[/img]"
-          else
-            replyText() = s"${replyText.now}${if (replyText.now.nonEmpty) "\n" else ""}[file name=${'"' + file.name + '"'} type=${'"' + file.`type` + '"'}]${url.split(",", 2).last}[/file]"
+        Blobs.asBase64(file).foreach { base64 ⇒
+          replyText() = s"${replyText.now}${if (replyText.now.nonEmpty) "\n" else ""}[file name=${'"' + file.name + '"'} type=${'"' + file.`type` + '"'}]$base64[/file]"
         }
       }).render
       field.click()

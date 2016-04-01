@@ -8,7 +8,7 @@ import com.karasiq.bootstrap.modal.Modal
 import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
-import com.karasiq.nanoboard.frontend.utils.{CancelledException, Images, Notifications}
+import com.karasiq.nanoboard.frontend.utils.{Blobs, CancelledException, Images, Notifications}
 import org.scalajs.dom.html.Input
 import org.scalajs.dom.raw.File
 import rx._
@@ -17,13 +17,15 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import scalatags.JsDom.all._
 
-private[components] object AttachmentGenerationDialog {
-  def apply()(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): AttachmentGenerationDialog = {
-    new AttachmentGenerationDialog
+case class ImageData(base64: String, format: String)
+
+private[components] object ImageAttachDialog {
+  def apply()(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): ImageAttachDialog = {
+    new ImageAttachDialog()
   }
 }
 
-private[components] final class AttachmentGenerationDialog(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) {
+private[components] final class ImageAttachDialog(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) {
   import controller.locale
   val scale = Var("50")
   val size = Var("500")
@@ -48,8 +50,8 @@ private[components] final class AttachmentGenerationDialog(implicit ctx: Ctx.Own
       isValidPct(quality) && (useServer() || isValidPct(sharpness))
   }
 
-  def generate(): Future[String] = {
-    val promise = Promise[String]
+  def generate(): Future[ImageData] = {
+    val promise = Promise[ImageData]
     val preview = Var[Option[PostInlineImage]](None)
     val modal = Modal(locale.insertImage)
       .withBody(Form(
@@ -74,8 +76,8 @@ private[components] final class AttachmentGenerationDialog(implicit ctx: Ctx.Own
         }),
         Button(ButtonStyle.info)(locale.preview, ready.reactiveShow)(onclick := Bootstrap.jsClick { _ ⇒
           createBase64Image().onComplete {
-            case Success(base64) ⇒
-              preview() = Some(PostInlineImage(base64, s"image/${format.now}"))
+            case Success(ImageData(base64, format)) ⇒
+              preview() = Some(PostInlineImage(base64, format))
 
             case Failure(exc) ⇒
               Notifications.error(exc)(locale.attachmentGenerationError, Layout.topRight)
@@ -90,11 +92,13 @@ private[components] final class AttachmentGenerationDialog(implicit ctx: Ctx.Own
     promise.future
   }
 
-  private def createBase64Image(): Future[String] = {
-    if (useServer.now) {
-      NanoboardApi.generateAttachment(format.now, size.now.toInt, quality.now.toInt, file.now.get)
+  private def createBase64Image(): Future[ImageData] = {
+    if (file.now.exists(_.`type` == "image/svg+xml")) {
+      Blobs.asBase64(file.now.get).map(ImageData(_, "svg+xml"))
+    } else if (useServer.now) {
+      NanoboardApi.generateAttachment(format.now, size.now.toInt, quality.now.toInt, file.now.get).map(ImageData(_, format.now))
     } else {
-      Images.compress(file.now.get, s"image/${format.now}", scale.now.toInt, quality.now.toInt, sharpness.now.toInt)
+      Images.compress(file.now.get, s"image/${format.now}", scale.now.toInt, quality.now.toInt, sharpness.now.toInt).map(ImageData(_, format.now))
     }
   }
 }
