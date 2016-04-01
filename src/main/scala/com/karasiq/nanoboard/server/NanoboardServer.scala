@@ -1,7 +1,9 @@
 package com.karasiq.nanoboard.server
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.MediaType.Compressible
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.{CacheDirectives, `Cache-Control`}
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
@@ -9,7 +11,7 @@ import boopickle.Default._
 import com.karasiq.nanoboard.api.NanoboardReply
 import com.karasiq.nanoboard.dispatcher.NanoboardDispatcher
 import com.karasiq.nanoboard.server.streaming.NanoboardMessageStream
-import com.karasiq.nanoboard.server.util.AttachmentGenerator
+import com.karasiq.nanoboard.server.util.{AttachmentGenerator, FractalMusic}
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 
 import scala.concurrent.ExecutionContext
@@ -50,6 +52,9 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       } ~
       (path("containers") & parameters('offset.as[Long].?(0), 'count.as[Long].?(100))) { (offset, count) ⇒
         complete(StatusCodes.OK, dispatcher.containers(offset, count))
+      } ~
+      (path("fractal_music" / Segment) & respondWithHeaders(`Cache-Control`(CacheDirectives.public, CacheDirectives.`max-age`(100000000L)))) { formula ⇒
+        complete(StatusCodes.OK, FractalMusic(formula).map(HttpEntity(ContentType(MediaType.audio("wav", Compressible)), _)))
       } ~
       encodeResponse(pathEndOrSingleSlash(getFromResource("webapp/index.html")) ~ getFromResourceDirectory("webapp"))
     } ~

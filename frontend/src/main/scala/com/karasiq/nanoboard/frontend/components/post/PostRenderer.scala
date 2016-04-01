@@ -89,7 +89,6 @@ private[components] object PostRenderer {
   }
 }
 
-// TODO: Fractal music
 private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) {
   def render(parsed: PostDomValue): Frag = parsed match {
     case PlainText(value) ⇒
@@ -136,7 +135,7 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
       PostExternalVideo(url, VideoSource(s"video/${PostExternalVideo.defaultType}", url))
 
     case ShortBBCode("fm", music) ⇒
-      s"<FM: $music>"
+      PostFractalMusic(music)
 
     case BBCode("code", parameters, source) ⇒
       span(raw(PostRenderer.formatCode(PostRenderer.asText(source), parameters.get("lang"))))

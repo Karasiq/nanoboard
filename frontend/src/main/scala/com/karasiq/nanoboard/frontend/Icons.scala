@@ -31,4 +31,5 @@ object Icons {
   def submit = fa("mail-forward")
   def reply = fa("reply")
   def source = fa("file-text-o")
+  def music = fa("music")
 }
