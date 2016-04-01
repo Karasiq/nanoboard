@@ -146,6 +146,24 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
     case BBCode("link", parameters, value) ⇒
       a(target := "_blank", href := parameters.getOrElse("url", PostRenderer.asText(value)), render(value))
 
+    case BBCode("small", _, value) ⇒
+      small(render(value))
+
+    case BBCode("abbr", parameters, value) ⇒
+      val abbr = "abbr".tag
+      abbr(title := parameters.getOrElse("title", ""), render(value))
+
+    case BBCode("mark", _, value) ⇒
+      val mark = "mark".tag
+      mark(render(value))
+
+    case BBCode("quote", parameters, value) ⇒
+      blockquote(
+        if (parameters.contains("reverse")) "blockquote-reverse".addClass else (),
+        p(render(value)),
+        parameters.get("title").map(footer(_))
+      )
+
     // Unknown
     case value ⇒
       PostRenderer.asText(value)
