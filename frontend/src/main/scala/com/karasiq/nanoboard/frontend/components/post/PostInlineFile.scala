@@ -16,7 +16,7 @@ private[components] object PostInlineFile {
 }
 
 private[components] final class PostInlineFile(val fileName: String, val base64: String, val fileType: String)(implicit ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Anchor] {
-  val file = Blobs.asBlob(base64, fileType)
+  val file = Blobs.fromBase64(base64, fileType)
 
   override def renderTag(md: Modifier*): RenderedTag = {
     a(fontWeight.bold, href := "#", Icons.file, fileName, onclick := Bootstrap.jsClick { _ ⇒

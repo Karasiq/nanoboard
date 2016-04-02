@@ -30,7 +30,7 @@ private[components] final class PostInlineImage(val base64: String, val imageTyp
   }
 
   override def renderTag(md: Modifier*) = {
-    val blobUrl = Blobs.asUrl(Blobs.asBlob(base64, s"image/$imageType")) // s"data:image/jpeg;base64,$base64"
+    val blobUrl = Blobs.asUrl(Blobs.fromBase64(base64, s"image/$imageType")) // s"data:image/jpeg;base64,$base64"
     img(alt := controller.locale.embeddedImage, src := blobUrl, styleMod, onclick := Bootstrap.jsClick { _ ⇒
       expanded() = !expanded.now
     }, md)

@@ -51,7 +51,7 @@ object FractalMusic {
     val thread1 = new Thread(new Runnable {
       override def run(): Unit = {
         try {
-          val engine = engineFactory.getScriptEngine("-strict", "--no-java", "--no-syntax-extensions")
+          val engine = engineFactory.getScriptEngine(Array("-strict", "--no-java", "--no-syntax-extensions"), getClass.getClassLoader)
           promise.success(ByteString(engine.eval(source).asInstanceOf[String].toCharArray.map(_.toByte)))
         } catch {
           case exc: Throwable ⇒

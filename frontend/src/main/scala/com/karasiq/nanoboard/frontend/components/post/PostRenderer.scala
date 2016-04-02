@@ -58,11 +58,11 @@ private[components] object PostRenderer {
     case PlainText(value) ⇒
       value
 
-    case Markdown(value) ⇒
-      s"[md]$value[/md]"
-
     case PostDomValues(values) ⇒
       values.map(asText).mkString
+
+    case BBCode("plain", _, value) ⇒
+      asText(value)
 
     case BBCode(name, parameters, value) ⇒
       s"[$name${if (parameters.isEmpty) "" else parameters.map(p ⇒ p._1 + "=\"" + p._2 + "\"").mkString(" ", " ", "")}]" + asText(value) + s"[/$name]"
@@ -78,11 +78,14 @@ private[components] object PostRenderer {
     case PostDomValues(values) ⇒
       values.map(strip).mkString
 
-    case BBCode("g" | "sp" | "spoiler", _, _) ⇒
+    case BBCode("md" | "img" | "file" | "g" | "sp" | "spoiler", _, _) ⇒
       ""
 
     case BBCode(_, _, value) ⇒
       strip(value)
+
+    case ShortBBCode("svid" | "simg", url) ⇒
+      url
 
     case _ ⇒
       ""
@@ -97,8 +100,8 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
     case PostDomValues(values) ⇒
       values.map(render)
 
-    case Markdown(value) ⇒
-      PostRenderer.renderMarkdown(value)
+    case BBCode("md", _, value) ⇒
+      PostRenderer.renderMarkdown(PostRenderer.asText(value))
 
     case BBCode("b", _, value) ⇒
       span(fontWeight.bold, render(value))
@@ -121,13 +124,13 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
     case ShortBBCode("img", base64) ⇒
       PostInlineImage(base64)
 
-    case BBCode("img" | "image", parameters, value) ⇒
+    case BBCode("img", parameters, value) ⇒
       PostInlineImage(PostRenderer.asText(value), parameters.getOrElse("type", PostInlineImage.defaultType))
 
     case ShortBBCode("simg", url) ⇒
       PostExternalImage(url)
 
-    case BBCode("vid" | "video", parameters, value) ⇒
+    case BBCode("video", parameters, value) ⇒
       val url = PostRenderer.asText(value)
       PostExternalVideo(url, VideoSource(s"video/${parameters.getOrElse("type", PostExternalVideo.defaultType)}", url))
 

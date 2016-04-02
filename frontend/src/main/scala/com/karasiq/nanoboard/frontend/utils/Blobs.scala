@@ -19,10 +19,22 @@ object Blobs {
       .get
   }
 
-  def asBlob(base64: String, contentType: String = ""): Blob = {
+  def fromBytes(data: Array[Byte], contentType: String = ""): Blob = {
     import scala.scalajs.js.JSConverters._
-    val array = new Uint8Array(dom.window.atob(base64).toCharArray.map(_.toByte).toJSArray)
+    val array = new Uint8Array(data.toJSArray)
     new Blob(js.Array(array), BlobPropertyBag(contentType))
+  }
+
+  def fromChars(data: Array[Char], contentType: String = ""): Blob = {
+    fromBytes(data.map(_.toByte), contentType)
+  }
+
+  def fromString(data: String, contentType: String = ""): Blob = {
+    fromChars(data.toCharArray)
+  }
+
+  def fromBase64(base64: String, contentType: String = ""): Blob = {
+    fromString(dom.window.atob(base64), contentType)
   }
 
   def saveBlob(blob: Blob, fileName: String): Unit = {

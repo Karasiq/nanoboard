@@ -9,23 +9,31 @@ object PostDomValue {
   case class PlainText(underlying: String) extends PostDomValue
   case class BBCode(name: String, parameters: Map[String, String], inner: PostDomValue) extends PostDomValue
   case class ShortBBCode(name: String, value: String) extends PostDomValue
-  case class Markdown(value: String) extends PostDomValue
 }
 
 object PostParser {
-  def parse(text: String): PostDomValue = {
-    new PostParser(text).Message.run().getOrElse(PlainText(text))
+  def parse(text: String, plainCodes: Set[String] = Set("md", "plain", "code", "file", "img", "video")): PostDomValue = {
+    new PostParser(text, plainCodes).Message.run().getOrElse(PlainText(text))
   }
 }
 
-class PostParser(val input: ParserInput) extends Parser {
-  def PlainContentBBCode(name: String): Rule1[String] = rule { s"[$name]" ~ capture(oneOrMore(!s"[/$name]" ~ ANY)) ~ s"[/$name]" }
-  def Literal: Rule1[PostDomValue.PlainText] = rule { PlainContentBBCode("plain") ~> PostDomValue.PlainText }
-  def Markdown: Rule1[PostDomValue.Markdown] = rule { PlainContentBBCode("md") ~> PostDomValue.Markdown }
-  def BBCodeParameter: Rule1[(String, String)] = rule { capture(oneOrMore(CharPredicate.Alpha)) ~ '=' ~ '"' ~ capture(zeroOrMore(!'"' ~ ANY)) ~ '"'  ~> ((s1: String, s2: String) ⇒ s1 → s2) }
-  def BBCode: Rule1[PostDomValue.BBCode] = rule { '[' ~ capture(oneOrMore(CharPredicate.Alpha)) ~ zeroOrMore(' ' ~ BBCodeParameter) ~ ']' ~> ((tag: String, parameters: Seq[(String, String)]) ⇒ push(tag) ~ push(parameters.toMap) ~ FormattedText ~ ("[/" ~ tag ~ ']')) ~> PostDomValue.BBCode }
+class PostParser(val input: ParserInput, plainCodes: Set[String]) extends Parser {
+  private def BBCodeParameter: Rule1[(String, String)] = rule { capture(oneOrMore(CharPredicate.Alpha)) ~ (('=' ~ '"' ~ capture(zeroOrMore(!'"' ~ ANY)) ~ '"') | push("")) ~> { (s1: String, s2: String) ⇒ s1 → s2 } }
+  private def BBCodeParameters: Rule1[Map[String, String]] = rule { zeroOrMore(' ' ~ BBCodeParameter) ~> { (parameters: Seq[(String, String)]) ⇒ parameters.toMap } }
+  private def BBCodeAnyTag: Rule0 = rule { '[' ~ optional('/') ~ oneOrMore(CharPredicate.Alpha) ~ (('=' ~ oneOrMore(!']' ~ ANY)) | BBCodeParameters) ~ ']' }
+  private def BBCodeOpenTag: Rule2[String, Map[String, String]] = rule { '[' ~ capture(oneOrMore(CharPredicate.Alpha)) ~ BBCodeParameters ~ ']' }
+  private def BBCodeCloseTag(tag: String): Rule0 = rule { "[/" ~ tag ~ "]" }
+
+  def BBCode: Rule1[PostDomValue.BBCode] = rule {
+    BBCodeOpenTag ~>
+    { (tag: String, parameters: Map[String, String]) ⇒
+      push(tag) ~ push(parameters) ~
+      ((test(plainCodes.contains(tag.toLowerCase) || parameters.contains("plain")) ~ capture(oneOrMore(!BBCodeCloseTag(tag) ~ ANY)) ~> PostDomValue.PlainText) | FormattedText) ~ BBCodeCloseTag(tag)
+    } ~> PostDomValue.BBCode
+  }
+
   def ShortBBCode: Rule1[PostDomValue.ShortBBCode] = rule { '[' ~ capture(oneOrMore(CharPredicate.Alpha)) ~ '=' ~ capture(oneOrMore(!']' ~ ANY)) ~ ']' ~> PostDomValue.ShortBBCode }
-  def PlainText: Rule1[PostDomValue.PlainText] = rule { capture(oneOrMore(!('[' ~ optional('/') ~ oneOrMore(CharPredicate.Alpha) ~ optional('=' ~ oneOrMore(!']' ~ ANY)) ~ zeroOrMore(' ' ~ BBCodeParameter) ~ ']') ~ ANY)) ~> PostDomValue.PlainText }
-  def FormattedText: Rule1[PostDomValues] = rule { zeroOrMore(Literal | Markdown | BBCode | ShortBBCode | PlainText) ~> PostDomValues }
+  def PlainText: Rule1[PostDomValue.PlainText] = rule { capture(oneOrMore(!BBCodeAnyTag ~ ANY)) ~> PostDomValue.PlainText }
+  def FormattedText: Rule1[PostDomValues] = rule { zeroOrMore(BBCode | ShortBBCode | PlainText) ~> PostDomValues }
   def Message = rule { FormattedText ~ EOI }
 }
