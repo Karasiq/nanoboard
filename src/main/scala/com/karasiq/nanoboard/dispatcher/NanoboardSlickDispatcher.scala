@@ -16,7 +16,6 @@ import com.karasiq.nanoboard.model._
 import com.karasiq.nanoboard.streaming.NanoboardEvent
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage, NanoboardMessageGenerator}
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.commons.codec.binary.Hex
 import slick.driver.H2Driver.api._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -159,9 +158,10 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
 
   def requestVerification(hash: String): Future[NanoboardCaptchaRequest] = {
     for {
-      post ← db.run(Post.get(hash)) if post.nonEmpty && !post.exists(p ⇒ p.answers > 0 || p.text.contains("[sign="))
-      pow ← powCalculator.calculate(ByteString(post.get.text))
-      captchaId ← Future.successful(powCalculator.captchaIndex(ByteString(post.get.text) ++ pow, captcha.length))
+      DBPost(_, parent, text, firstSeen, cid) ← db.run(posts.filter(_.hash === hash).result.head) if !text.contains("[sign=")
+      (powPayload, None) ← Future.successful(NanoboardCaptcha.withoutSignature(NanoboardMessage(parent, text)))
+      pow ← powCalculator.calculate(powPayload)
+      captchaId ← Future.successful(powCalculator.captchaIndex(powPayload ++ pow, captcha.length))
       captchaImage ← captcha(captchaId)
     } yield NanoboardCaptchaRequest(hash, pow.utf8String, NanoboardCaptchaImage(captchaId, NanoboardCaptcha.render(captchaImage).toArray))
   }
@@ -169,10 +169,12 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
   def verifyPost(request: NanoboardCaptchaRequest, answer: String): Future[NanoboardMessageData] = {
     for {
       DBPost(_, parent, text, firstSeen, cid) ← db.run(posts.filter(_.hash === request.post).result.head) if !text.contains("[sign=")
-      captchaId ← Future.successful(powCalculator.captchaIndex(ByteString(text + request.pow), captcha.length))
+      (unsigned, None) ← Future.successful(NanoboardCaptcha.withoutSignature(NanoboardMessage(parent, text)))
+      signPayload ← Future.successful(unsigned ++ ByteString(request.pow))
+      captchaId ← Future.successful(powCalculator.captchaIndex(signPayload, captcha.length))
       captcha ← this.captcha(captchaId)
-      sign ← Future.successful(captcha.signature(ByteString(text + request.pow), answer)) if captcha.verify(ByteString(text + request.pow), sign)
-      newMessage ← Future.successful(NanoboardMessage(parent, text + request.pow + s"[sign=${Hex.encodeHexString(sign.toArray)}]"))
+      sign ← Future.successful(captcha.signature(signPayload, answer)) if captcha.verify(signPayload, sign)
+      newMessage ← Future.successful(NanoboardMessage(parent, NanoboardCaptcha.withSignature(text + request.pow, sign)))
       newPost ← db.run(DBIO.seq(
         posts.filter(_.hash === request.post).delete,
         posts += DBPost(newMessage.hash, newMessage.parent, newMessage.text, firstSeen, cid),

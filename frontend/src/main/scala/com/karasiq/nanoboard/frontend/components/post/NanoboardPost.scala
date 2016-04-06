@@ -81,6 +81,7 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
               case Success(newData) ⇒
                 verifyLoading() = false
                 verified() = true
+                controller.addPending(postData) // Show as pending
 
               case Failure(CancelledException) ⇒
                 verifyLoading() = false

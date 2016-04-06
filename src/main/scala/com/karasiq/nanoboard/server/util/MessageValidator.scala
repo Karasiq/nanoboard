@@ -27,7 +27,7 @@ private[server] final class MessageValidator(captcha: NanoboardCaptchaFile, conf
           message.text.length <= maxPostSize &&
           spamFilter.forall(!message.text.matches(_))
       ),
-      if (requirePow) NanoboardCaptcha.verify(message.text, powCalculator, captcha) else Future.successful(true)
+      if (requirePow) NanoboardCaptcha.verify(message, powCalculator, captcha) else Future.successful(true)
     ))(_ && _)
   }
 }

@@ -61,7 +61,7 @@ final class NanoboardCaptchaFile(file: String) extends Closeable {
     * Closes this file
     */
   override def close(): Unit = {
-    ec.shutdown()
+    ec.shutdownNow()
     IOUtils.closeQuietly(randomAccessFile)
   }
 }

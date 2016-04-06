@@ -7,6 +7,7 @@ import java.security.MessageDigest
 import javax.imageio.ImageIO
 
 import akka.util.ByteString
+import com.karasiq.nanoboard.NanoboardMessage
 import com.karasiq.nanoboard.encoding.DataCipher
 import org.apache.commons.codec.binary.Hex
 
@@ -86,9 +87,9 @@ object NanoboardCaptcha {
     * @param message Signed message
     * @return Unsigned message and EdDSA digital signature
     */
-  def withoutSignature(message: String): (ByteString, Option[ByteString]) = {
-    val buffer = message.split("\\[sign=", 2)
-    (ByteString(buffer.head), if (buffer.length > 1) buffer(1).split("\\]", 2).headOption.map(str ⇒ ByteString(Hex.decodeHex(str.toCharArray))) else None)
+  def withoutSignature(message: NanoboardMessage): (ByteString, Option[ByteString]) = {
+    val buffer = message.text.split("\\[sign=", 2)
+    (ByteString(message.parent + buffer.head), if (buffer.length > 1) buffer(1).split("\\]", 2).headOption.map(str ⇒ ByteString(Hex.decodeHex(str.toCharArray))) else None)
   }
 
   /**
@@ -99,7 +100,7 @@ object NanoboardCaptcha {
     * @param ec Execution context
     * @return Is message valid
     */
-  def verify(message: String, pow: NanoboardPow, captcha: NanoboardCaptchaFile)(implicit ec: ExecutionContext): Future[Boolean] = {
+  def verify(message: NanoboardMessage, pow: NanoboardPow, captcha: NanoboardCaptchaFile)(implicit ec: ExecutionContext): Future[Boolean] = {
     val (post, sign) = withoutSignature(message)
     Future.reduce(Seq(
       Future.successful(sign.isDefined && pow.verify(post)),
