@@ -151,7 +151,7 @@ final class SettingsPanel(implicit ctx: Ctx.Owner, ec: ExecutionContext, control
     }
 
     NanoboardApi.categories().foreach { categories ⇒
-      categoriesText() = categories.map(c ⇒ s"${c.hash}\n${c.text}").mkString("\n")
+      categoriesText() = categories.map(c ⇒ s"${c.hash}\n${c.textWithoutSign}").mkString("\n")
     }
   }
 

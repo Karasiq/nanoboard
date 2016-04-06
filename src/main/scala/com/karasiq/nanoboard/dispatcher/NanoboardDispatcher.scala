@@ -1,7 +1,7 @@
 package com.karasiq.nanoboard.dispatcher
 
 import akka.util.ByteString
-import com.karasiq.nanoboard.api.{NanoboardContainer, NanoboardMessageData}
+import com.karasiq.nanoboard.api.{NanoboardCaptchaRequest, NanoboardContainer, NanoboardMessageData}
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 
 import scala.concurrent.Future
@@ -25,4 +25,6 @@ trait NanoboardDispatcher {
   def updateCategories(categories: Seq[NanoboardCategory]): Future[Unit]
   def containers(offset: Long, count: Long): Future[Seq[NanoboardContainer]]
   def clearContainer(id: Long): Future[Seq[String]]
+  def requestVerification(hash: String): Future[NanoboardCaptchaRequest]
+  def verifyPost(request: NanoboardCaptchaRequest, answer: String): Future[NanoboardMessageData]
 }

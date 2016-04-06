@@ -167,6 +167,9 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
         parameters.get("title").map(footer(_))
       )
 
+    case ShortBBCode("pow" | "sign", _) ⇒
+      ""
+
     // Unknown
     case value ⇒
       PostRenderer.asText(value)

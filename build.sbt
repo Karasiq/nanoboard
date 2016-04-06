@@ -2,7 +2,7 @@ import sbtassembly.Plugin.AssemblyKeys._
 
 lazy val commonSettings = Seq(
   organization := "com.github.karasiq",
-  version := "1.1.0",
+  version := "1.1.1-SNAPSHOT",
   isSnapshot := version.value.endsWith("SNAPSHOT"),
   scalaVersion := "2.11.8"
 )
@@ -19,6 +19,7 @@ lazy val librarySettings = Seq(
       "commons-codec" % "commons-codec" % "1.8",
       "commons-io" % "commons-io" % "2.4",
       "org.bouncycastle" % "bcprov-jdk15on" % "1.52",
+      "net.i2p.crypto" % "eddsa" % "0.1.0",
       "org.jsoup" % "jsoup" % "1.8.3",
       "com.lihaoyi" %% "upickle" % "0.3.8",
       "com.lihaoyi" %% "scalatags" % "0.5.4"

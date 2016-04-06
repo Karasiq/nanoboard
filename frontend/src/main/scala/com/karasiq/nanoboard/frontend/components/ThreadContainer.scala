@@ -89,8 +89,8 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
     val categories = Rx[Frag] {
       span(
         model.categories().map[Frag, Seq[Frag]] {
-          case NanoboardMessageData(_, _, hash, text, answers) ⇒
-            val plainText = PostRenderer.strip(PostParser.parse(text))
+          case m @ NanoboardMessageData(_, _, hash, _, answers) ⇒
+            val plainText = PostRenderer.strip(PostParser.parse(m.textWithoutSign))
             val answersSpan = span(marginLeft := 0.25.em, Icons.answers, answers)
             a(href := s"#$hash", margin := 0.25.em, "[", span(fontWeight.bold, plainText), answersSpan, "]", onclick := Bootstrap.jsClick { _ ⇒
               controller.setContext(NanoboardContext.Thread(hash))

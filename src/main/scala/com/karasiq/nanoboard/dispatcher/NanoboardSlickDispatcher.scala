@@ -7,7 +7,8 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.util.ByteString
-import com.karasiq.nanoboard.api.{NanoboardContainer, NanoboardMessageData}
+import com.karasiq.nanoboard.api.{NanoboardCaptchaImage, NanoboardCaptchaRequest, NanoboardContainer, NanoboardMessageData}
+import com.karasiq.nanoboard.captcha.{NanoboardCaptcha, NanoboardCaptchaFile, NanoboardPow}
 import com.karasiq.nanoboard.encoding.NanoboardEncoding
 import com.karasiq.nanoboard.encoding.stages.PngEncoding
 import com.karasiq.nanoboard.model.MessageConversions._
@@ -15,17 +16,19 @@ import com.karasiq.nanoboard.model._
 import com.karasiq.nanoboard.streaming.NanoboardEvent
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage, NanoboardMessageGenerator}
 import com.typesafe.config.{Config, ConfigFactory}
+import org.apache.commons.codec.binary.Hex
 import slick.driver.H2Driver.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object NanoboardSlickDispatcher {
-  def apply(db: Database, config: Config = ConfigFactory.load(), eventSink: Sink[NanoboardEvent, _] = Sink.ignore)(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer): NanoboardDispatcher = {
-    new NanoboardSlickDispatcher(db, config, eventSink)
+  def apply(db: Database, captcha: NanoboardCaptchaFile, config: Config = ConfigFactory.load(), eventSink: Sink[NanoboardEvent, _] = Sink.ignore)(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer): NanoboardDispatcher = {
+    new NanoboardSlickDispatcher(db, captcha, config, eventSink)
   }
 }
 
-private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: Config, eventSink: Sink[NanoboardEvent, _])(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer) extends NanoboardDispatcher {
+private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: NanoboardCaptchaFile, config: Config, eventSink: Sink[NanoboardEvent, _])(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer) extends NanoboardDispatcher {
+  private val powCalculator = NanoboardPow(config)
   private val messageGenerator = NanoboardMessageGenerator(config)
   private val eventQueue = Source.queue(20, OverflowStrategy.dropHead)
     .to(eventSink)
@@ -152,5 +155,29 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, config: C
 
   override def clearContainer(id: Long): Future[Seq[String]] = {
     db.run(Container.clearPosts(id))
+  }
+
+  def requestVerification(hash: String): Future[NanoboardCaptchaRequest] = {
+    for {
+      post ← db.run(Post.get(hash)) if post.nonEmpty && !post.exists(p ⇒ p.answers > 0 || p.text.contains("[sign="))
+      pow ← powCalculator.calculate(ByteString(post.get.text))
+      captchaId ← Future.successful(powCalculator.captchaIndex(ByteString(post.get.text) ++ pow, captcha.length))
+      captchaImage ← captcha(captchaId)
+    } yield NanoboardCaptchaRequest(hash, pow.utf8String, NanoboardCaptchaImage(captchaId, NanoboardCaptcha.render(captchaImage).toArray))
+  }
+
+  def verifyPost(request: NanoboardCaptchaRequest, answer: String): Future[NanoboardMessageData] = {
+    for {
+      DBPost(_, parent, text, firstSeen, cid) ← db.run(posts.filter(_.hash === request.post).result.head) if !text.contains("[sign=")
+      captchaId ← Future.successful(powCalculator.captchaIndex(ByteString(text + request.pow), captcha.length))
+      captcha ← this.captcha(captchaId)
+      sign ← Future.successful(captcha.signature(ByteString(text + request.pow), answer)) if captcha.verify(ByteString(text + request.pow), sign)
+      newMessage ← Future.successful(NanoboardMessage(parent, text + request.pow + s"[sign=${Hex.encodeHexString(sign.toArray)}]"))
+      newPost ← db.run(DBIO.seq(
+        posts.filter(_.hash === request.post).delete,
+        posts += DBPost(newMessage.hash, newMessage.parent, newMessage.text, firstSeen, cid),
+        pendingPosts += newMessage.hash
+      ))
+    } yield NanoboardMessageData(Some(cid), Some(parent), newMessage.hash, newMessage.text, 0)
   }
 }

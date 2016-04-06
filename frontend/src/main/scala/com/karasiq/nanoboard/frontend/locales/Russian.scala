@@ -49,6 +49,8 @@ object Russian extends BoardLocale {
   def containers = "Принятые контейнеры"
   def container(c: NanoboardContainer) = s"№${c.id}, ${c.posts} сообщений"
   def file = "Файл"
+  def verify = "Подтвердить"
+  def verificationError = "Ошибка подтверждения"
   def webSocketError = "Ошибка WebSocket"
   def clearDeletedError = "Ошибка очистки кэша удалённых сообщений"
   def postingError = "Ошибка отправки сообщения"

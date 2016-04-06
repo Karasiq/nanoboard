@@ -2,7 +2,7 @@ package com.karasiq.nanoboard.frontend.api
 
 
 import boopickle.Default._
-import com.karasiq.nanoboard.api.{NanoboardCategory, NanoboardContainer, NanoboardMessageData, NanoboardReply}
+import com.karasiq.nanoboard.api._
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.{File, XMLHttpRequest}
 import org.scalajs.dom.{Blob, console}
@@ -117,5 +117,15 @@ object NanoboardApi {
   def clearContainer(id: Long)(implicit ec: ExecutionContext): Future[Vector[String]] = {
     Ajax.delete(s"/posts?container=$id", responseType = marshaller.responseType)
       .map(readResponse[Vector[String]])
+  }
+
+  def requestVerification(hash: String)(implicit ec: ExecutionContext): Future[NanoboardCaptchaRequest] = {
+    Ajax.get(s"/verify/$hash", responseType = marshaller.responseType)
+      .map(readResponse[NanoboardCaptchaRequest])
+  }
+
+  def verifyPost(request: NanoboardCaptchaRequest, answer: String)(implicit ec: ExecutionContext): Future[NanoboardMessageData] = {
+    Ajax.post(s"/verify", marshaller.write(NanoboardCaptchaAnswer(request, answer)), responseType = marshaller.responseType)
+      .map(readResponse[NanoboardMessageData])
   }
 }

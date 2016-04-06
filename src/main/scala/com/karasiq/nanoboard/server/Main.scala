@@ -13,7 +13,7 @@ import akka.stream.scaladsl._
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
 import com.karasiq.nanoboard.model.MessageConversions._
 import com.karasiq.nanoboard.model.{Place, _}
-import com.karasiq.nanoboard.server.util.MessageValidator
+import com.karasiq.nanoboard.server.util.{CaptchaLoader, MessageValidator}
 import com.karasiq.nanoboard.sources.bitmessage.BitMessageTransport
 import com.karasiq.nanoboard.sources.png.UrlPngSource
 import com.karasiq.nanoboard.streaming.NanoboardEvent
@@ -45,23 +45,6 @@ object Main extends App {
   implicit val executionContext = actorSystem.dispatcher
   implicit val actorMaterializer = ActorMaterializer(ActorMaterializerSettings(actorSystem))
   val db = Database.forConfig("nanoboard.database", config)
-  val messageValidator = MessageValidator(config)
-
-  // Initialize transport
-  val bitMessage = BitMessageTransport(config)
-  val dispatcher = NanoboardSlickDispatcher(db, config, Sink.foreach { event ⇒
-    actorSystem.eventStream.publish(event)
-
-    event match {
-      case NanoboardEvent.PostAdded(message, true) ⇒
-        bitMessage.sendMessage(message).foreach { response ⇒
-          actorSystem.log.info("Message was sent to BM transport: {}", response)
-        }
-
-      case _ ⇒
-        // Pass
-    }
-  })
 
   actorSystem.registerOnTermination(db.close())
 
@@ -95,14 +78,36 @@ object Main extends App {
     }
 
   // Initialize server
-  schema.foreach { _ ⇒
+  actorSystem.log.info("Loading captcha file")
+  schema.flatMap(_ ⇒ CaptchaLoader.load(config)).foreach { captcha ⇒
+    actorSystem.registerOnTermination(captcha.close())
+    actorSystem.log.info("Captcha file loaded successfully ({} entries)", captcha.length)
+    val messageValidator = MessageValidator(captcha, config)
+
+    // Initialize transport
+    val bitMessage = BitMessageTransport(config)
+    val dispatcher = NanoboardSlickDispatcher(db, captcha, config, Sink.foreach { event ⇒
+      actorSystem.eventStream.publish(event)
+
+      event match {
+        case NanoboardEvent.PostAdded(message, true) ⇒
+          bitMessage.sendMessage(message).foreach { response ⇒
+            actorSystem.log.info("Message was sent to BM transport: {}", response)
+          }
+
+        case _ ⇒
+        // Pass
+      }
+    })
+
     // Bitmessage
     if (config.getBoolean("nanoboard.bitmessage.receive")) {
       val host = config.getString("nanoboard.bitmessage.listen-host")
       val port = config.getInt("nanoboard.bitmessage.listen-port")
       bitMessage.receiveMessages(host, port, Sink.foreach { (message: NanoboardMessage) ⇒
-        if (messageValidator.isMessageValid(message))
-          dispatcher.addPost(s"bitmessage://${LocalDate.now()}", message)
+        messageValidator.isMessageValid(message)
+          .filter(identity)
+          .foreach(_ ⇒ dispatcher.addPost(s"bitmessage://${LocalDate.now()}", message))
       })
     }
 
@@ -128,16 +133,21 @@ object Main extends App {
         case (url, messages) ⇒
           def insertMessages(messages: Seq[NanoboardMessage], inserted: Int = 0): Unit = messages match {
             case Seq(message, ms @ _*) if inserted < maxNewPosts ⇒
-              dispatcher.addPost(url, message).foreach(i ⇒ insertMessages(ms, inserted + i))
+              messageValidator.isMessageValid(message)
+                .flatMap(valid ⇒ if (valid) dispatcher.addPost(url, message) else Future.successful(0))
+                .foreach(i ⇒ insertMessages(ms, inserted + i))
 
             case Seq(message) if inserted < maxNewPosts ⇒
-              dispatcher.addPost(url, message)
+              messageValidator.isMessageValid(message)
+                .filter(identity)
+                .foreach(_ ⇒ dispatcher.addPost(url, message))
 
             case _ ⇒
               ()
           }
+
           db.run(Container.create(url)).foreach { _ ⇒
-            insertMessages(messages.filter(messageValidator.isMessageValid))
+            insertMessages(messages)
           }
       }
 

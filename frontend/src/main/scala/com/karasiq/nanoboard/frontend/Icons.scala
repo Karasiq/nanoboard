@@ -3,6 +3,9 @@ package com.karasiq.nanoboard.frontend
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.icons.{FontAwesome, IconModifier}
 
+/**
+  * Nanoboard application icons
+  */
 object Icons {
   private def fa(name: String): IconModifier = name.fontAwesome(FontAwesome.fixedWidth)
 
@@ -32,4 +35,5 @@ object Icons {
   def reply = fa("reply")
   def source = fa("file-text-o")
   def music = fa("music")
+  def verify = fa("key")
 }

@@ -8,7 +8,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import boopickle.Default._
-import com.karasiq.nanoboard.api.NanoboardReply
+import com.karasiq.nanoboard.api.{NanoboardCaptchaAnswer, NanoboardReply}
 import com.karasiq.nanoboard.dispatcher.NanoboardDispatcher
 import com.karasiq.nanoboard.server.streaming.NanoboardMessageStream
 import com.karasiq.nanoboard.server.util.{AttachmentGenerator, FractalMusic}
@@ -56,6 +56,9 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       (path("fractal_music" / Segment) & respondWithHeaders(`Cache-Control`(CacheDirectives.public, CacheDirectives.`max-age`(100000000L)))) { formula ⇒
         complete(StatusCodes.OK, FractalMusic(formula).map(HttpEntity(ContentType(MediaType.audio("wav", Compressible)), _)))
       } ~
+      (path("verify" / NanoboardMessage.HASH_FORMAT)) { hash ⇒
+        complete(StatusCodes.OK, dispatcher.requestVerification(hash))
+      } ~
       encodeResponse(pathEndOrSingleSlash(getFromResource("webapp/index.html")) ~ getFromResourceDirectory("webapp"))
     } ~
     post {
@@ -78,6 +81,9 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
       } ~
       (path("attachment") & parameters('format.?("jpeg"), 'size.as[Int].?(500), 'quality.as[Int].?(70)) & entity(as[ByteString])) { (format, size, quality, data) ⇒
         complete(StatusCodes.OK, HttpEntity(ContentTypes.`text/plain(UTF-8)`, AttachmentGenerator.createImage(format, size, quality, data)))
+      } ~
+      (path("verify") & entity[NanoboardCaptchaAnswer](defaultUnmarshaller)) { answer ⇒
+        complete(StatusCodes.OK, dispatcher.verifyPost(answer.request, answer.answer))
       }
     } ~
     delete {

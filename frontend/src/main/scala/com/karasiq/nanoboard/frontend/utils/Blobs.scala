@@ -11,7 +11,9 @@ import scala.scalajs.js.UndefOr
 import scala.scalajs.js.typedarray.Uint8Array
 import scalatags.JsDom.all._
 
-// Blob/file util
+/**
+  * Blob/file utility
+  */
 object Blobs {
   private def urlObject: URL = {
     js.Dynamic.global.window.URL.asInstanceOf[UndefOr[URL]]
@@ -30,7 +32,7 @@ object Blobs {
   }
 
   def fromString(data: String, contentType: String = ""): Blob = {
-    fromChars(data.toCharArray)
+    fromChars(data.toCharArray, contentType)
   }
 
   def fromBase64(base64: String, contentType: String = ""): Blob = {
