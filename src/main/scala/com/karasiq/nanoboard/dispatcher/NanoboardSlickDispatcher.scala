@@ -27,7 +27,8 @@ object NanoboardSlickDispatcher {
 }
 
 private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: NanoboardCaptchaFile, config: Config, eventSink: Sink[NanoboardEvent, _])(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer) extends NanoboardDispatcher {
-  private val powCalculator = NanoboardPow(config)
+  private val powContext = NanoboardPow.executionContext()
+  private val powCalculator = NanoboardPow(config)(powContext)
   private val messageGenerator = NanoboardMessageGenerator(config)
   private val eventQueue = Source.queue(20, OverflowStrategy.dropHead)
     .to(eventSink)

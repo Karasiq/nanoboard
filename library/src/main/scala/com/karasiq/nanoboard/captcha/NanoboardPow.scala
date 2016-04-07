@@ -17,8 +17,12 @@ object NanoboardPow {
     * @param config Configuration object
     * @return Proof-of-work calculator
     */
-  def apply(config: Config = ConfigFactory.load()): NanoboardPow = {
+  def apply(config: Config = ConfigFactory.load())(implicit ec: ExecutionContext): NanoboardPow = {
     new NanoboardPow(config.getInt("nanoboard.pow.offset"), config.getInt("nanoboard.pow.length"), config.getInt("nanoboard.pow.threshold"))
+  }
+
+  def executionContext() = {
+    ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors()))
   }
 }
 
@@ -29,7 +33,7 @@ object NanoboardPow {
   * @param threshold Maximum byte value
   * @see [[https://github.com/nanoboard/nanoboard/commit/ef747596802919c270d0de61bd9bcdf319c787f0]]
   */
-final class NanoboardPow(offset: Int, length: Int, threshold: Int) {
+final class NanoboardPow(offset: Int, length: Int, threshold: Int)(implicit ec: ExecutionContext) {
   // For verification with cached SHA256 state
   private def verify(update: ByteString, md: SHA256Digest): Boolean = {
     val hash = md.digest(update)
@@ -71,7 +75,6 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int) {
     * @return `[pow]` tag to be appended to message
     */
   def calculate(message: ByteString): Future[ByteString] = {
-    implicit val powContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors()))
     val open = ByteString("[pow=")
     val preHashed = sha256.updated(message ++ open)
     val close = ByteString("]")
@@ -85,10 +88,9 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int) {
           val data = ByteString(Hex.encodeHexString(array)) ++ close
           if (verify(data, new SHA256Digest(preHashed))) {
             result.success(open ++ data)
-            powContext.shutdownNow()
           }
         })(())((_, _) ⇒ ()).foreach { _ ⇒
-          if (!result.isCompleted && !powContext.isShutdown) {
+          if (!result.isCompleted) {
             submitTasks()
           }
         }

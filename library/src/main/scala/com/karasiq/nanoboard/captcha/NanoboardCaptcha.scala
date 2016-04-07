@@ -71,13 +71,22 @@ object NanoboardCaptcha {
   }
 
   /**
+    * Wraps signature in `[sign]` tag
+    * @param signature EdDSA digital signature
+    * @return Wrapped signature
+    */
+  def wrapSignature(signature: ByteString): ByteString = {
+    ByteString(s"[sign=${Hex.encodeHexString(signature.toArray)}]")
+  }
+
+  /**
     * Adds the signature to message
     * @param message Unsigned message
     * @param signature EdDSA digital signature
     * @return Signed message
     */
   def withSignature(message: String, signature: ByteString): String = {
-    message + s"[sign=${Hex.encodeHexString(signature.toArray)}]"
+    message + wrapSignature(signature).utf8String
   }
 
   /**
