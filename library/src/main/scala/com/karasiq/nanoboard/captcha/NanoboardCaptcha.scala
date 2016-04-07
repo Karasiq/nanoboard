@@ -3,7 +3,6 @@ package com.karasiq.nanoboard.captcha
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
-import java.security.MessageDigest
 import javax.imageio.ImageIO
 
 import akka.util.ByteString
@@ -28,9 +27,8 @@ case class NanoboardCaptcha(publicKey: ByteString, seed: ByteString, image: Byte
   }
 
   private def decryptSeed(answer: String): ByteString = {
-    val sha512 = MessageDigest.getInstance("SHA512", DataCipher.provider)
     val result = new Array[Byte](32)
-    val array = sha512.digest(ByteString(answer + Hex.encodeHexString(publicKey.toArray)).toArray) // Hex string is lowercase
+    val array = DataCipher.sha512.digest(ByteString(answer + Hex.encodeHexString(publicKey.toArray)).toArray) // Hex string is lowercase
     for (i ← seed.indices) {
       result(i) = (seed(i) ^ array(i & 63)).toByte
     }

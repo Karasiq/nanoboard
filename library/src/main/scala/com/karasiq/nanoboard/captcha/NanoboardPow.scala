@@ -1,13 +1,12 @@
 package com.karasiq.nanoboard.captcha
 
-import java.security.MessageDigest
 import java.util.concurrent.{Executors, RejectedExecutionException}
-import java.util.function.Supplier
 
 import akka.util.ByteString
 import com.karasiq.nanoboard.encoding.DataCipher
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.codec.binary.Hex
+import org.bouncycastle.crypto.digests.SHA256Digest
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Random
@@ -31,23 +30,11 @@ object NanoboardPow {
   * @see [[https://github.com/nanoboard/nanoboard/commit/ef747596802919c270d0de61bd9bcdf319c787f0]]
   */
 final class NanoboardPow(offset: Int, length: Int, threshold: Int) {
-  private val threadLocalSha256 = ThreadLocal.withInitial(new Supplier[MessageDigest] {
-    override def get(): MessageDigest = DataCipher.sha256
-  })
-
-  private def sha256 = {
-    val md = threadLocalSha256.get()
-    md.reset()
-    md
-  }
-
-  /**
-    * Verifies the message proof-of-work value
-    * @param message Message with `[pow]` tag
-    * @return Is POW valid
-    */
-  def verify(message: ByteString): Boolean = {
-    val hash = sha256.digest(message.toArray[Byte])
+  // For verification with cached SHA256 state
+  private def verify(update: ByteString, sha256: SHA256Digest): Boolean = {
+    sha256.update(update.toArray, 0, update.length)
+    val hash = Array.ofDim[Byte](sha256.getDigestSize)
+    sha256.doFinal(hash, 0)
     var maxLength = 0
     for (i ← offset until hash.length if maxLength < this.length) {
       if (java.lang.Byte.toUnsignedInt(hash(i)) <= threshold) {
@@ -60,13 +47,22 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int) {
   }
 
   /**
+    * Verifies the message proof-of-work value
+    * @param message Message with `[pow]` tag
+    * @return Is POW valid
+    */
+  def verify(message: ByteString): Boolean = {
+    verify(message, new SHA256Digest())
+  }
+
+  /**
     * Calculates captcha index
     * @param message Message with `[pow]` tag
     * @param max Maximum captcha index
     * @return Index of the captcha to be solved
     */
   def captchaIndex(message: ByteString, max: Int): Int = {
-    sha256.digest(message.toArray[Byte]).take(3).map(java.lang.Byte.toUnsignedInt) match {
+    DataCipher.sha256.digest(message.toArray[Byte]).take(3).map(java.lang.Byte.toUnsignedInt) match {
       case Array(b0, b1, b2) ⇒
         (b0 + b1 * 256 + b2 * 256 * 256) % max
     }
@@ -80,6 +76,13 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int) {
   def calculate(message: ByteString): Future[ByteString] = {
     implicit val powContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors()))
     val open = ByteString("[pow=")
+
+    val preHashed = {
+      val md = new SHA256Digest()
+      val data = (message ++ open).toArray
+      md.update(data, 0, data.length)
+      md
+    }
     val close = ByteString("]")
     val result = Promise[ByteString]
 
@@ -88,9 +91,9 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int) {
         Future.fold(for (_ ← 0 to 100) yield Future {
           val array = Array.ofDim[Byte](128)
           Random.nextBytes(array)
-          val data = open ++ ByteString(Hex.encodeHexString(array)) ++ close
-          if (verify(message ++ data)) {
-            result.success(data)
+          val data = ByteString(Hex.encodeHexString(array)) ++ close
+          if (verify(data, new SHA256Digest(preHashed))) {
+            result.success(open ++ data)
             powContext.shutdownNow()
           }
         })(())((_, _) ⇒ ()).foreach { _ ⇒

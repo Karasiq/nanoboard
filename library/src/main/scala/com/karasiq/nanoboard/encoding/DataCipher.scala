@@ -9,4 +9,7 @@ private[nanoboard] object DataCipher {
 
   @inline
   def sha256 = MessageDigest.getInstance("SHA256", provider)
+
+  @inline
+  def sha512 = MessageDigest.getInstance("SHA512", provider)
 }
