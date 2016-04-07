@@ -14,7 +14,7 @@ trait UrlPngSource {
 
 object UrlPngSource {
   def apply(config: Config)(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {
-    new DefaultUrlPngSource(NanoboardEncoding(config))
+    apply(NanoboardEncoding(config))
   }
 
   def apply(encoding: DataEncodingStage)(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {

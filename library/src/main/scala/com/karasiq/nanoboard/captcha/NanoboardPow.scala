@@ -3,7 +3,7 @@ package com.karasiq.nanoboard.captcha
 import java.util.concurrent.{Executors, RejectedExecutionException}
 
 import akka.util.ByteString
-import com.karasiq.nanoboard.encoding.DataCipher
+import com.karasiq.nanoboard.encoding.DataCipher.{BCDigestOps, sha256}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.codec.binary.Hex
 import org.bouncycastle.crypto.digests.SHA256Digest
@@ -31,17 +31,14 @@ object NanoboardPow {
   */
 final class NanoboardPow(offset: Int, length: Int, threshold: Int) {
   // For verification with cached SHA256 state
-  private def verify(update: ByteString, sha256: SHA256Digest): Boolean = {
-    sha256.update(update.toArray, 0, update.length)
-    val hash = Array.ofDim[Byte](sha256.getDigestSize)
-    sha256.doFinal(hash, 0)
+  private def verify(update: ByteString, md: SHA256Digest): Boolean = {
+    val hash = md.digest(update)
     var maxLength = 0
     for (i ← offset until hash.length if maxLength < this.length) {
-      if (java.lang.Byte.toUnsignedInt(hash(i)) <= threshold) {
+      if (java.lang.Byte.toUnsignedInt(hash(i)) <= threshold)
         maxLength += 1
-      } else {
+      else
         maxLength = 0
-      }
     }
     maxLength >= this.length
   }
@@ -52,7 +49,7 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int) {
     * @return Is POW valid
     */
   def verify(message: ByteString): Boolean = {
-    verify(message, new SHA256Digest())
+    verify(message, sha256)
   }
 
   /**
@@ -62,8 +59,8 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int) {
     * @return Index of the captcha to be solved
     */
   def captchaIndex(message: ByteString, max: Int): Int = {
-    DataCipher.sha256.digest(message.toArray[Byte]).take(3).map(java.lang.Byte.toUnsignedInt) match {
-      case Array(b0, b1, b2) ⇒
+    sha256.digest(message).take(3).map(java.lang.Byte.toUnsignedInt) match {
+      case Seq(b0, b1, b2) ⇒
         (b0 + b1 * 256 + b2 * 256 * 256) % max
     }
   }
@@ -76,13 +73,7 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int) {
   def calculate(message: ByteString): Future[ByteString] = {
     implicit val powContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors()))
     val open = ByteString("[pow=")
-
-    val preHashed = {
-      val md = new SHA256Digest()
-      val data = (message ++ open).toArray
-      md.update(data, 0, data.length)
-      md
-    }
+    val preHashed = sha256.updated(message ++ open)
     val close = ByteString("]")
     val result = Promise[ByteString]
 
