@@ -104,16 +104,16 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
       PostRenderer.renderMarkdown(PostRenderer.asText(value))
 
     case BBCode("b", _, value) ⇒
-      span(fontWeight.bold, render(value))
+      strong(render(value))
 
     case BBCode("i", _, value) ⇒
-      span(fontStyle.italic, render(value))
+      em(render(value))
 
     case BBCode("u", _, value) ⇒
-      span(textDecoration.underline, render(value))
+      u(render(value))
 
     case BBCode("s", _, value) ⇒
-      span(textDecoration.`line-through`, render(value))
+      s(render(value))
 
     case BBCode("g", _, value) ⇒
       span(controller.style.greenText, render(value))

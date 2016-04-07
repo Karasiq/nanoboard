@@ -15,13 +15,17 @@ import upickle.default._
 import scala.concurrent.Future
 
 object BitMessageTransport {
-  def apply(config: Config = ConfigFactory.load())(implicit ac: ActorSystem, am: ActorMaterializer) = {
-    val chanAddress = config.getString("nanoboard.bitmessage.chan-address")
-    val apiAddress = config.getString("nanoboard.bitmessage.host")
-    val apiPort = config.getInt("nanoboard.bitmessage.port")
-    val apiUsername = config.getString("nanoboard.bitmessage.username")
-    val apiPassword = config.getString("nanoboard.bitmessage.password")
+  def fromConfig(bmConfig: Config)(implicit ac: ActorSystem, am: ActorMaterializer) = {
+    val chanAddress = bmConfig.getString("chan-address")
+    val apiAddress = bmConfig.getString("host")
+    val apiPort = bmConfig.getInt("port")
+    val apiUsername = bmConfig.getString("username")
+    val apiPassword = bmConfig.getString("password")
     new BitMessageTransport(chanAddress, apiAddress, apiPort, apiUsername, apiPassword)
+  }
+
+  def apply(config: Config = ConfigFactory.load())(implicit ac: ActorSystem, am: ActorMaterializer) = {
+    fromConfig(config.getConfig("nanoboard.bitmessage"))
   }
 
   @inline
@@ -44,6 +48,10 @@ object BitMessageTransport {
   }
 }
 
+/**
+  * Nanoboard BitMessage transport, compatible with official implementation.
+  * @see [[https://github.com/nanoboard/nanoboard-bittransport]]
+  */
 final class BitMessageTransport(chanAddress: String, apiAddress: String, apiPort: Int, apiUsername: String, apiPassword: String)(implicit ac: ActorSystem, am: ActorMaterializer) {
   import XmlRpcProxy._
   private val http = Http()

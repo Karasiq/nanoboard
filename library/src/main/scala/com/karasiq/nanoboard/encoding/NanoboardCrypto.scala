@@ -5,7 +5,10 @@ import org.bouncycastle.crypto.digests.{SHA256Digest, SHA512Digest}
 import org.bouncycastle.crypto.{Digest, StreamCipher}
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 
-private[nanoboard] object DataCipher {
+/**
+  * Internal cryptography utility
+  */
+private[nanoboard] object NanoboardCrypto {
   val provider = new BouncyCastleProvider
 
   @inline

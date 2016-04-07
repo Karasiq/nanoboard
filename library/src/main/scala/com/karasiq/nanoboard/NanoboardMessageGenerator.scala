@@ -10,12 +10,24 @@ import com.typesafe.config.{Config, ConfigFactory}
 import scala.util.Try
 
 object NanoboardMessageGenerator {
+  def fromConfig(config: Config) = {
+    new NanoboardMessageGenerator(config.getString("client-version"), Try(ZoneId.of(config.getString("default-time-zone"))).getOrElse(ZoneId.systemDefault()))
+  }
+
   def apply(config: Config = ConfigFactory.load()) = {
-    new NanoboardMessageGenerator(config.getString("nanoboard.client-version"), Try(ZoneId.of(config.getString("nanoboard.default-time-zone"))).getOrElse(ZoneId.systemDefault()))
+    fromConfig(config.getConfig("nanoboard"))
   }
 }
 
-class NanoboardMessageGenerator(clientVersion: String, defaultTimeZone: ZoneId) {
+/**
+  * Nanoboard message generator
+  * @param clientVersion Client version string
+  * @param timeZone Timestamp time zone
+  */
+class NanoboardMessageGenerator(clientVersion: String, timeZone: ZoneId) {
+  /**
+    * Message timestamp format
+    */
   protected val timestampFormat = new DateTimeFormatterBuilder()
     .appendText(ChronoField.DAY_OF_WEEK, TextStyle.SHORT)
     .appendLiteral(", ")
@@ -31,8 +43,14 @@ class NanoboardMessageGenerator(clientVersion: String, defaultTimeZone: ZoneId) 
     .appendLiteral(")")
     .toFormatter(Locale.ENGLISH)
 
+  /**
+    * Creates new message with timestamp and client header
+    * @param parent Parent message hash
+    * @param text Message text
+    * @return Created message
+    */
   def newMessage(parent: String, text: String): NanoboardMessage = {
-    val header = s"[g]${timestampFormat.format(ZonedDateTime.now(defaultTimeZone))}, client: $clientVersion[/g]"
+    val header = s"[g]${timestampFormat.format(ZonedDateTime.now(timeZone))}, client: $clientVersion[/g]"
     NanoboardMessage(parent, s"$header\n$text")
   }
 }

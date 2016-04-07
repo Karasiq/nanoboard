@@ -7,7 +7,7 @@ import javax.imageio.ImageIO
 
 import akka.util.ByteString
 import com.karasiq.nanoboard.NanoboardMessage
-import com.karasiq.nanoboard.encoding.DataCipher.{BCDigestOps, sha512}
+import com.karasiq.nanoboard.encoding.NanoboardCrypto.{BCDigestOps, sha512}
 import org.apache.commons.codec.binary.Hex
 
 import scala.concurrent.{ExecutionContext, Future}

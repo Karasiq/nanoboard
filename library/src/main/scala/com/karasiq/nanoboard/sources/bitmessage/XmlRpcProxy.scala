@@ -11,6 +11,9 @@ import scala.language.{dynamics, implicitConversions}
 import scalatags.Text.all._
 import scalatags.text.Builder
 
+/**
+  * Simple XML-RPC wrapper, based on `akka-http`
+  */
 private[bitmessage] final class XmlRpcProxy(http: HttpExt, apiAddress: String, apiPort: Int, apiUsername: String, apiPassword: String)(implicit am: ActorMaterializer) extends Dynamic {
   def applyDynamic(method: String)(args: XmlRpcParameter*): Future[HttpResponse] = {
     import XmlRpcTags._

@@ -6,6 +6,10 @@ import akka.stream.scaladsl.Source
 import com.karasiq.nanoboard.encoding.DataEncodingStage
 import org.jsoup.nodes.Element
 
+/**
+  * 2ch.hk PNG downloader
+  * @param encoding PNG data decoder
+  */
 final class SosachPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: ActorMaterializer) extends BoardPngSource(encoding) {
   private val regex = """https?://2ch\.hk/(\w+/src/\d+/\d+\.(?:png|bmp))""".r
 

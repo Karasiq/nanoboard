@@ -1,26 +1,36 @@
 package com.karasiq.nanoboard.encoding.stages
 
 import akka.util.ByteString
-import com.karasiq.nanoboard.encoding.DataCipher.{BCDigestOps, BCStreamCipherOps, sha256}
 import com.karasiq.nanoboard.encoding.DataEncodingStage
-import com.typesafe.config.{Config, ConfigFactory}
+import com.karasiq.nanoboard.encoding.NanoboardCrypto.{BCDigestOps, BCStreamCipherOps, sha256}
+import com.typesafe.config.Config
 import org.bouncycastle.crypto.engines.Salsa20Engine
 import org.bouncycastle.crypto.params.{KeyParameter, ParametersWithIV}
 
 object SalsaCipher {
+  /**
+    * Creates Salsa20 cipher stage from specified config
+    * @param nbConfig Configuration object
+    * @return Salsa20 cipher stage
+    */
+  def fromConfig(nbConfig: Config): SalsaCipher = {
+    apply(nbConfig.getString("encryption-key"))
+  }
+
+  /**
+    * Creates Salsa20 cipher stage with the specified key
+    * @param key Encryption key
+    * @return Salsa20 cipher stage
+    */
   def apply(key: String): SalsaCipher = {
     new SalsaCipher(key)
   }
-
-  def apply(config: Config): SalsaCipher = {
-    apply(config.getString("nanoboard.encryption-key"))
-  }
-
-  def apply(): SalsaCipher = {
-    apply(ConfigFactory.load())
-  }
 }
 
+/**
+  * Salsa20 stream cipher encryption stage
+  * @param key Encryption key
+  */
 final class SalsaCipher(key: String) extends DataEncodingStage {
   private def createCipher(encryption: Boolean): Salsa20Engine = {
     val cipher = new Salsa20Engine()
@@ -32,10 +42,20 @@ final class SalsaCipher(key: String) extends DataEncodingStage {
     cipher
   }
 
+  /**
+    * Encrypts provided data with the Salsa20 stream cipher
+    * @param data Source data
+    * @return Encrypted data
+    */
   override def encode(data: ByteString): ByteString = {
     createCipher(encryption = true).process(data)
   }
 
+  /**
+    * Decrypts data, encrypted with the Salsa20 stream cipher
+    * @param data Encrypted data
+    * @return Source data
+    */
   override def decode(data: ByteString): ByteString = {
     createCipher(encryption = false).process(data)
   }

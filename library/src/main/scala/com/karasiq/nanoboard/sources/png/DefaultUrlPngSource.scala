@@ -4,6 +4,10 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import com.karasiq.nanoboard.encoding.DataEncodingStage
 
+/**
+  * Default PNG downloader
+  * @param encoding PNG data decoder
+  */
 final class DefaultUrlPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: ActorMaterializer) extends UrlPngSource {
   private val generic = new BoardPngSource(encoding)
   private val sosach = new SosachPngSource(encoding)

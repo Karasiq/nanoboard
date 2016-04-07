@@ -18,6 +18,7 @@ private[server] final class MessageValidator(captcha: NanoboardCaptchaFile, conf
   private val maxPostSize = config.getMemorySize("nanoboard.max-post-size").toBytes
   private val spamFilter = config.getStringList("nanoboard.scheduler.spam-filter").toVector
   private val powCalculator = NanoboardPow(config)
+  private val initialPosts = Set("bdd4b5fc1b3a933367bc6830fef72a35", "cd94a3d60f2f521806abebcd3dc3f549", "f682830a470200d738d32c69e6c2b8a4")
 
   def isMessageValid(message: NanoboardMessage): Future[Boolean] = {
     Future.reduce(Seq(
@@ -27,7 +28,7 @@ private[server] final class MessageValidator(captcha: NanoboardCaptchaFile, conf
           message.text.length <= maxPostSize &&
           spamFilter.forall(!message.text.matches(_))
       ),
-      if (requirePow) NanoboardCaptcha.verify(message, powCalculator, captcha) else Future.successful(true)
+      if (requirePow && !initialPosts.contains(message.hash)) NanoboardCaptcha.verify(message, powCalculator, captcha) else Future.successful(true)
     ))(_ && _)
   }
 }

@@ -12,13 +12,13 @@ class SourceTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   implicit val actorMaterializer = ActorMaterializer()
   val source = UrlPngSource()
 
-  "PNG source" should "load messages from image" in {
+  ignore should "load messages from image" in {
     val imageSource = source.messagesFromImage("http://dobrochan.com/src/png/1512/00cfb029473e4a90.png")
     val messages = Await.result(imageSource.runWith(Sink.seq), Duration.Inf)
     messages.length shouldBe 72
   }
 
-  it should "load messages from thread" in {
+  ignore should "load messages from thread" in {
     val imageSource = source.imagesFromPage("http://dobrochan.com/slow/res/26779.xhtml").flatMapConcat(source.messagesFromImage)
     val messages = Await.result(imageSource.take(100).runWith(Sink.seq), Duration.Inf)
     messages.length shouldBe 100

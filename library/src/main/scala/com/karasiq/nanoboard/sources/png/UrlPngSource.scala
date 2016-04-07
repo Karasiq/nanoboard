@@ -7,12 +7,30 @@ import com.karasiq.nanoboard.NanoboardMessage
 import com.karasiq.nanoboard.encoding.{DataEncodingStage, NanoboardEncoding}
 import com.typesafe.config.{Config, ConfigFactory}
 
+/**
+  * PNG downloader interface
+  */
 trait UrlPngSource {
+  /**
+    * Downloads and parses the messages from provided URL
+    * @param url PNG image URL
+    * @return Nanoboard messages
+    */
   def messagesFromImage(url: String): Source[NanoboardMessage, akka.NotUsed]
+
+  /**
+    * Downloads and provides list of available PNG images from the page
+    * @param url Page URL
+    * @return PNG images URL
+    */
   def imagesFromPage(url: String): Source[String, akka.NotUsed]
 }
 
 object UrlPngSource {
+  def fromConfig(config: Config)(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {
+    apply(NanoboardEncoding.fromConfig(config))
+  }
+
   def apply(config: Config)(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {
     apply(NanoboardEncoding(config))
   }

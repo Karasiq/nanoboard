@@ -16,6 +16,10 @@ import org.jsoup.nodes.{Document, Element}
 import scala.collection.JavaConversions._
 import scala.util.Try
 
+/**
+  * Generic imageboard PNG downloader
+  * @param encoding PNG data decoder
+  */
 class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: ActorMaterializer) extends UrlPngSource {
   protected final val http = Http()
 

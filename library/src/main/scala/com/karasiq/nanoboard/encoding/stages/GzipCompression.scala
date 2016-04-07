@@ -6,11 +6,19 @@ import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 import akka.util.ByteString
 import com.karasiq.nanoboard.encoding.DataEncodingStage
 
+/**
+  * GZIP compression data stage.
+  */
 object GzipCompression extends GzipCompression {
   def apply(): GzipCompression = this
 }
 
 sealed class GzipCompression extends DataEncodingStage {
+  /**
+    * Compresses data with GZIP
+    * @param data Source data
+    * @return Compressed data
+    */
   override def encode(data: ByteString): ByteString = {
     val inputStream = new ByteArrayInputStream(data.toArray)
     val byteArrayOutputStream = new ByteArrayOutputStream()
@@ -31,6 +39,11 @@ sealed class GzipCompression extends DataEncodingStage {
     }
   }
 
+  /**
+    * Decompresses GZIP-compressed data
+    * @param data Previously compressed data
+    * @return Source data
+    */
   override def decode(data: ByteString): ByteString = {
     val inputStream = new GZIPInputStream(new ByteArrayInputStream(data.toArray), 1024)
     val outputStream = new ByteArrayOutputStream()

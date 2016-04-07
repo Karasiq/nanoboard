@@ -3,7 +3,7 @@ package com.karasiq.nanoboard.captcha
 import java.util.concurrent.{Executors, RejectedExecutionException}
 
 import akka.util.ByteString
-import com.karasiq.nanoboard.encoding.DataCipher.{BCDigestOps, sha256}
+import com.karasiq.nanoboard.encoding.NanoboardCrypto.{BCDigestOps, sha256}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.codec.binary.Hex
 import org.bouncycastle.crypto.digests.SHA256Digest
@@ -21,6 +21,10 @@ object NanoboardPow {
     new NanoboardPow(config.getInt("nanoboard.pow.offset"), config.getInt("nanoboard.pow.length"), config.getInt("nanoboard.pow.threshold"))
   }
 
+  /**
+    * Provides execution context, optimised for nanoboard proof-of-work calculation
+    * @return Fixed thread pool execution context
+    */
   def executionContext() = {
     ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors()))
   }

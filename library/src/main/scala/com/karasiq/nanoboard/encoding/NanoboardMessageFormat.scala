@@ -4,15 +4,34 @@ import com.karasiq.nanoboard.NanoboardMessage
 
 import scala.annotation.tailrec
 
+/**
+  * Nanoboard message pack format
+  */
 trait NanoboardMessageFormat {
+  /**
+    * Parses messages from serialized data
+    * @param payload Serialized messages
+    * @return Parsed messages
+    */
   def parseMessages(payload: String): Vector[NanoboardMessage]
 
+  /**
+    * Serializes messages to string
+    * @param messages Messages
+    * @return Serialized messages
+    */
   def writeMessages(messages: Seq[NanoboardMessage]): String
 }
 
+/**
+  * Default nanoboard message pack format.
+  * Output starts with six-digits hex numbers, the first of which is a count of messages,
+  * and subsequent are lengths of the messages itself, and followed by concatenated messages in format `replyTo` + `text`.
+  * @see [[https://github.com/nanoboard/nanoboard/blob/master/Database/NanoPostPackUtil.cs Original implementation]]
+  */
 trait DefaultNanoboardMessageFormat extends NanoboardMessageFormat {
   final def parseMessages(payload: String): Vector[NanoboardMessage] = {
-    val sizes = {
+    val sizes: Vector[Int] = {
       val sizes: Iterator[Int] = payload.grouped(6)
         .map(bs ⇒ Integer.parseInt(bs, 16))
 
