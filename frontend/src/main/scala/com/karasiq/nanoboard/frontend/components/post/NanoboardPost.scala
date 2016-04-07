@@ -39,7 +39,6 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
         maxHeight := 48.em
     }
 
-    val verified = Var(false)
     val verifyLoading = Var(false)
     div(
       if (scrollable) id := s"post-${postData.hash}" else (),
@@ -74,14 +73,13 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
           })
         },
         a(style.postLink, href := "#", Icons.source, locale.source, onclick := Bootstrap.jsClick(_ ⇒ showSource() = !showSource.now)),
-        a(style.postLink, href := "#", Icons.verify, locale.verify, Rx[AutoModifier](if (verifyLoading()) textDecoration.`line-through` else textDecoration.none), Rx[AutoModifier](if (verified() || postData.answers > 0 || postData.isSigned) display.none else display.inline), onclick := Bootstrap.jsClick { _ ⇒
+        a(style.postLink, href := "#", Icons.verify, locale.verify, Rx[AutoModifier](if (verifyLoading()) textDecoration.`line-through` else textDecoration.none), if (postData.isSigned) display.none else display.inline, onclick := Bootstrap.jsClick { _ ⇒
           if (!verifyLoading.now) {
             verifyLoading() = true
             CaptchaDialog().verify(postData.hash).onComplete {
               case Success(newData) ⇒
                 verifyLoading() = false
-                verified() = true
-                controller.addPending(postData) // Show as pending
+                controller.updatePosts()
 
               case Failure(CancelledException) ⇒
                 verifyLoading() = false

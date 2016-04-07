@@ -166,9 +166,25 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
     } yield NanoboardCaptchaRequest(hash, pow.utf8String, NanoboardCaptchaImage(captchaId, NanoboardCaptcha.render(captchaImage).toArray))
   }
 
+  // Recursively moves answers
+  private def moveAnswers(hash: String, newHash: String): DBIOAction[Unit, NoStream, Effect.Write with Effect.Read] = {
+    for {
+      answers ← posts.filter(_.parent === hash).result
+      _ ← DBIO.sequence(answers.map {
+        case DBPost(hash, _, text, firstSeen, containerId) ⇒
+          val newMessage = NanoboardMessage(newHash, NanoboardMessageData.stripSignTags(text))
+          DBIO.seq(
+            posts.filter(_.hash === hash).delete,
+            posts += DBPost(newMessage.hash, newMessage.parent, newMessage.text, firstSeen, containerId),
+            moveAnswers(hash, newMessage.hash)
+          )
+      })
+    } yield ()
+  }
+
   def verifyPost(request: NanoboardCaptchaRequest, answer: String): Future[NanoboardMessageData] = {
     for {
-      DBPost(_, parent, text, firstSeen, cid) ← db.run(posts.filter(_.hash === request.post).result.head) if !text.contains("[sign=")
+      DBPost(_, parent, text, firstSeen, containerId) ← db.run(posts.filter(_.hash === request.post).result.head) if !text.contains("[sign=")
       (unsigned, None) ← Future.successful(NanoboardCaptcha.withoutSignature(NanoboardMessage(parent, text)))
       signPayload ← Future.successful(unsigned ++ ByteString(request.pow))
       captchaId ← Future.successful(powCalculator.captchaIndex(signPayload, captcha.length))
@@ -177,9 +193,10 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
       newMessage ← Future.successful(NanoboardMessage(parent, NanoboardCaptcha.withSignature(text + request.pow, sign)))
       newPost ← db.run(DBIO.seq(
         posts.filter(_.hash === request.post).delete,
-        posts += DBPost(newMessage.hash, newMessage.parent, newMessage.text, firstSeen, cid),
-        pendingPosts += newMessage.hash
+        posts += DBPost(newMessage.hash, newMessage.parent, newMessage.text, firstSeen, containerId),
+        pendingPosts += newMessage.hash,
+        moveAnswers(request.post, newMessage.hash)
       ))
-    } yield NanoboardMessageData(Some(cid), Some(parent), newMessage.hash, newMessage.text, 0)
+    } yield NanoboardMessageData(Some(containerId), Some(parent), newMessage.hash, newMessage.text, 0)
   }
 }
