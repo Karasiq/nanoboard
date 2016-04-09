@@ -14,7 +14,8 @@ trait Tables {
     }
   }
 
-  // TODO: Descending recent index
+  // TODO: Descending recent index: https://github.com/slick/slick/issues/1035
+  // TODO: Separate column for signature
   class Post(tag: Tag) extends Table[DBPost](tag, "posts") {
     def hash = column[String]("hash", O.SqlType("char(32)"), O.PrimaryKey)
     def parent = column[String]("parent_hash", O.SqlType("char(32)"))

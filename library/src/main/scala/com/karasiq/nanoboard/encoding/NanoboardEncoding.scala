@@ -21,6 +21,6 @@ object NanoboardEncoding {
     * but uses root configuration.
     */
   def apply(config: Config = ConfigFactory.load(), pngEncoding: PngEncoding = PngEncoding.decoder): DataEncodingStage = {
-    fromConfig(config.getConfig("nanoboard"))
+    fromConfig(config.getConfig("nanoboard"), pngEncoding)
   }
 }

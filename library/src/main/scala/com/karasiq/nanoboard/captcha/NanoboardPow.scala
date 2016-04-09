@@ -23,10 +23,10 @@ object NanoboardPow {
 
   /**
     * Provides execution context, optimised for nanoboard proof-of-work calculation
-    * @return Fixed thread pool execution context
+    * @return Work stealing pool execution context
     */
   def executionContext() = {
-    ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors()))
+    ExecutionContext.fromExecutorService(Executors.newWorkStealingPool(Runtime.getRuntime.availableProcessors()))
   }
 }
 

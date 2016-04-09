@@ -1,8 +1,5 @@
 package com.karasiq.nanoboard.dispatcher
 
-import java.io.ByteArrayInputStream
-import javax.imageio.ImageIO
-
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, OverflowStrategy}
@@ -12,7 +9,7 @@ import com.karasiq.nanoboard.captcha.{NanoboardCaptcha, NanoboardCaptchaFile, Na
 import com.karasiq.nanoboard.encoding.NanoboardEncoding
 import com.karasiq.nanoboard.encoding.stages.PngEncoding
 import com.karasiq.nanoboard.model.MessageConversions._
-import com.karasiq.nanoboard.model._
+import com.karasiq.nanoboard.model.{categories => categoriesTable, _}
 import com.karasiq.nanoboard.streaming.NanoboardEvent
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage, NanoboardMessageGenerator}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -40,14 +37,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
     val random = for (ps ← posts.sortBy(_ ⇒ rand).take(randomCount).result) yield ps.map(_.asThread(0))
     val query = for (p ← pending; r ← random) yield (p ++ r).toVector
 
-    val stage = NanoboardEncoding(config, PngEncoding { data ⇒
-      val inputStream = new ByteArrayInputStream(container.toArray)
-      val image = try { ImageIO.read(inputStream) } finally inputStream.close()
-      assert(image.ne(null), "Invalid image")
-      assert(PngEncoding.imageBytes(image) >= data.length, s"Image is too small, ${data.length} bits required")
-      image
-    })
-
+    val stage = NanoboardEncoding(config, PngEncoding.fromEncodedImage(container))
     val future = db.run(query).map { posts ⇒
       val data = ByteString(NanoboardMessage.writeMessages(posts.map(messageDataToMessage)))
       val encoded = stage.encode(data)
@@ -167,15 +157,34 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
     } yield NanoboardCaptchaRequest(hash, pow.utf8String, NanoboardCaptchaImage(captchaId, NanoboardCaptcha.render(captchaImage).toArray))
   }
 
+  // Replaces category hash
+  private def moveCategory(hash: String, newHash: String): DBIOAction[Unit, NoStream, Effect.Write with Effect.Read] = {
+    for {
+      category ← categoriesTable.filter(_.hash === hash).result.headOption
+      _ ← if (category.isDefined) {
+        DBIO.seq(
+          categoriesTable.filter(_.hash inSet Seq(hash, newHash)).delete,
+          categoriesTable += NanoboardCategory(newHash, category.get.name)
+        )
+      } else {
+        DBIO.successful(())
+      }
+    } yield ()
+  }
+
   // Recursively moves answers
   private def moveAnswers(hash: String, newHash: String): DBIOAction[Unit, NoStream, Effect.Write with Effect.Read] = {
     for {
+      _ ← DBIO.seq(
+        deletedPosts.filter(_.hash === newHash).delete,
+        moveCategory(hash, newHash)
+      )
       answers ← posts.filter(_.parent === hash).result
       _ ← DBIO.sequence(answers.map {
         case DBPost(hash, _, text, firstSeen, containerId) ⇒
           val newMessage = NanoboardMessage(newHash, NanoboardMessageData.stripSignTags(text))
           DBIO.seq(
-            posts.filter(_.hash === hash).delete,
+            posts.filter(_.hash inSet Seq(hash, newMessage.hash)).delete,
             posts += DBPost(newMessage.hash, newMessage.parent, newMessage.text, firstSeen, containerId),
             moveAnswers(hash, newMessage.hash)
           )
@@ -185,7 +194,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
 
   def verifyPost(request: NanoboardCaptchaRequest, answer: String): Future[NanoboardMessageData] = {
     for {
-      DBPost(_, parent, text, firstSeen, containerId) ← db.run(posts.filter(_.hash === request.post).result.head) if !text.contains("[sign=")
+      DBPost(_, parent, text, firstSeen, containerId) ← db.run(posts.filter(_.hash === request.postHash).result.head) if !text.contains("[sign=")
       (unsigned, None) ← Future.successful(NanoboardCaptcha.withoutSignature(NanoboardMessage(parent, text)))
       signPayload ← Future.successful(unsigned ++ ByteString(request.pow))
       captchaId ← Future.successful(powCalculator.captchaIndex(signPayload, captcha.length))
@@ -193,10 +202,10 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
       sign ← Future.successful(captcha.signature(signPayload, answer)) if captcha.verify(signPayload, sign)
       newMessage ← Future.successful(NanoboardMessage(parent, NanoboardCaptcha.withSignature(text + request.pow, sign)))
       newPost ← db.run(DBIO.seq(
-        posts.filter(_.hash === request.post).delete,
+        posts.filter(_.hash === request.postHash).delete,
         posts += DBPost(newMessage.hash, newMessage.parent, newMessage.text, firstSeen, containerId),
         pendingPosts += newMessage.hash,
-        moveAnswers(request.post, newMessage.hash)
+        moveAnswers(request.postHash, newMessage.hash)
       ))
     } yield NanoboardMessageData(Some(containerId), Some(parent), newMessage.hash, newMessage.text, 0)
   }

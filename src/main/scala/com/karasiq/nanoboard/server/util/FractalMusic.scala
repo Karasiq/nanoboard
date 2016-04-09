@@ -1,14 +1,22 @@
 package com.karasiq.nanoboard.server.util
 
-import java.util.concurrent.TimeoutException
+import java.util.concurrent.{Executors, TimeUnit, TimeoutException}
+import javax.script.ScriptEngine
 
 import akka.util.ByteString
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory
 
 import scala.concurrent.{Future, Promise}
 
-object FractalMusic {
+object FractalMusic extends FractalMusicGenerator(5000)
+
+class FractalMusicGenerator(timeLimit: Int) {
+  private val scheduler = Executors.newScheduledThreadPool(1)
   private val engineFactory = new NashornScriptEngineFactory()
+
+  protected def createScriptEngine(): ScriptEngine = {
+    engineFactory.getScriptEngine(Array("-strict", "--no-java", "--no-syntax-extensions"), getClass.getClassLoader)
+  }
 
   def apply(formula: String): Future[ByteString] = {
     val source =
@@ -48,10 +56,10 @@ object FractalMusic {
 
     val promise = Promise[ByteString]
 
-    val thread1 = new Thread(new Runnable {
+    val thread = new Thread(new Runnable {
       override def run(): Unit = {
         try {
-          val engine = engineFactory.getScriptEngine(Array("-strict", "--no-java", "--no-syntax-extensions"), getClass.getClassLoader)
+          val engine = createScriptEngine()
           promise.success(ByteString(engine.eval(source).asInstanceOf[String].toCharArray.map(_.toByte)))
         } catch {
           case exc: Throwable ⇒
@@ -60,18 +68,16 @@ object FractalMusic {
       }
     })
 
-    val thread2 = new Thread(new Runnable {
+    scheduler.schedule(new Runnable {
       override def run(): Unit = {
-        Thread.sleep(5000)
         if (!promise.isCompleted) {
-          thread1.interrupt()
+          thread.interrupt()
           promise.failure(new TimeoutException("JavaScript execution timed out"))
         }
       }
-    })
+    }, timeLimit, TimeUnit.MILLISECONDS)
 
-    thread1.start()
-    thread2.start()
+    thread.start()
     promise.future
   }
 }

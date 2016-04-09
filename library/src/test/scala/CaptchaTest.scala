@@ -40,7 +40,7 @@ class CaptchaTest extends FlatSpec with Matchers {
   val post = NanoboardMessage("0" * 32, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
   val (postPayload, None) = NanoboardCaptcha.withoutSignature(post)
   val preCalculatedPow = ByteString("[pow=e02724de6a34a58555cece6475f5bc4ce4f957644ffa5c4fb983efc3bdd669651c5e5a8d4436930af26e1b6d0c9bf8ee2225ea2d446eec3ee3a7376a6788b579446a94581d02bfaa71eae8398d72397b77c3e0b152cee8999dc9129b7e72e6a98bfcfb164399a1ecd47fae574012fa3ea0d176638bae242085f0cd4ee0f0afb9]")
-  val powCalculator = NanoboardPow()(scala.concurrent.ExecutionContext.global)
+  val powCalculator = NanoboardPow()(NanoboardPow.executionContext())
 
   "POW calculator" should "verify hash" in {
     val data = postPayload ++ preCalculatedPow

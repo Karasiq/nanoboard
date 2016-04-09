@@ -21,6 +21,21 @@ object PngEncoding {
   }
 
   /**
+    * Creates PNG encoder, that uses single image for encoding
+    * @param imageData Encoded image, must be readable with [[javax.imageio.ImageIO#read(java.io.InputStream) Java ImageIO]]
+    * @return PNG encoder
+    */
+  def fromEncodedImage(imageData: ByteString): PngEncoding = {
+    apply { data ⇒
+      val inputStream = new ByteArrayInputStream(imageData.toArray)
+      val image = try { ImageIO.read(inputStream) } finally inputStream.close()
+      assert(image.ne(null), "Invalid image")
+      assert(PngEncoding.imageBytes(image) >= data.length, s"Image is too small, ${data.length} bits required")
+      image
+    }
+  }
+
+  /**
     * Default PNG decoder
     * @note Would fail on encode request
     */
