@@ -11,5 +11,6 @@ case class NanoboardMessage(parent: String, text: String) {
 }
 
 object NanoboardMessage extends DefaultNanoboardMessageFormat {
+  val HASH_LENGTH = 32
   val HASH_FORMAT = "(?i)[a-f0-9]{32}".r
 }

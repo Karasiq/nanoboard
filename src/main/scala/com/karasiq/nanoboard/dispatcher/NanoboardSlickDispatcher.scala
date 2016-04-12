@@ -5,7 +5,8 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.util.ByteString
 import com.karasiq.nanoboard.api.{NanoboardCaptchaImage, NanoboardCaptchaRequest, NanoboardContainer, NanoboardMessageData}
-import com.karasiq.nanoboard.captcha.{NanoboardCaptcha, NanoboardCaptchaFile, NanoboardPow}
+import com.karasiq.nanoboard.captcha.storage.NanoboardCaptchaSource
+import com.karasiq.nanoboard.captcha.{NanoboardCaptcha, NanoboardPow}
 import com.karasiq.nanoboard.encoding.NanoboardEncoding
 import com.karasiq.nanoboard.encoding.stages.PngEncoding
 import com.karasiq.nanoboard.model.MessageConversions._
@@ -18,12 +19,12 @@ import slick.driver.H2Driver.api._
 import scala.concurrent.{ExecutionContext, Future}
 
 object NanoboardSlickDispatcher {
-  def apply(db: Database, captcha: NanoboardCaptchaFile, config: Config = ConfigFactory.load(), eventSink: Sink[NanoboardEvent, _] = Sink.ignore)(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer): NanoboardDispatcher = {
+  def apply(db: Database, captcha: NanoboardCaptchaSource, config: Config = ConfigFactory.load(), eventSink: Sink[NanoboardEvent, _] = Sink.ignore)(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer): NanoboardDispatcher = {
     new NanoboardSlickDispatcher(db, captcha, config, eventSink)
   }
 }
 
-private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: NanoboardCaptchaFile, config: Config, eventSink: Sink[NanoboardEvent, _])(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer) extends NanoboardDispatcher {
+private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: NanoboardCaptchaSource, config: Config, eventSink: Sink[NanoboardEvent, _])(implicit ec: ExecutionContext, as: ActorSystem, am: ActorMaterializer) extends NanoboardDispatcher {
   private val powContext = NanoboardPow.executionContext()
   private val powCalculator = NanoboardPow(config)(powContext)
   private val messageGenerator = NanoboardMessageGenerator(config)
@@ -152,7 +153,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
       DBPost(_, parent, text, firstSeen, cid) ← db.run(posts.filter(_.hash === hash).result.head) if !text.contains("[sign=")
       (powPayload, None) ← Future.successful(NanoboardCaptcha.withoutSignature(NanoboardMessage(parent, text)))
       pow ← powCalculator.calculate(powPayload)
-      captchaId ← Future.successful(powCalculator.captchaIndex(powPayload ++ pow, captcha.length))
+      captchaId ← Future.successful(NanoboardCaptcha.index(powPayload ++ pow, captcha.length))
       captchaImage ← captcha(captchaId)
     } yield NanoboardCaptchaRequest(hash, pow.utf8String, NanoboardCaptchaImage(captchaId, NanoboardCaptcha.render(captchaImage).toArray))
   }
@@ -197,7 +198,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
       DBPost(_, parent, text, firstSeen, containerId) ← db.run(posts.filter(_.hash === request.postHash).result.head) if !text.contains("[sign=")
       (unsigned, None) ← Future.successful(NanoboardCaptcha.withoutSignature(NanoboardMessage(parent, text)))
       signPayload ← Future.successful(unsigned ++ ByteString(request.pow))
-      captchaId ← Future.successful(powCalculator.captchaIndex(signPayload, captcha.length))
+      captchaId ← Future.successful(NanoboardCaptcha.index(signPayload, captcha.length))
       captcha ← this.captcha(captchaId)
       sign ← Future.successful(captcha.signature(signPayload, answer)) if captcha.verify(signPayload, sign)
       newMessage ← Future.successful(NanoboardMessage(parent, NanoboardCaptcha.withSignature(text + request.pow, sign)))

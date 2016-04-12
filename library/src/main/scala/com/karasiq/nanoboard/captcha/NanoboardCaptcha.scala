@@ -7,7 +7,9 @@ import javax.imageio.ImageIO
 
 import akka.util.ByteString
 import com.karasiq.nanoboard.NanoboardMessage
-import com.karasiq.nanoboard.encoding.NanoboardCrypto.{BCDigestOps, sha512}
+import com.karasiq.nanoboard.captcha.internal.{Constants, Ed25519}
+import com.karasiq.nanoboard.captcha.storage.NanoboardCaptchaSource
+import com.karasiq.nanoboard.encoding.NanoboardCrypto._
 import org.apache.commons.codec.binary.Hex
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -18,26 +20,31 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param seed XORed seed
   * @param image Encoded captcha image
   * @see [[https://github.com/nanoboard/nanoboard/commit/ef747596802919c270d0de61bd9bcdf319c787f0]]
+  * @note {{{
+  *   UnsignedMessage = ReplyTo + Text + PowValue
+  *   Signature = Sign(UnsignedMessage, PrivateKeyFromSeed(DecryptedSeed))
+  *   SignedMessage = UnsignedMessage + "[sign=$Hex(Signature)]"
+  * }}}
   */
 case class NanoboardCaptcha(publicKey: ByteString, seed: ByteString, image: ByteString) {
-  require(publicKey.length == 32 && seed.length == 32 && image.length == 125)
+  require(publicKey.length == Constants.PUBLIC_KEY_LENGTH && seed.length == Constants.SEED_LENGTH && image.length == Constants.IMAGE_LENGTH, "Invalid data")
 
   def toBytes: ByteString = {
     publicKey ++ seed ++ image
   }
 
   private def decryptSeed(answer: String): ByteString = {
-    val result = new Array[Byte](32)
-    val array = sha512.digest(ByteString(answer + Hex.encodeHexString(publicKey.toArray))) // Hex string is lowercase
+    val result = new Array[Byte](seed.length)
+    val hashedAnswer = sha512.digest(ByteString(answer + Hex.encodeHexString(publicKey.toArray))) // Hex string is lowercase
     for (i ← seed.indices) {
-      result(i) = (seed(i) ^ array(i & 63)).toByte
+      result(i) = (seed(i) ^ hashedAnswer(i & 63)).toByte
     }
     ByteString(result)
   }
 
   /**
     * Calculates the signature for post
-    * @param post Message without the `[sign]` tag
+    * @param post Unsigned message
     * @param guess Captcha answer
     * @return EdDSA digital signature (must be wrapped in `[sign]` tag)
     */
@@ -48,7 +55,7 @@ case class NanoboardCaptcha(publicKey: ByteString, seed: ByteString, image: Byte
 
   /**
     * Verifies the signature for post
-    * @param post Message without the `[sign]` tag
+    * @param post Unsigned message
     * @param signature EdDSA digital signature
     * @return Is signature valid
     */
@@ -66,8 +73,10 @@ object NanoboardCaptcha {
     * @param byteString Encoded captcha block
     */
   def fromBytes(byteString: ByteString): NanoboardCaptcha = {
-    assert(byteString.length == 32 + 32 + 125, "Invalid captcha block length")
-    NanoboardCaptcha(byteString.take(32), byteString.drop(32).take(32), byteString.drop(64).take(125))
+    assert(byteString.length == Constants.BLOCK_LENGTH, "Invalid captcha block length")
+    NanoboardCaptcha(byteString.take(Constants.PUBLIC_KEY_LENGTH),
+      byteString.drop(Constants.PUBLIC_KEY_LENGTH).take(Constants.SEED_LENGTH),
+      byteString.drop(Constants.PUBLIC_KEY_LENGTH + Constants.SEED_LENGTH).take(Constants.IMAGE_LENGTH))
   }
 
   /**
@@ -100,6 +109,19 @@ object NanoboardCaptcha {
   }
 
   /**
+    * Calculates captcha index
+    * @param message Unsigned message
+    * @param max Maximum captcha index
+    * @return Index of the captcha to be solved
+    */
+  def index(message: ByteString, max: Int): Int = {
+    sha256.digest(message).take(3).map(java.lang.Byte.toUnsignedInt) match {
+      case Seq(b0, b1, b2) ⇒
+        (b0 + b1 * 256 + b2 * 256 * 256) % max
+    }
+  }
+
+  /**
     * Verifies POW and signature of the message
     * @param message Signed message
     * @param pow Proof-of-work calculator
@@ -107,11 +129,11 @@ object NanoboardCaptcha {
     * @param ec Execution context
     * @return Is message valid
     */
-  def verify(message: NanoboardMessage, pow: NanoboardPow, captcha: NanoboardCaptchaFile)(implicit ec: ExecutionContext): Future[Boolean] = {
+  def verify(message: NanoboardMessage, pow: NanoboardPow, captcha: NanoboardCaptchaSource)(implicit ec: ExecutionContext): Future[Boolean] = {
     val (post, sign) = withoutSignature(message)
     Future.reduce(Seq(
       Future.successful(sign.isDefined && pow.verify(post)),
-      captcha(pow.captchaIndex(post, captcha.length)).map(_.verify(post, sign.get))
+      captcha(index(post, captcha.length)).map(_.verify(post, sign.get))
     ))(_ && _)
   }
 

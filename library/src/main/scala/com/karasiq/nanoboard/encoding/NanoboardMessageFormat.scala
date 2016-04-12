@@ -45,13 +45,13 @@ trait DefaultNanoboardMessageFormat extends NanoboardMessageFormat {
         messages
       } else {
         val (data, rest) = str.splitAt(sizes.head)
-        val (hash, message) = data.splitAt(32)
+        val (hash, message) = data.splitAt(NanoboardMessage.HASH_LENGTH)
         parse(rest, sizes.tail, messages :+ NanoboardMessage(hash, message))
       }
     }
 
     val data = payload.drop((sizes.length + 1) * 6)
-    assert(sizes.forall(_ > 32) && sizes.sum <= data.length, "Invalid message sizes")
+    assert(sizes.forall(_ > NanoboardMessage.HASH_LENGTH) && sizes.sum <= data.length, "Invalid message sizes")
     parse(data, sizes)
   }
 

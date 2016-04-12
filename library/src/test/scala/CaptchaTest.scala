@@ -3,7 +3,8 @@ import java.nio.file.{Files, Paths}
 
 import akka.util.ByteString
 import com.karasiq.nanoboard.NanoboardMessage
-import com.karasiq.nanoboard.captcha.{NanoboardCaptcha, NanoboardCaptchaFile, NanoboardPow}
+import com.karasiq.nanoboard.captcha.storage.NanoboardCaptchaSource
+import com.karasiq.nanoboard.captcha.{NanoboardCaptcha, NanoboardPow}
 import org.apache.commons.io.IOUtils
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -46,7 +47,7 @@ class CaptchaTest extends FlatSpec with Matchers {
     val data = postPayload ++ preCalculatedPow
     powCalculator.verify(postPayload) shouldBe false
     powCalculator.verify(data) shouldBe true
-    powCalculator.captchaIndex(data, 10000) shouldBe 6430
+    NanoboardCaptcha.index(data, 10000) shouldBe 6430
   }
 
   it should "calculate valid hash" in {
@@ -58,10 +59,10 @@ class CaptchaTest extends FlatSpec with Matchers {
 
   "Captcha file" should "be parsed" in {
     val captchaFileName = CaptchaTest.unpackResource("test-captcha.nbc")
-    val captchaFile = new NanoboardCaptchaFile(captchaFileName)
+    val captchaFile = NanoboardCaptchaSource.fromFile(captchaFileName)
     try {
       val data = postPayload ++ preCalculatedPow
-      val captcha = Await.result(captchaFile(powCalculator.captchaIndex(data, captchaFile.length)), Duration.Inf)
+      val captcha = Await.result(captchaFile(NanoboardCaptcha.index(data, captchaFile.length)), Duration.Inf)
       val captchaPng = NanoboardCaptcha.render(captcha, 50, 20)
       // CaptchaTest.saveToFile(captchaPng, "test-captcha.png")
       captchaPng.hashCode() shouldBe 1579429469

@@ -6,11 +6,13 @@ import javax.script.ScriptEngine
 import akka.util.ByteString
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory
 
+import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{Future, Promise}
+import scala.language.postfixOps
 
-object FractalMusic extends FractalMusicGenerator(5000)
+object FractalMusic extends FractalMusicGenerator
 
-class FractalMusicGenerator(timeLimit: Int) {
+class FractalMusicGenerator {
   private val scheduler = Executors.newScheduledThreadPool(1)
   private val engineFactory = new NashornScriptEngineFactory()
 
@@ -18,7 +20,7 @@ class FractalMusicGenerator(timeLimit: Int) {
     engineFactory.getScriptEngine(Array("-strict", "--no-java", "--no-syntax-extensions"), getClass.getClassLoader)
   }
 
-  def apply(formula: String): Future[ByteString] = {
+  def apply(formula: String, timeLimit: FiniteDuration = 5 seconds): Future[ByteString] = {
     val source =
       s"""
          |(function(){
@@ -75,7 +77,7 @@ class FractalMusicGenerator(timeLimit: Int) {
           promise.failure(new TimeoutException("JavaScript execution timed out"))
         }
       }
-    }, timeLimit, TimeUnit.MILLISECONDS)
+    }, timeLimit.toMillis, TimeUnit.MILLISECONDS)
 
     thread.start()
     promise.future

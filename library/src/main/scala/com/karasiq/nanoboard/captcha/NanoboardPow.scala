@@ -36,6 +36,10 @@ object NanoboardPow {
   * @param length Required consequent bytes
   * @param threshold Maximum byte value
   * @see [[https://github.com/nanoboard/nanoboard/commit/ef747596802919c270d0de61bd9bcdf319c787f0]]
+  * @note {{{
+  *   PowValue = "[pow=$Hex(RandomBytes(128))]"
+  *   PowHash = SHA256(ReplyTo + Text + PowValue)
+  * }}}
   */
 final class NanoboardPow(offset: Int, length: Int, threshold: Int)(implicit ec: ExecutionContext) {
   // For verification with cached SHA256 state
@@ -53,7 +57,7 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int)(implicit ec: 
 
   /**
     * Verifies the message proof-of-work value
-    * @param message Message with `[pow]` tag
+    * @param message Message with calculated POW
     * @return Is POW valid
     */
   def verify(message: ByteString): Boolean = {
@@ -61,21 +65,8 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int)(implicit ec: 
   }
 
   /**
-    * Calculates captcha index
-    * @param message Message with `[pow]` tag
-    * @param max Maximum captcha index
-    * @return Index of the captcha to be solved
-    */
-  def captchaIndex(message: ByteString, max: Int): Int = {
-    sha256.digest(message).take(3).map(java.lang.Byte.toUnsignedInt) match {
-      case Seq(b0, b1, b2) ⇒
-        (b0 + b1 * 256 + b2 * 256 * 256) % max
-    }
-  }
-
-  /**
     * Calculates nanoboard proof-of-work value
-    * @param message Message without a `[pow]` tag
+    * @param message Message without a calculated POW
     * @return `[pow]` tag to be appended to message
     */
   def calculate(message: ByteString): Future[ByteString] = {
@@ -86,14 +77,14 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int)(implicit ec: 
 
     def submitTasks(): Unit = {
       try {
-        Future.fold(for (_ ← 0 to 100) yield Future {
+        Future.sequence(for (_ ← 0 to 100) yield Future {
           val array = Array.ofDim[Byte](128)
           Random.nextBytes(array)
           val data = ByteString(Hex.encodeHexString(array)) ++ close
           if (verify(data, new SHA256Digest(preHashed))) {
             result.success(open ++ data)
           }
-        })(())((_, _) ⇒ ()).foreach { _ ⇒
+        }).foreach { _ ⇒
           if (!result.isCompleted) {
             submitTasks()
           }

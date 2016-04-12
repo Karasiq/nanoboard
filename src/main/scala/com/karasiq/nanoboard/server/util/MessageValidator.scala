@@ -1,19 +1,20 @@
 package com.karasiq.nanoboard.server.util
 
 import com.karasiq.nanoboard.NanoboardMessage
-import com.karasiq.nanoboard.captcha.{NanoboardCaptcha, NanoboardCaptchaFile, NanoboardPow}
+import com.karasiq.nanoboard.captcha.storage.NanoboardCaptchaSource
+import com.karasiq.nanoboard.captcha.{NanoboardCaptcha, NanoboardPow}
 import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.collection.JavaConversions._
 import scala.concurrent.{ExecutionContext, Future}
 
 private[server] object MessageValidator {
-  def apply(captcha: NanoboardCaptchaFile, config: Config = ConfigFactory.load())(implicit ec: ExecutionContext): MessageValidator = {
+  def apply(captcha: NanoboardCaptchaSource, config: Config = ConfigFactory.load())(implicit ec: ExecutionContext): MessageValidator = {
     new MessageValidator(captcha, config)
   }
 }
 
-private[server] final class MessageValidator(captcha: NanoboardCaptchaFile, config: Config)(implicit ec: ExecutionContext) {
+private[server] final class MessageValidator(captcha: NanoboardCaptchaSource, config: Config)(implicit ec: ExecutionContext) {
   private val requirePow = config.getBoolean("nanoboard.pow-required")
   private val maxPostSize = config.getMemorySize("nanoboard.max-post-size").toBytes
   private val spamFilter = config.getStringList("nanoboard.scheduler.spam-filter").toVector

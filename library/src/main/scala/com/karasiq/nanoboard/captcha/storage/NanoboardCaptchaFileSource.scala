@@ -1,46 +1,30 @@
-package com.karasiq.nanoboard.captcha
+package com.karasiq.nanoboard.captcha.storage
 
 import java.io.{Closeable, RandomAccessFile}
 import java.util.concurrent.Executors
 
 import akka.util.ByteString
+import com.karasiq.nanoboard.captcha.NanoboardCaptcha
+import com.karasiq.nanoboard.captcha.internal.Constants
 import org.apache.commons.io.IOUtils
 
 import scala.concurrent.{ExecutionContext, Future}
-
-object NanoboardCaptchaFile {
-  /**
-    * Opens nanoboard captcha file storage
-    * @param file File path
-    * @return Nanoboard captcha file storage
-    */
-  def apply(file: String): NanoboardCaptchaFile = {
-    new NanoboardCaptchaFile(file)
-  }
-}
 
 /**
   * Nanoboard captcha file storage
   * @param file File path
   */
-final class NanoboardCaptchaFile(file: String) extends Closeable {
+final class NanoboardCaptchaFileSource(file: String) extends NanoboardCaptchaSource with Closeable {
   private implicit val ec = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
   private val randomAccessFile = new RandomAccessFile(file, "r")
+  private val buffer = new Array[Byte](Constants.BLOCK_LENGTH)
 
-  private val captchaLength = 189
-  private val buffer = new Array[Byte](captchaLength)
-
-  /**
-    * Extracts the captcha block with specified index
-    * @param index Captcha block index
-    * @return Captcha block
-    */
   def apply(index: Int): Future[NanoboardCaptcha] = {
     try {
       assert(index < this.length, s"Invalid index: $index, captcha blocks: $length")
       Future {
-        randomAccessFile.seek(index.toLong * captchaLength)
-        randomAccessFile.read(buffer, 0, captchaLength)
+        randomAccessFile.seek(index.toLong * Constants.BLOCK_LENGTH)
+        randomAccessFile.read(buffer, 0, Constants.BLOCK_LENGTH)
         NanoboardCaptcha.fromBytes(ByteString(buffer))
       }
     } catch {
@@ -49,11 +33,8 @@ final class NanoboardCaptchaFile(file: String) extends Closeable {
     }
   }
 
-  /**
-    * Captcha blocks count
-    */
-  val length: Int = {
-    val length = randomAccessFile.length() / captchaLength
+  override val length: Int = {
+    val length = randomAccessFile.length() / Constants.BLOCK_LENGTH
     math.min(length, Int.MaxValue).toInt
   }
 

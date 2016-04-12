@@ -1,4 +1,4 @@
-package com.karasiq.nanoboard.captcha
+package com.karasiq.nanoboard.captcha.internal
 
 import java.util.function.Supplier
 
