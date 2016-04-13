@@ -30,8 +30,8 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
   private val threadPosts = Rx[Frag] {
     val thread = model.posts()
     val rendered = context.now match {
-      case NanoboardContext.Thread(_, _) ⇒
-        val (opPost, answers) = thread.splitAt(1)
+      case NanoboardContext.Thread(hash, _) ⇒
+        val (opPost, answers) = thread.partition(_.hash == hash)
         opPost.map(NanoboardPost(true, false, _, scrollable = true)) ++ answers.map(NanoboardPost(false, true, _, scrollable = true))
 
       case NanoboardContext.Recent(_) | NanoboardContext.Pending(_) ⇒
@@ -89,8 +89,8 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
     val categories = Rx[Frag] {
       span(
         model.categories().map[Frag, Seq[Frag]] {
-          case m @ NanoboardMessageData(_, _, hash, _, answers) ⇒
-            val plainText = PostRenderer.strip(PostParser.parse(m.textWithoutSign))
+          case m @ NanoboardMessageData(_, _, hash, _, answers, _, _) ⇒
+            val plainText = PostRenderer.strip(PostParser.parse(m.text))
             val answersSpan = span(marginLeft := 0.25.em, Icons.answers, answers)
             a(href := s"#$hash", margin := 0.25.em, "[", span(fontWeight.bold, plainText), answersSpan, "]", onclick := Bootstrap.jsClick { _ ⇒
               controller.setContext(NanoboardContext.Thread(hash))

@@ -11,7 +11,6 @@ import akka.http.scaladsl.Http.ServerBinding
 import akka.stream._
 import akka.stream.scaladsl._
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
-import com.karasiq.nanoboard.model.MessageConversions._
 import com.karasiq.nanoboard.model.{Place, _}
 import com.karasiq.nanoboard.server.util.{CaptchaLoader, MessageValidator}
 import com.karasiq.nanoboard.sources.bitmessage.BitMessageTransport
@@ -91,7 +90,7 @@ object Main extends App {
 
       event match {
         case NanoboardEvent.PostAdded(message, true) ⇒
-          bitMessage.sendMessage(message).foreach { response ⇒
+          bitMessage.sendMessage(MessageConversions.unwrapToMessage(message)).foreach { response ⇒
             actorSystem.log.info("Message was sent to BM transport: {}", response)
           }
 

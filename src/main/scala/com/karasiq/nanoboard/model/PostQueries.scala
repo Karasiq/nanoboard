@@ -3,7 +3,6 @@ package com.karasiq.nanoboard.model
 import java.time.{Instant, LocalDate}
 
 import com.karasiq.nanoboard.NanoboardMessage
-import com.karasiq.nanoboard.api.NanoboardMessageData
 import slick.driver.H2Driver.api._
 import slick.lifted.{Compiled, ConstColumn}
 
@@ -18,13 +17,13 @@ trait PostQueries { self: Tables with ConfigQueries with ContainerQueries ⇒
           val exists = (for (p <- pendingPosts if p.hash === m.hash) yield ()).exists
           for (message <- Query(m.hash) if !exists) yield message
         }, deletedPosts.filter(_.hash === m.hash).delete)
-      } yield NanoboardMessageData(Some(container), Some(m.parent), m.hash, m.text, 0)
+      } yield MessageConversions.wrapMessage(m, Some(container))
     }
 
     def insertMessage(container: Long, m: NanoboardMessage) = posts.forceInsertQuery {
       val deleted = (for (p <- deletedPosts if p.hash inSet Seq(m.hash, m.parent)) yield ()).exists
       val exists = (for (p <- posts if p.hash === m.hash) yield ()).exists
-      val insert = (m.hash, m.parent, m.text, Instant.now().toEpochMilli, container) <> (DBPost.tupled, DBPost.unapply)
+      val insert = (m.hash, m.parent, m.text, Instant.now().toEpochMilli, container, m.pow, m.signature) <> (DBPost.tupled, DBPost.unapply)
       for (message <- Query(insert) if !deleted && !exists) yield message
     }
 
@@ -45,7 +44,7 @@ trait PostQueries { self: Tables with ConfigQueries with ContainerQueries ⇒
     def recent(offset: Long, count: Long)(implicit ec: ExecutionContext) = {
       for (ps ← recentCompiled(offset, count).result) yield ps.map {
         case (post, answers) ⇒
-          post.asThread(answers)
+          MessageConversions.wrapDbPost(post, answers)
       }
     }
 
@@ -60,7 +59,7 @@ trait PostQueries { self: Tables with ConfigQueries with ContainerQueries ⇒
     private val pendingCompiled = Compiled(pendingQuery _)
 
     def pending(offset: Long, count: Long)(implicit ec: ExecutionContext) = {
-      for (ps ← pendingCompiled(offset, count).result) yield ps.map(_.asThread(0))
+      for (ps ← pendingCompiled(offset, count).result) yield ps.map(MessageConversions.wrapDbPost(_, 0))
     }
 
     private def getQuery(hash: Rep[String]) = {
@@ -74,7 +73,7 @@ trait PostQueries { self: Tables with ConfigQueries with ContainerQueries ⇒
     def get(hash: String)(implicit ec: ExecutionContext) = {
       for (p ← getCompiled(hash).result.headOption) yield p.map {
         case (post, answers) ⇒
-          post.asThread(answers)
+          MessageConversions.wrapDbPost(post, answers)
       }
     }
 
@@ -98,8 +97,8 @@ trait PostQueries { self: Tables with ConfigQueries with ContainerQueries ⇒
         opPost ← get(hash)
         answers ← threadCompiled(hash, offset, count).result
       } yield opPost.toVector ++ answers.map {
-        case (post, answersCount) ⇒
-          post.asThread(answersCount)
+        case (post, answers) ⇒
+          MessageConversions.wrapDbPost(post, answers)
       }
     }
 

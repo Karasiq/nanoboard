@@ -22,7 +22,8 @@ lazy val librarySettings = Seq(
       "net.i2p.crypto" % "eddsa" % "0.1.0",
       "org.jsoup" % "jsoup" % "1.8.3",
       "com.lihaoyi" %% "upickle" % "0.3.8",
-      "com.lihaoyi" %% "scalatags" % "0.5.4"
+      "com.lihaoyi" %% "scalatags" % "0.5.4",
+      "com.upokecenter" % "cbor" % "2.4.1"
     )
   },
   publishMavenStyle := true,

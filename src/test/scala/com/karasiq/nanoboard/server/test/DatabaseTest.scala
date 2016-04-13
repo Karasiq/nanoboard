@@ -28,10 +28,9 @@ class DatabaseTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     val result: Option[NanoboardMessageData] = Await.result(db.run(query), Duration.Inf)
     println(result)
 
-    val testMessageData = NanoboardMessageData(None, Some(testMessage.parent), testMessage.hash, testMessage.text, 0)
-    result.map(_.copy(None)) shouldBe Some(testMessageData)
-    val answers: Vector[NanoboardMessageData] = Await.result(db.run(Post.thread("8b8cfb7574741838450e286909e8fd1f", 0, 10)), Duration.Inf).toVector
-    answers.map(_.copy(None)) shouldBe Vector(testMessageData)
+    result.get.hash shouldBe testMessage.hash
+    val answers: Vector[NanoboardMessageData] = Await.result(db.run(Post.thread("8b8cfb7574741838450e286909e8fd1f", 0, 10)), Duration.Inf)
+    answers.map(_.hash) shouldBe Vector(testMessage.hash)
 
     Await.result(db.run(Container.forUrl("local://test")), Duration.Inf) shouldBe result.get.containerId.get
   }

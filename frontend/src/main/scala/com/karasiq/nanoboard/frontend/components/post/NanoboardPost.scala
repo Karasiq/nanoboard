@@ -52,7 +52,7 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
           if (showParent && postData.parent.isDefined) PostLink(postData.parent.get).renderTag(Icons.parent) else (),
           sup(cursor.pointer, postData.containerId.fold(postData.hash)(cid ⇒ s"${postData.hash}/$cid"), onclick := Bootstrap.jsClick(_ ⇒ expanded() = !expanded.now))
         ),
-        Rx[Frag](if (showSource()) postData.textWithoutSign else span(NanoboardPost.render(postData.textWithoutSign)))
+        Rx[Frag](if (showSource()) postData.text else span(NanoboardPost.render(postData.text)))
       ),
       div(
         if (showAnswers && postData.answers > 0) a(style.postLink, href := s"#${postData.hash}", Icons.answers, s"${postData.answers}", onclick := Bootstrap.jsClick { _ ⇒
@@ -73,11 +73,12 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
           })
         },
         a(style.postLink, href := "#", Icons.source, locale.source, onclick := Bootstrap.jsClick(_ ⇒ showSource() = !showSource.now)),
-        a(style.postLink, href := "#", Icons.verify, locale.verify, Rx[AutoModifier](if (verifyLoading()) textDecoration.`line-through` else textDecoration.none), if (postData.isSigned) display.none else display.inline, onclick := Bootstrap.jsClick { _ ⇒
+        a(style.postLink, href := "#", Icons.verify, locale.verify, Rx[AutoModifier](if (verifyLoading()) textDecoration.`line-through` else textDecoration.none), if (postData.isSigned || postData.isCategory) display.none else display.inline, onclick := Bootstrap.jsClick { _ ⇒
           if (!verifyLoading.now) {
             verifyLoading() = true
             CaptchaDialog().verify(postData.hash).onComplete {
               case Success(newData) ⇒
+                // TODO: Remove reload
                 verifyLoading() = false
                 controller.updatePosts()
 

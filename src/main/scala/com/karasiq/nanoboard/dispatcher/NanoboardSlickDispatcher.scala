@@ -35,12 +35,12 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
   override def createContainer(pendingCount: Int, randomCount: Int, format: String, container: ByteString) = {
     val pending = Post.pending(0, pendingCount)
     val rand = SimpleFunction.nullary[Double]("rand")
-    val random = for (ps ← posts.sortBy(_ ⇒ rand).take(randomCount).result) yield ps.map(_.asThread(0))
+    val random = for (ps ← posts.sortBy(_ ⇒ rand).take(randomCount).result) yield ps.map(MessageConversions.wrapDbPost(_, 0))
     val query = for (p ← pending; r ← random) yield (p ++ r).toVector
 
     val stage = NanoboardEncoding(config, PngEncoding.fromEncodedImage(container))
     val future = db.run(query).map { posts ⇒
-      val data = ByteString(NanoboardMessage.writeMessages(posts.map(messageDataToMessage)))
+      val data = NanoboardMessage.writeMessages(posts.map(MessageConversions.unwrapToMessage))
       val encoded = stage.encode(data)
       // assert(stage.decode(encoded) == data, "Container is broken")
       posts.map(_.hash) → encoded
@@ -118,7 +118,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
     val future = db.run(query)
     future.foreach {
       case (container, inserted) ⇒
-        if (inserted > 0) eventQueue.offer(NanoboardEvent.PostAdded(asMessageData(message, Some(container))))
+        if (inserted > 0) eventQueue.offer(NanoboardEvent.PostAdded(wrapMessage(message, Some(container))))
     }
     future.map(_._2)
   }
@@ -149,65 +149,31 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
   }
 
   def requestVerification(hash: String): Future[NanoboardCaptchaRequest] = {
-    for {
-      DBPost(_, parent, text, firstSeen, cid) ← db.run(posts.filter(_.hash === hash).result.head) if !text.contains("[sign=")
-      (powPayload, None) ← Future.successful(NanoboardCaptcha.withoutSignature(NanoboardMessage(parent, text)))
-      pow ← powCalculator.calculate(powPayload)
-      captchaId ← Future.successful(NanoboardCaptcha.index(powPayload ++ pow, captcha.length))
-      captchaImage ← captcha(captchaId)
-    } yield NanoboardCaptchaRequest(hash, pow.utf8String, NanoboardCaptchaImage(captchaId, NanoboardCaptcha.render(captchaImage).toArray))
-  }
-
-  // Replaces category hash
-  private def moveCategory(hash: String, newHash: String): DBIOAction[Unit, NoStream, Effect.Write with Effect.Read] = {
-    for {
-      category ← categoriesTable.filter(_.hash === hash).result.headOption
-      _ ← if (category.isDefined) {
-        DBIO.seq(
-          categoriesTable.filter(_.hash inSet Seq(hash, newHash)).delete,
-          categoriesTable += NanoboardCategory(newHash, category.get.name)
-        )
-      } else {
-        DBIO.successful(())
-      }
-    } yield ()
-  }
-
-  // Recursively moves answers
-  private def moveAnswers(hash: String, newHash: String): DBIOAction[Unit, NoStream, Effect.Write with Effect.Read] = {
-    for {
-      _ ← DBIO.seq(
-        deletedPosts.filter(_.hash === newHash).delete,
-        moveCategory(hash, newHash)
-      )
-      answers ← posts.filter(_.parent === hash).result
-      _ ← DBIO.sequence(answers.map {
-        case DBPost(hash, _, text, firstSeen, containerId) ⇒
-          val newMessage = NanoboardMessage(newHash, NanoboardMessageData.stripSignTags(text))
-          DBIO.seq(
-            posts.filter(_.hash inSet Seq(hash, newMessage.hash)).delete,
-            posts += DBPost(newMessage.hash, newMessage.parent, newMessage.text, firstSeen, containerId),
-            moveAnswers(hash, newMessage.hash)
-          )
-      })
-    } yield ()
+    val query = for {
+      (parent, text) ← posts.filter(_.hash === hash).map(p ⇒ (p.parent, p.text)).result.head
+      powPayload ← DBIO.successful(NanoboardPow.dataToPow(NanoboardMessage(parent, text)))
+      pow ← DBIO.from(powCalculator.calculate(powPayload))
+      captchaId ← DBIO.successful(NanoboardCaptcha.index(powPayload ++ pow, captcha.length))
+      captchaImage ← DBIO.from(captcha(captchaId))
+    } yield NanoboardCaptchaRequest(hash, pow.toArray, NanoboardCaptchaImage(captchaId, NanoboardCaptcha.render(captchaImage).toArray))
+    db.run(query)
   }
 
   def verifyPost(request: NanoboardCaptchaRequest, answer: String): Future[NanoboardMessageData] = {
-    for {
-      DBPost(_, parent, text, firstSeen, containerId) ← db.run(posts.filter(_.hash === request.postHash).result.head) if !text.contains("[sign=")
-      (unsigned, None) ← Future.successful(NanoboardCaptcha.withoutSignature(NanoboardMessage(parent, text)))
-      signPayload ← Future.successful(unsigned ++ ByteString(request.pow))
-      captchaId ← Future.successful(NanoboardCaptcha.index(signPayload, captcha.length))
-      captcha ← this.captcha(captchaId)
-      sign ← Future.successful(captcha.signature(signPayload, answer)) if captcha.verify(signPayload, sign)
-      newMessage ← Future.successful(NanoboardMessage(parent, NanoboardCaptcha.withSignature(text + request.pow, sign)))
-      newPost ← db.run(DBIO.seq(
+    val query = for {
+      DBPost(_, parent, text, firstSeen, containerId, _, _) ← posts.filter(_.hash === request.postHash).result.head
+      pow ← DBIO.successful(ByteString(request.pow))
+      unsigned ← DBIO.successful(NanoboardCaptcha.dataToSign(NanoboardMessage(parent, text, pow)))
+      captchaId ← DBIO.successful(NanoboardCaptcha.index(unsigned, captcha.length))
+      captcha ← DBIO.from(this.captcha(captchaId))
+      signature ← DBIO.successful(captcha.signature(unsigned, answer)) if captcha.verify(unsigned, signature)
+      newMessage ← DBIO.successful(NanoboardMessage(parent, text, pow, signature))
+      newPost ← DBIO.seq(
         posts.filter(_.hash === request.postHash).delete,
-        posts += DBPost(newMessage.hash, newMessage.parent, newMessage.text, firstSeen, containerId),
-        pendingPosts += newMessage.hash,
-        moveAnswers(request.postHash, newMessage.hash)
-      ))
-    } yield NanoboardMessageData(Some(containerId), Some(parent), newMessage.hash, newMessage.text, 0)
+        posts += DBPost(newMessage.hash, newMessage.parent, newMessage.text, firstSeen, containerId, pow, signature),
+        pendingPosts += newMessage.hash
+      )
+    } yield MessageConversions.wrapMessage(newMessage, Some(containerId))
+    db.run(query)
   }
 }

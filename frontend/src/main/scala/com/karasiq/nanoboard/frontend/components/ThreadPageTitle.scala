@@ -25,7 +25,7 @@ private[components] final class ThreadPageTitle(thread: ThreadModel)(implicit ct
     thread.context() match {
       case NanoboardContext.Thread(_, _) ⇒
         thread.posts().headOption.fold(locale.nanoboard) { post ⇒
-          val text = Some(PostParser.parse(post.textWithoutSign))
+          val text = Some(PostParser.parse(post.text))
             .map(PostRenderer.strip(_).trim.split("\\s+").take(10).mkString(" "))
             .filter(_.nonEmpty)
           text.fold(locale.nanoboard)(locale.nanoboard + " - " + _)

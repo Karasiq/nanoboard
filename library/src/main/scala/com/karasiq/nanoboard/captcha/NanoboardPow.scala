@@ -3,8 +3,8 @@ package com.karasiq.nanoboard.captcha
 import java.util.concurrent.{Executors, RejectedExecutionException}
 
 import akka.util.ByteString
+import com.karasiq.nanoboard.NanoboardMessage
 import com.karasiq.nanoboard.encoding.NanoboardCrypto.{BCDigestOps, sha256}
-import com.karasiq.nanoboard.utils.ByteStringOps
 import com.typesafe.config.{Config, ConfigFactory}
 import org.bouncycastle.crypto.digests.SHA256Digest
 
@@ -28,6 +28,15 @@ object NanoboardPow {
   def executionContext() = {
     ExecutionContext.fromExecutorService(Executors.newWorkStealingPool(Runtime.getRuntime.availableProcessors()))
   }
+
+  /**
+    * Data fragment to calculate POW value
+    * @param message Message
+    * @return ReplyTo + Text
+    */
+  def dataToPow(message: NanoboardMessage): ByteString = {
+    ByteString(message.parent + message.text)
+  }
 }
 
 /**
@@ -37,7 +46,7 @@ object NanoboardPow {
   * @param threshold Maximum byte value
   * @see [[https://github.com/nanoboard/nanoboard/commit/ef747596802919c270d0de61bd9bcdf319c787f0]]
   * @note {{{
-  *   PowValue = "[pow=$Hex(RandomBytes(128))]"
+  *   PowValue = RandomBytes(128)
   *   PowHash = SHA256(ReplyTo + Text + PowValue)
   * }}}
   */
@@ -67,22 +76,20 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int)(implicit ec: 
   /**
     * Calculates nanoboard proof-of-work value
     * @param message Message without a calculated POW
-    * @return `[pow]` tag to be appended to message
+    * @return Proof-of-work value
     */
   def calculate(message: ByteString): Future[ByteString] = {
-    val open = ByteString("[pow=")
-    val preHashed = sha256.updated(message ++ open)
-    val close = ByteString("]")
+    val preHashed = sha256.updated(message)
     val result = Promise[ByteString]
 
     def submitTasks(): Unit = {
       try {
         Future.sequence(for (_ ← 0 to 100) yield Future {
-          val array = Array.ofDim[Byte](128)
+          val array = Array.ofDim[Byte](NanoboardMessage.POW_LENGTH)
           Random.nextBytes(array)
-          val data = ByteString(ByteString(array).toHexString()) ++ close
+          val data = ByteString(array)
           if (verify(data, new SHA256Digest(preHashed))) {
-            result.success(open ++ data)
+            result.success(data)
           }
         }).foreach { _ ⇒
           if (!result.isCompleted) {

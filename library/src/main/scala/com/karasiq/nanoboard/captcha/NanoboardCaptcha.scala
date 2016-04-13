@@ -80,32 +80,12 @@ object NanoboardCaptcha {
   }
 
   /**
-    * Wraps signature in `[sign]` tag
-    * @param signature EdDSA digital signature
-    * @return Wrapped signature
+    * Data to sign/verify with the EdDSA digital signature
+    * @param message Message
+    * @return ReplyTo + Text + PowValue
     */
-  def wrapSignature(signature: ByteString): ByteString = {
-    ByteString(s"[sign=${signature.toHexString()}]")
-  }
-
-  /**
-    * Adds the signature to message
-    * @param message Unsigned message
-    * @param signature EdDSA digital signature
-    * @return Signed message
-    */
-  def withSignature(message: String, signature: ByteString): String = {
-    message + wrapSignature(signature).utf8String
-  }
-
-  /**
-    * Removes the signature from message
-    * @param message Signed message
-    * @return Unsigned message and EdDSA digital signature
-    */
-  def withoutSignature(message: NanoboardMessage): (ByteString, Option[ByteString]) = {
-    val buffer = message.text.split("\\[sign=", 2)
-    (ByteString(message.parent + buffer.head), if (buffer.length > 1) buffer(1).split("\\]", 2).headOption.map(ByteString.fromHexString) else None)
+  def dataToSign(message: NanoboardMessage): ByteString = {
+    ByteString(message.parent + message.text) ++ message.pow
   }
 
   /**
@@ -130,10 +110,10 @@ object NanoboardCaptcha {
     * @return Is message valid
     */
   def verify(message: NanoboardMessage, pow: NanoboardPow, captcha: NanoboardCaptchaSource)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val (post, sign) = withoutSignature(message)
+    val post = dataToSign(message)
     Future.reduce(Seq(
-      Future.successful(sign.isDefined && pow.verify(post)),
-      captcha(index(post, captcha.length)).map(_.verify(post, sign.get))
+      Future.successful(pow.verify(post)),
+      captcha(index(post, captcha.length)).map(_.verify(post, message.signature))
     ))(_ && _)
   }
 

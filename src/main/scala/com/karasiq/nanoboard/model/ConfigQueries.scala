@@ -1,7 +1,6 @@
 package com.karasiq.nanoboard.model
 
 import com.karasiq.nanoboard.NanoboardCategory
-import com.karasiq.nanoboard.api.NanoboardMessageData
 import slick.driver.H2Driver.api._
 
 import scala.concurrent.ExecutionContext
@@ -21,11 +20,11 @@ trait ConfigQueries { self: Tables ⇒
   object Category {
     def list()(implicit ec: ExecutionContext) = {
       val query = categories.map { c ⇒
-        (c.hash, c.name, posts.filter(_.parent === c.hash).length)
+        (c, posts.filter(_.parent === c.hash).length)
       }
       query.result.map(_.map {
-        case (hash, name, answers) ⇒
-          NanoboardMessageData(None, None, hash, name, answers)
+        case (category, answers) ⇒
+          MessageConversions.wrapCategory(category, answers)
       })
     }
 

@@ -27,8 +27,7 @@ class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: 
     Source.fromFuture(http.singleRequest(HttpRequest(uri = url)))
       .flatMapConcat(_.entity.dataBytes.fold(ByteString.empty)(_ ++ _))
       .mapConcat { data ⇒
-        val decoded: String = encoding.decode(data).utf8String
-        NanoboardMessage.parseMessages(decoded)
+        NanoboardMessage.parseMessages(encoding.decode(data))
       }
       .recoverWith { case _ ⇒ Source.empty }
   }

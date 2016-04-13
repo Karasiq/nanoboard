@@ -9,6 +9,7 @@ import javax.imageio.ImageIO
 
 import akka.util.ByteString
 import com.karasiq.nanoboard.encoding.DataEncodingStage
+import org.apache.commons.io.IOUtils
 
 object PngEncoding {
   /**
@@ -174,10 +175,12 @@ final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataE
 
     // Render image as PNG
     val outputStream = new ByteArrayOutputStream()
-    ImageIO.write(img, "png", outputStream)
-    val result = ByteString(outputStream.toByteArray)
-    outputStream.close()
-    result
+    try {
+      ImageIO.write(img, "png", outputStream)
+      ByteString(outputStream.toByteArray)
+    } finally {
+      IOUtils.closeQuietly(outputStream)
+    }
   }
 
   override def decode(data: ByteString): ByteString = {
