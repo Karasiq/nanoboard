@@ -1,3 +1,5 @@
+package com.karasiq.nanoboard.server.test
+
 import com.karasiq.nanoboard.NanoboardMessageGenerator
 import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.model._

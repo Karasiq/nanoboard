@@ -1,3 +1,5 @@
+package com.karasiq.nanoboard.test
+
 import com.karasiq.nanoboard.NanoboardMessage
 import com.karasiq.nanoboard.sources.bitmessage.BitMessageTransport
 import org.scalatest.{FlatSpec, Matchers}

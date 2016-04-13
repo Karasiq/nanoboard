@@ -10,7 +10,7 @@ import com.karasiq.nanoboard.NanoboardMessage
 import com.karasiq.nanoboard.captcha.internal.{Constants, Ed25519}
 import com.karasiq.nanoboard.captcha.storage.NanoboardCaptchaSource
 import com.karasiq.nanoboard.encoding.NanoboardCrypto._
-import org.apache.commons.codec.binary.Hex
+import com.karasiq.nanoboard.utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,7 +35,7 @@ case class NanoboardCaptcha(publicKey: ByteString, seed: ByteString, image: Byte
 
   private def decryptSeed(answer: String): ByteString = {
     val result = new Array[Byte](seed.length)
-    val hashedAnswer = sha512.digest(ByteString(answer + Hex.encodeHexString(publicKey.toArray))) // Hex string is lowercase
+    val hashedAnswer = sha512.digest(ByteString(answer + publicKey.toHexString())) // Hex string is lowercase
     for (i ← seed.indices) {
       result(i) = (seed(i) ^ hashedAnswer(i & 63)).toByte
     }
@@ -85,7 +85,7 @@ object NanoboardCaptcha {
     * @return Wrapped signature
     */
   def wrapSignature(signature: ByteString): ByteString = {
-    ByteString(s"[sign=${Hex.encodeHexString(signature.toArray)}]")
+    ByteString(s"[sign=${signature.toHexString()}]")
   }
 
   /**
@@ -105,7 +105,7 @@ object NanoboardCaptcha {
     */
   def withoutSignature(message: NanoboardMessage): (ByteString, Option[ByteString]) = {
     val buffer = message.text.split("\\[sign=", 2)
-    (ByteString(message.parent + buffer.head), if (buffer.length > 1) buffer(1).split("\\]", 2).headOption.map(str ⇒ ByteString(Hex.decodeHex(str.toCharArray))) else None)
+    (ByteString(message.parent + buffer.head), if (buffer.length > 1) buffer(1).split("\\]", 2).headOption.map(ByteString.fromHexString) else None)
   }
 
   /**

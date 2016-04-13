@@ -4,8 +4,8 @@ import java.util.concurrent.{Executors, RejectedExecutionException}
 
 import akka.util.ByteString
 import com.karasiq.nanoboard.encoding.NanoboardCrypto.{BCDigestOps, sha256}
+import com.karasiq.nanoboard.utils.ByteStringOps
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.commons.codec.binary.Hex
 import org.bouncycastle.crypto.digests.SHA256Digest
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -80,7 +80,7 @@ final class NanoboardPow(offset: Int, length: Int, threshold: Int)(implicit ec: 
         Future.sequence(for (_ ← 0 to 100) yield Future {
           val array = Array.ofDim[Byte](128)
           Random.nextBytes(array)
-          val data = ByteString(Hex.encodeHexString(array)) ++ close
+          val data = ByteString(ByteString(array).toHexString()) ++ close
           if (verify(data, new SHA256Digest(preHashed))) {
             result.success(open ++ data)
           }

@@ -1,3 +1,5 @@
+package com.karasiq.nanoboard.test
+
 import java.io.{ByteArrayInputStream, FileOutputStream}
 import java.nio.file.{Files, Paths}
 
@@ -5,6 +7,8 @@ import akka.util.ByteString
 import com.karasiq.nanoboard.NanoboardMessage
 import com.karasiq.nanoboard.captcha.storage.NanoboardCaptchaSource
 import com.karasiq.nanoboard.captcha.{NanoboardCaptcha, NanoboardPow}
+import com.karasiq.nanoboard.encoding.NanoboardCrypto._
+import com.karasiq.nanoboard.utils._
 import org.apache.commons.io.IOUtils
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -65,18 +69,22 @@ class CaptchaTest extends FlatSpec with Matchers {
       val captcha = Await.result(captchaFile(NanoboardCaptcha.index(data, captchaFile.length)), Duration.Inf)
       val captchaPng = NanoboardCaptcha.render(captcha, 50, 20)
       // CaptchaTest.saveToFile(captchaPng, "test-captcha.png")
-      captchaPng.hashCode() shouldBe 1579429469
-      captcha.image.hashCode() shouldBe 196048800
-      captcha.publicKey.hashCode() shouldBe 2074712280
-      captcha.seed.hashCode() shouldBe 1681681311
+      sha256.digest(captchaPng).toHexString() shouldBe "da8b669b7aec1f57a4e4da7ad1afd59feea10b6305cc699951416f33ff4decde"
+      sha256.digest(captcha.image).toHexString() shouldBe "007100217d1b9de3cf8cefb04eb2001149d985f01f84a5de86d6fe0ea2b893e3"
+      captcha.publicKey.toHexString() shouldBe "90d643cec557ef34719d90a7a637dbcd3d14e6cfa59a3f3eb2f270065e320b6f"
+      captcha.seed.toHexString() shouldBe "187295a2e886c05abbcedf5ea442b0b43d5fcd9532c9119043b1e7616865ea29"
 
       val signature = captcha.signature(data, "qxceo")
+      signature.toHexString() shouldBe "d61ae209bd9a920309954d9d4b7c0a1f9ec2c569be09f1dc285ba25931e65002e9f9cf961a30cc680249ec336d9054ccabdddaef194d32e849c0c27ea77e2f03"
       captcha.verify(data, signature) shouldBe true
 
       val invalidSignature = captcha.signature(data, "11111")
       captcha.verify(data, invalidSignature) shouldBe false
 
-      Await.result(NanoboardCaptcha.verify(post.copy(text = (ByteString(post.text) ++ preCalculatedPow ++ NanoboardCaptcha.wrapSignature(signature)).utf8String), powCalculator, captchaFile)(scala.concurrent.ExecutionContext.global), Duration.Inf) shouldBe true
+      val signedText = ByteString(post.text) ++ preCalculatedPow ++ NanoboardCaptcha.wrapSignature(signature)
+      sha256.digest(signedText).toHexString() shouldBe "2df1240bdffc504230096f3aa951586981a2c873af90fa14a434f22c7a086754"
+      println(signedText)
+      Await.result(NanoboardCaptcha.verify(post.copy(text = signedText.utf8String), powCalculator, captchaFile)(scala.concurrent.ExecutionContext.global), Duration.Inf) shouldBe true
     } finally {
       captchaFile.close()
       Files.delete(Paths.get(captchaFileName))
