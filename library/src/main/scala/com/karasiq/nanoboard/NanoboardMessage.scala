@@ -21,6 +21,7 @@ object NanoboardMessage extends MessagePackFormat {
   val NO_POW = ByteString(Array.fill[Byte](POW_LENGTH)(0))
   val NO_SIGNATURE = ByteString(Array.fill[Byte](SIGNATURE_LENGTH)(0))
 
+  //noinspection ScalaDeprecation
   override def parseMessages(payload: ByteString): Vector[NanoboardMessage] = {
     Try(CBORMessagePackFormat.parseMessages(payload))
       .orElse(Try(TextMessagePackFormat.parseMessages(payload)))

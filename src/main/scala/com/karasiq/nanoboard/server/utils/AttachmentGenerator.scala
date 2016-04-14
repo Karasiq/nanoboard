@@ -1,4 +1,4 @@
-package com.karasiq.nanoboard.server.util
+package com.karasiq.nanoboard.server.utils
 
 import java.awt.RenderingHints._
 import java.awt.image._
@@ -9,6 +9,7 @@ import javax.imageio.{IIOImage, ImageIO, ImageWriteParam, ImageWriter}
 
 import akka.util.ByteString
 import org.apache.commons.codec.binary.Base64
+import org.apache.commons.io.IOUtils
 
 import scala.collection.JavaConversions._
 
@@ -20,7 +21,7 @@ object AttachmentGenerator {
   }
 }
 
-private[util] final class ImageResizingUtil {
+private[utils] final class ImageResizingUtil {
   private def getScaledDimension(imgSize: Dimension, boundary: Dimension): Dimension = {
     var newWidth: Int = imgSize.width
     var newHeight: Int = imgSize.height
@@ -39,6 +40,7 @@ private[util] final class ImageResizingUtil {
     val bufferedImage = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_RGB)
     val graphics = bufferedImage.createGraphics()
     try {
+      // Max quality settings
       graphics.setRenderingHints(Map(
         KEY_RENDERING → VALUE_RENDER_QUALITY,
         KEY_COLOR_RENDERING → VALUE_COLOR_RENDER_QUALITY,
@@ -75,7 +77,7 @@ private[util] final class ImageResizingUtil {
 
   def compress(image: BufferedImage, format: String, quality: Int): Array[Byte] = {
     val outputStream = new ByteArrayOutputStream()
-    val ios: ImageOutputStream = ImageIO.createImageOutputStream(outputStream)
+    val imageOutputStream: ImageOutputStream = ImageIO.createImageOutputStream(outputStream)
     try {
       val writer: ImageWriter = ImageIO.getImageWritersByFormatName(format).next
       val iwp: ImageWriteParam = writer.getDefaultWriteParam
@@ -83,14 +85,14 @@ private[util] final class ImageResizingUtil {
         iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
         iwp.setCompressionQuality(quality.toFloat / 100.0f)
       }
-      writer.setOutput(ios)
+      writer.setOutput(imageOutputStream)
       writer.write(null, new IIOImage(image, null, null), iwp)
       writer.dispose()
-      ios.flush()
+      imageOutputStream.flush()
       outputStream.toByteArray
     } finally {
-      ios.close()
-      outputStream.close()
+      IOUtils.closeQuietly(imageOutputStream)
+      IOUtils.closeQuietly(outputStream)
     }
   }
 

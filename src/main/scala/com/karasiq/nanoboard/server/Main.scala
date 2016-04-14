@@ -12,7 +12,7 @@ import akka.stream._
 import akka.stream.scaladsl._
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
 import com.karasiq.nanoboard.model.{Place, _}
-import com.karasiq.nanoboard.server.util.{CaptchaLoader, MessageValidator}
+import com.karasiq.nanoboard.server.utils.{CaptchaLoader, MessageValidator}
 import com.karasiq.nanoboard.sources.bitmessage.BitMessageTransport
 import com.karasiq.nanoboard.sources.png.UrlPngSource
 import com.karasiq.nanoboard.streaming.NanoboardEvent

@@ -1,15 +1,12 @@
 package com.karasiq.nanoboard.encoding.stages
 
-import java.awt.Color
 import java.awt.image.BufferedImage
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.ByteOrder
 import java.util
-import javax.imageio.ImageIO
 
 import akka.util.ByteString
 import com.karasiq.nanoboard.encoding.DataEncodingStage
-import org.apache.commons.io.IOUtils
+import com.karasiq.nanoboard.utils._
 
 object PngEncoding {
   /**
@@ -27,27 +24,31 @@ object PngEncoding {
     * @return PNG encoder
     */
   def fromEncodedImage(imageData: ByteString): PngEncoding = {
+    apply(_ ⇒ BufferedImages.fromBytes(imageData))
+  }
+
+  /**
+    * Creates PNG encoder, that always generates random image for encoding
+    * @return PNG encoder
+    */
+  def fromRandomImage(): PngEncoding = {
     apply { data ⇒
-      val inputStream = new ByteArrayInputStream(imageData.toArray)
-      val image = try { ImageIO.read(inputStream) } finally inputStream.close()
-      assert(image.ne(null), "Invalid image")
-      assert(PngEncoding.imageBytes(image) >= data.length, s"Image is too small, ${data.length} bits required")
-      image
+      val size = math.ceil(math.sqrt(requiredImageBytes(data) / 3)).toInt
+      BufferedImages.generateImage(size, size)
     }
   }
 
   /**
-    * Default PNG decoder
-    * @note Would fail on encode request
+    * Default PNG encoder
     */
-  val decoder = apply(_ ⇒ null)
+  val default = fromRandomImage()
 
   /**
     * Image bytes, required to encode provided data
     * @param data Payload
     * @return Required image length
     */
-  def requiredSize(data: ByteString): Int = {
+  def requiredImageBytes(data: ByteString): Int = {
     (4 + data.length) * 8
   }
 
@@ -101,42 +102,6 @@ final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataE
   }
 
   /**
-    * Decodes image to RGB array.
-    * Output format: {{{Array(red, green, blue)}}}
-    * @param img Source image
-    * @return RGB array
-    */
-  @inline
-  private def asRgbBytes(img: BufferedImage): Array[Int] = {
-    val colors = new Array[Int](img.getWidth * img.getHeight)
-    img.getRGB(0, 0, img.getWidth, img.getHeight, colors, 0, img.getWidth)
-    val bytes = new Array[Int](colors.length * 3)
-    for (i ← colors.indices) {
-      val color = new Color(colors(i))
-      bytes(i * 3) = color.getRed
-      bytes(i * 3 + 1) = color.getGreen
-      bytes(i * 3 + 2) = color.getBlue
-    }
-    bytes
-  }
-
-  /**
-    * Converts RGB array to color array, which can be used in [[java.awt.image.BufferedImage#setRGB(int, int, int, int, int[], int, int) setRGB function]].
-    * Input format: {{{Array(red, green, blue)}}}
-    * Output format: {{{Array(rgb)}}}
-    * @param arr RGB array
-    * @return Color array
-    */
-  @inline
-  private def asRgbColors(arr: Array[Int]): Array[Int] = {
-    val result = new Array[Int](arr.length / 3)
-    for (i ← result.indices) {
-      result(i) = new Color(arr(i * 3), arr(i * 3 + 1), arr(i * 3 + 2)).getRGB
-    }
-    result
-  }
-
-  /**
     * Encodes provided data to RGB bytes
     * @param bytes RGB array
     * @param data Payload
@@ -159,8 +124,8 @@ final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataE
     assert(img.ne(null), "Container image not found")
 
     // Decode RGB data
-    val bytes: Array[Int] = asRgbBytes(img)
-    val requiredSize: Int = PngEncoding.requiredSize(data)
+    val bytes: Array[Int] = img.toRgbArray
+    val requiredSize: Int = PngEncoding.requiredImageBytes(data)
     assert(bytes.length >= requiredSize, s"Image is too small, $requiredSize bits required")
 
     // Write length
@@ -170,28 +135,20 @@ final class PngEncoding(sourceImage: ByteString ⇒ BufferedImage) extends DataE
     writeBytes(bytes, data, 4)
 
     // Convert bytes to RGB data
-    val rgb = asRgbColors(bytes)
+    val rgb = BufferedImages.toColorArray(bytes)
     img.setRGB(0, 0, img.getWidth, img.getHeight, rgb, 0, img.getWidth)
 
     // Render image as PNG
-    val outputStream = new ByteArrayOutputStream()
-    try {
-      ImageIO.write(img, "png", outputStream)
-      ByteString(outputStream.toByteArray)
-    } finally {
-      IOUtils.closeQuietly(outputStream)
-    }
+    img.toBytes("png")
   }
 
   override def decode(data: ByteString): ByteString = {
     // Decode image
-    val inputStream = new ByteArrayInputStream(data.toArray)
-    val img = ImageIO.read(inputStream)
-    inputStream.close()
+    val img = BufferedImages.fromBytes(data)
     assert(img.ne(null), "Invalid image")
 
     // Decode RGB data
-    val bytes: Array[Int] = asRgbBytes(img)
+    val bytes: Array[Int] = img.toRgbArray
 
     // Read data length
     val length: Int = asInt(readBytes(bytes, 4, 0))

@@ -11,7 +11,7 @@ import boopickle.Default._
 import com.karasiq.nanoboard.api.{NanoboardCaptchaAnswer, NanoboardReply}
 import com.karasiq.nanoboard.dispatcher.NanoboardDispatcher
 import com.karasiq.nanoboard.server.streaming.NanoboardMessageStream
-import com.karasiq.nanoboard.server.util.{AttachmentGenerator, FractalMusic}
+import com.karasiq.nanoboard.server.utils.{AttachmentGenerator, FractalMusic}
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 
 import scala.concurrent.ExecutionContext

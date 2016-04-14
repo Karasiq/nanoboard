@@ -4,7 +4,7 @@ package com.karasiq.nanoboard.frontend.api
 import boopickle.Default._
 import com.karasiq.nanoboard.api._
 import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.{File, XMLHttpRequest}
+import org.scalajs.dom.raw.XMLHttpRequest
 import org.scalajs.dom.{Blob, console}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -93,7 +93,7 @@ object NanoboardApi {
       .map(readResponse[Vector[NanoboardMessageData]])
   }
 
-  def generateContainer(pending: Int, random: Int, format: String, container: File)(implicit ec: ExecutionContext): Future[Blob] = {
+  def generateContainer(pending: Int, random: Int, format: String, container: Ajax.InputData)(implicit ec: ExecutionContext): Future[Blob] = {
     Ajax.post(s"/container?pending=$pending&random=$random&format=$format", container, responseType = "blob")
       .map { r ⇒
         if (r.status == 200) {
@@ -104,7 +104,7 @@ object NanoboardApi {
       }
   }
 
-  def generateAttachment(format: String, size: Int, quality: Int, container: File)(implicit ec: ExecutionContext): Future[String] = {
+  def generateAttachment(format: String, size: Int, quality: Int, container: Ajax.InputData)(implicit ec: ExecutionContext): Future[String] = {
     Ajax.post(s"/attachment?format=$format&size=$size&quality=$quality", container)
       .map(_.responseText)
   }

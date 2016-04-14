@@ -1,4 +1,4 @@
-package com.karasiq.nanoboard.server.util
+package com.karasiq.nanoboard.server.utils
 
 import com.karasiq.nanoboard.NanoboardMessage
 import com.karasiq.nanoboard.captcha.storage.NanoboardCaptchaSource

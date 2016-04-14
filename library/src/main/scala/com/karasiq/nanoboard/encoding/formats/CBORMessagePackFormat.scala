@@ -24,7 +24,7 @@ trait CBORMessagePackFormat extends MessagePackFormat {
   }
 
   /**
-    * Serializes messages to string
+    * Serializes messages to byte string
     * @param messages Messages
     * @return Serialized messages
     */

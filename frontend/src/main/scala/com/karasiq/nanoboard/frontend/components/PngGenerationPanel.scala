@@ -11,6 +11,7 @@ import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Blobs, Notifications}
 import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardController}
 import org.scalajs.dom
+import org.scalajs.dom.Blob
 import org.scalajs.dom.html.Input
 import rx._
 
@@ -51,26 +52,20 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
       if (!loading.now) {
         loading() = true
         def input(name: String) = frm(name).asInstanceOf[Input]
-        input("container").files.headOption match {
-          case Some(file) ⇒
-            val pending = input("pending").valueAsNumber
-            val random = input("random").valueAsNumber
-            val format: String = input("format").value
+        val file: Blob = input("container").files.headOption.getOrElse(Blobs.fromBytes(Array.emptyByteArray))
+        val pending = input("pending").valueAsNumber
+        val random = input("random").valueAsNumber
+        val format: String = input("format").value
 
-            NanoboardApi.generateContainer(pending, random, format, file).onComplete {
-              case Success(blob) ⇒
-                loading() = false
-                Blobs.saveBlob(blob, s"${js.Date.now()}.$format")
-                model.updatePosts()
-
-              case Failure(exc) ⇒
-                loading() = false
-                Notifications.error(exc)(locale.containerGenerationError, Layout.topRight, 1500)
-            }
-
-          case None ⇒
+        NanoboardApi.generateContainer(pending, random, format, file).onComplete {
+          case Success(blob) ⇒
             loading() = false
-            Notifications.warning(locale.fileNotSelected, Layout.topRight)
+            Blobs.saveBlob(blob, s"${js.Date.now()}.$format")
+            model.updatePosts()
+
+          case Failure(exc) ⇒
+            loading() = false
+            Notifications.error(exc)(locale.containerGenerationError, Layout.topRight, 1500)
         }
       }
     }

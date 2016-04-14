@@ -2,8 +2,6 @@ package com.karasiq.nanoboard.captcha
 
 import java.awt.Color
 import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
-import javax.imageio.ImageIO
 
 import akka.util.ByteString
 import com.karasiq.nanoboard.NanoboardMessage
@@ -140,11 +138,7 @@ object NanoboardCaptcha {
     * @return Captcha image, rendered as png
     */
   def render(captcha: NanoboardCaptcha, width: Int = 50, height: Int = 20): ByteString = {
-    val outputStream = new ByteArrayOutputStream()
-    try {
-      ImageIO.write(renderBufferedImage(captcha, width, height), "png", outputStream)
-      ByteString(outputStream.toByteArray)
-    } finally outputStream.close()
+    renderBufferedImage(captcha, width, height).toBytes("png")
   }
 }
 

@@ -22,6 +22,7 @@ Scala [nanoboard](https://github.com/nanoboard/nanoboard) implementation, fully 
 * Markdown formatting support
 * Message live preview
 * Option to verify existing posts
+* Random container generation
 * SVG images support
 * Six themes
 

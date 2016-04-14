@@ -1,7 +1,7 @@
 package com.karasiq.nanoboard.server.test
 
 import com.karasiq.nanoboard.encoding.NanoboardCrypto._
-import com.karasiq.nanoboard.server.util.FractalMusic
+import com.karasiq.nanoboard.server.utils.FractalMusic
 import com.karasiq.nanoboard.utils._
 import org.scalatest.{FlatSpec, Matchers}
 

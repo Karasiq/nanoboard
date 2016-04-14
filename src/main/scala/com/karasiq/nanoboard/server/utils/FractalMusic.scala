@@ -1,4 +1,4 @@
-package com.karasiq.nanoboard.server.util
+package com.karasiq.nanoboard.server.utils
 
 import java.util.concurrent.{Executors, TimeUnit, TimeoutException}
 import javax.script.ScriptEngine

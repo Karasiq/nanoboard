@@ -1,7 +1,5 @@
 package com.karasiq.nanoboard.model
 
-import java.time.Instant
-
 import akka.util.ByteString
 import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
@@ -17,13 +15,8 @@ private[nanoboard] object MessageConversions {
     NanoboardMessageData(Some(dbPost.containerId), Some(dbPost.parent), dbPost.hash, dbPost.text, answers, dbPost.pow.toArray, dbPost.signature.toArray)
   }
 
-  // TODO: Remove unused
-  def dbWrapMessage(message: NanoboardMessage, containerId: Long, firstSeen: Long = Instant.now().toEpochMilli): DBPost = {
-    DBPost(message.hash, message.parent, message.text, firstSeen, containerId, message.pow, message.signature)
-  }
-
   def wrapCategory(category: NanoboardCategory, answers: Int = 0): NanoboardMessageData = {
-    NanoboardMessageData(None, None, category.hash, category.name, answers, Array.empty, Array.empty)
+    NanoboardMessageData(None, None, category.hash, category.name, answers)
   }
 
   def unwrapToMessage(message: NanoboardMessageData): NanoboardMessage = {

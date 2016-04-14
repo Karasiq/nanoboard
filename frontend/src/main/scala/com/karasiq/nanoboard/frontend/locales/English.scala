@@ -34,7 +34,6 @@ object English extends BoardLocale {
   def style = "Style"
   def fromTo(from: Int, to: Int) = s"From $from to $to"
   def embeddedImage = "Embedded image"
-  def fileNotSelected = "Source file not selected"
   def preferences = "Preferences"
   def control = "Control"
   def offset = "Offset"

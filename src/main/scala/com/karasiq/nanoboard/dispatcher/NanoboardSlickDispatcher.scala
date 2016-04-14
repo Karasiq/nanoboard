@@ -38,7 +38,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
     val random = for (ps ← posts.sortBy(_ ⇒ rand).take(randomCount).result) yield ps.map(MessageConversions.wrapDbPost(_, 0))
     val query = for (p ← pending; r ← random) yield (p ++ r).toVector
 
-    val stage = NanoboardEncoding(config, PngEncoding.fromEncodedImage(container))
+    val stage = NanoboardEncoding(config, if (container.nonEmpty) PngEncoding.fromEncodedImage(container) else PngEncoding.default)
     val future = db.run(query).map { posts ⇒
       val data = NanoboardMessage.writeMessages(posts.map(MessageConversions.unwrapToMessage))
       val encoded = stage.encode(data)

@@ -15,7 +15,7 @@ trait MessagePackFormat {
   def parseMessages(payload: ByteString): Vector[NanoboardMessage]
 
   /**
-    * Serializes messages to string
+    * Serializes messages to byte string
     * @param messages Messages
     * @return Serialized messages
     */

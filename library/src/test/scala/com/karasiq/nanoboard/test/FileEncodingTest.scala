@@ -15,7 +15,7 @@ import scala.util.Random
 class FileEncodingTest extends FlatSpec with Matchers {
   val testImage = TestFiles.resource("test-encoded.png")
   val testMessages = Vector(NanoboardMessage("0" * 32, "Test message 1"), NanoboardMessage("1" * 32, "Test message 2"))
-  val pngEncoding = PngEncoding.fromEncodedImage(testImage)
+  val pngEncoding = PngEncoding.fromRandomImage()
   val gzipCompression = GzipCompression()
   val salsaCipher = SalsaCipher("nano")
 

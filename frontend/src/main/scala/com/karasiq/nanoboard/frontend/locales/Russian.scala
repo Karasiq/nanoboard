@@ -34,7 +34,6 @@ object Russian extends BoardLocale {
   def style = "Стиль оформления"
   def fromTo(from: Int, to: Int) = s"С $from по $to"
   def embeddedImage = "Встроенное изображение"
-  def fileNotSelected = "Файл не выбран"
   def preferences = "Опции"
   def control = "Управление"
   def offset = "Начиная с"

@@ -54,7 +54,6 @@ trait BoardLocale {
   def postingError: String
   def updateError: String
   def containerGenerationError: String
-  def fileNotSelected: String
   def attachmentGenerationError: String
   def settingsUpdateError: String
   def batchDeleteError: String
