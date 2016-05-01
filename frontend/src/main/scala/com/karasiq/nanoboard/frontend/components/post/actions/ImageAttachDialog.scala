@@ -1,4 +1,4 @@
-package com.karasiq.nanoboard.frontend.components.post
+package com.karasiq.nanoboard.frontend.components.post.actions
 
 import com.karasiq.bootstrap.Bootstrap
 import com.karasiq.bootstrap.BootstrapImplicits._
@@ -7,6 +7,7 @@ import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.modal.Modal
 import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
+import com.karasiq.nanoboard.frontend.components.post.PostInlineImage
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Blobs, CancelledException, Images, Notifications}
 import org.scalajs.dom.html.Input

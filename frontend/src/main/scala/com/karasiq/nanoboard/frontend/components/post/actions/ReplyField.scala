@@ -1,4 +1,4 @@
-package com.karasiq.nanoboard.frontend.components.post
+package com.karasiq.nanoboard.frontend.components.post.actions
 
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.buttons._
@@ -6,6 +6,7 @@ import com.karasiq.bootstrap.form.{Form, FormInput}
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
+import com.karasiq.nanoboard.frontend.components.post.NanoboardPost
 import com.karasiq.nanoboard.frontend.styles.BoardStyle
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
 import com.karasiq.nanoboard.frontend.utils.{Blobs, CancelledException, Notifications}
@@ -20,9 +21,9 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 import scalatags.JsDom.all._
 
-private[components] object PostReplyField {
-  def apply(post: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): PostReplyField = {
-    new PostReplyField(post)
+private[post] object ReplyField {
+  def apply(post: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): ReplyField = {
+    new ReplyField(post)
   }
 
   def tabOverride: Modifier = new Modifier {
@@ -32,7 +33,7 @@ private[components] object PostReplyField {
   }
 }
 
-private[components] final class PostReplyField(post: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Span] {
+private[post] final class ReplyField(post: NanoboardMessageData)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Span] {
   import controller.{locale, style}
 
   val expanded = Var(false)
@@ -43,7 +44,7 @@ private[components] final class PostReplyField(post: NanoboardMessageData)(impli
 
   override def renderTag(md: Modifier*) = {
     val field = Form(
-      FormInput.textArea((), style.input, placeholder := locale.writeYourMessage, rows := 5, replyText.reactiveInput, "has-errors".classIf(lengthIsValid.map(!_)), PostReplyField.tabOverride)
+      FormInput.textArea((), style.input, placeholder := locale.writeYourMessage, rows := 5, replyText.reactiveInput, "has-errors".classIf(lengthIsValid.map(!_)), ReplyField.tabOverride)
     )
 
     val imageLink = Button(ButtonStyle.primary)(Icons.image, locale.insertImage, onclick := Bootstrap.jsClick { _ ⇒

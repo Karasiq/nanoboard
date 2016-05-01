@@ -4,15 +4,15 @@ import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
 import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.frontend.api.NanoboardApi
+import com.karasiq.nanoboard.frontend.components.post.actions.{PendingButton, ReplyField, VerificationButton}
 import com.karasiq.nanoboard.frontend.styles.BoardStyle
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
-import com.karasiq.nanoboard.frontend.utils.{CancelledException, Notifications, PostParser}
+import com.karasiq.nanoboard.frontend.utils.{Notifications, PostParser}
 import com.karasiq.nanoboard.frontend.{Icons, NanoboardContext, NanoboardController}
 import org.scalajs.dom
 import rx._
 
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
 import scalatags.JsDom.all._
 
 private[components] object NanoboardPost {
@@ -39,7 +39,6 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
         maxHeight := 48.em
     }
 
-    val verifyLoading = Var(false)
     div(
       if (scrollable) id := s"post-${postData.hash}" else (),
       style.post,
@@ -61,37 +60,10 @@ private[components] final class NanoboardPost(showParent: Boolean, showAnswers: 
         a(style.postLink, href := "#", Icons.delete, locale.delete, onclick := Bootstrap.jsClick { _ ⇒
           this.delete()
         }),
-        controller.isPending(postData.hash).map { pending ⇒
-          if (!pending) a(style.postLink, href := "#", Icons.enqueue, locale.enqueue, onclick := Bootstrap.jsClick { a ⇒
-            NanoboardApi.markAsPending(postData.hash).foreach { _ ⇒
-              controller.addPending(postData)
-            }
-          }) else a(style.postLink, href := "#", Icons.dequeue, locale.dequeue, onclick := Bootstrap.jsClick { a ⇒
-            NanoboardApi.markAsNotPending(postData.hash).foreach { _ ⇒
-              controller.deletePending(postData)
-            }
-          })
-        },
+        PendingButton(postData),
         a(style.postLink, href := "#", Icons.source, locale.source, onclick := Bootstrap.jsClick(_ ⇒ showSource() = !showSource.now)),
-        a(style.postLink, href := "#", Icons.verify, locale.verify, Rx[AutoModifier](if (verifyLoading()) textDecoration.`line-through` else textDecoration.none), if (postData.isSigned || postData.isCategory) display.none else display.inline, onclick := Bootstrap.jsClick { _ ⇒
-          if (!verifyLoading.now) {
-            verifyLoading() = true
-            CaptchaDialog().verify(postData.hash).onComplete {
-              case Success(newData) ⇒
-                // TODO: Remove reload
-                verifyLoading() = false
-                controller.updatePosts()
-
-              case Failure(CancelledException) ⇒
-                verifyLoading() = false
-
-              case Failure(exc) ⇒
-                verifyLoading() = false
-                Notifications.error(exc)(locale.verificationError, Layout.topRight)
-            }
-          }
-        }),
-        PostReplyField(postData)
+        VerificationButton(postData),
+        ReplyField(postData)
       ),
       md
     )

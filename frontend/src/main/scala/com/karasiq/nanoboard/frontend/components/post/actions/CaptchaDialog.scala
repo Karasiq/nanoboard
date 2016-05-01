@@ -1,4 +1,4 @@
-package com.karasiq.nanoboard.frontend.components.post
+package com.karasiq.nanoboard.frontend.components.post.actions
 
 import com.karasiq.bootstrap.Bootstrap
 import com.karasiq.bootstrap.BootstrapImplicits._
@@ -31,7 +31,7 @@ private[components] final class CaptchaDialog(implicit ctx: Ctx.Owner, ec: Execu
   val answer = Var("")
 
   val ready = Rx {
-    answer().matches("[a-z0-9\\?]{5}")
+    answer().nonEmpty
   }
 
   def verify(hash: String): Future[NanoboardMessageData] = {

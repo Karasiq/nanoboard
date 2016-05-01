@@ -45,7 +45,7 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
   private val form = Form(
     FormInput.number(locale.pendingPosts, style.input, name := "pending", value := 3, min := 0),
     FormInput.number(locale.randomPosts, style.input, name := "random", value := 30, min := 0),
-    FormInput.text(locale.imageFormat, style.input, name := "format", value := "png"),
+    // FormInput.text(locale.imageFormat, style.input, name := "format", value := "png"),
     FormInput.file(locale.dataContainer, style.input, name := "container"),
     Form.submit(locale.generateContainer)(style.submit, "disabled".classIf(loading), "btn-block".addClass),
     onsubmit := Bootstrap.jsSubmit { frm ⇒
@@ -55,7 +55,7 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
         val file: Blob = input("container").files.headOption.getOrElse(Blobs.fromBytes(Array.emptyByteArray))
         val pending = input("pending").valueAsNumber
         val random = input("random").valueAsNumber
-        val format: String = input("format").value
+        val format = "png" // input("format").value
 
         NanoboardApi.generateContainer(pending, random, format, file).onComplete {
           case Success(blob) ⇒

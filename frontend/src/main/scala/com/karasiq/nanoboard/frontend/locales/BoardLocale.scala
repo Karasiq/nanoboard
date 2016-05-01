@@ -50,6 +50,7 @@ trait BoardLocale {
   def source: String
   def verify: String
   def verificationError: String
+  def verificationSuccess(hash: String): String
   def clearDeletedError: String
   def postingError: String
   def updateError: String

@@ -50,6 +50,7 @@ object English extends BoardLocale {
   def source = "Source"
   def verify = "Verify"
   def verificationError = "Verification error"
+  def verificationSuccess(hash: String) = s"Post verified: #$hash"
   def webSocketError = "WebSocket error"
   def clearDeletedError = "Clearing deleted posts failure"
   def containerGenerationError = "Container generation failure"
