@@ -32,13 +32,13 @@ object NanoboardMessageStream {
     Unpickle[NanoboardEvent].fromBytes(TypedArrayBuffer.wrap(response.asInstanceOf[ArrayBuffer]))
   }
 
-  def apply(f: NanoboardEvent ⇒ Unit)(implicit controller: NanoboardController): NanoboardMessageStream = {
+  def apply(f: PartialFunction[NanoboardEvent, Unit])(implicit controller: NanoboardController): NanoboardMessageStream = {
     new NanoboardMessageStream(f)
   }
 }
 
 // WebSocket wrapper
-final class NanoboardMessageStream(f: NanoboardEvent ⇒ Unit)(implicit controller: NanoboardController) {
+final class NanoboardMessageStream(f: PartialFunction[NanoboardEvent, Unit])(implicit controller: NanoboardController) {
   private var webSocket: Option[WebSocket] = None
   private var last: NanoboardSubscription = Unfiltered
   private var lastSet = false
@@ -61,7 +61,9 @@ final class NanoboardMessageStream(f: NanoboardEvent ⇒ Unit)(implicit controll
 
     webSocket.onmessage = { (m: MessageEvent) ⇒
       val message = NanoboardMessageStream.asEvent(m.data)
-      f(message)
+      if (f.isDefinedAt(message)) {
+        f.apply(message)
+      }
     }
 
     webSocket.onclose = { (e: CloseEvent) ⇒

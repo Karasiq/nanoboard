@@ -24,7 +24,8 @@ private[bitmessage] final class XmlRpcProxy(http: HttpExt, apiAddress: String, a
       )
     )
     val authentication = Authorization(BasicHttpCredentials(apiUsername, apiPassword))
-    http.singleRequest(HttpRequest(method = HttpMethods.POST, uri = s"http://$apiAddress:$apiPort/", entity = HttpEntity(ContentTypes.`text/xml(UTF-8)`, entity), headers = List(authentication)))
+    val url = s"http://$apiAddress:$apiPort/"
+    http.singleRequest(HttpRequest(method = HttpMethods.POST, uri = url, entity = HttpEntity(ContentTypes.`text/xml(UTF-8)`, entity), headers = List(authentication)))
   }
 }
 
@@ -38,23 +39,25 @@ private[bitmessage] object XmlRpcProxy {
     val int = "int".tag
   }
 
-  sealed trait XmlDataWrapper[T] extends (T ⇒ Modifier)
+  sealed trait XmlDataWrapper[T] {
+    def toModifier(value: T): Modifier
+  }
 
   implicit object StringXmlDataWrapper extends XmlDataWrapper[String] {
-    def apply(v1: String) = v1
+    def toModifier(value: String) = value
   }
 
   implicit object IntXmlDataWrapper extends XmlDataWrapper[Int] {
-    def apply(v1: Int) = XmlRpcTags.int(v1)
+    def toModifier(value: Int) = XmlRpcTags.int(value)
   }
 
   implicit object UnitXmlDataWrapper extends XmlDataWrapper[Unit] {
-    def apply(v1: Unit) = ()
+    def toModifier(value: Unit) = ()
   }
 
   sealed trait XmlRpcParameter extends Modifier
 
   implicit def anyToXmlRpcParameter[T: XmlDataWrapper](value: T): XmlRpcParameter = new XmlRpcParameter {
-    def applyTo(t: Builder) = value.applyTo(t)
+    def applyTo(t: Builder) = implicitly[XmlDataWrapper[T]].toModifier(value).applyTo(t)
   }
 }

@@ -127,7 +127,7 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
     val newMessage: NanoboardMessage = messageGenerator.newMessage(parent, text)
     val future = db.run(Post.addReply(newMessage))
     future.foreach { msg ⇒
-      eventQueue.offer(NanoboardEvent.PostAdded(msg, pending = true))
+      eventQueue.offer(NanoboardEvent.PostAdded(msg))
     }
     future
   }
@@ -174,6 +174,11 @@ private[dispatcher] final class NanoboardSlickDispatcher(db: Database, captcha: 
         pendingPosts += newMessage.hash
       )
     } yield MessageConversions.wrapMessage(newMessage, Some(containerId))
-    db.run(query)
+
+    val future = db.run(query)
+    future.foreach { message ⇒
+      eventQueue.offer(NanoboardEvent.PostVerified(message))
+    }
+    future
   }
 }

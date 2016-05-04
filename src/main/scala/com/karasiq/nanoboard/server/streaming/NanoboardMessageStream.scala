@@ -39,19 +39,19 @@ private[server] final class NanoboardMessageStream extends GraphStage[FanInShape
     setHandler(events, new InHandler {
       override def onPush(): Unit = {
         grab(events) match {
-          case e @ NanoboardEvent.PostAdded(message, _) ⇒
+          case added @ NanoboardEvent.PostAdded(message) ⇒
             subscription match {
               case PostHashes(hashes) ⇒
                 if (hashes.exists(message.parent.contains) || hashes.contains(message.hash)) {
-                  emit(output, e)
+                  emit(output, added)
                 }
 
               case Unfiltered ⇒
-                emit(output, e)
+                emit(output, added)
             }
 
-          case e @ NanoboardEvent.PostDeleted(_) ⇒
-            emit(output, e)
+          case event ⇒
+            emit(output, event)
         }
 
         request()

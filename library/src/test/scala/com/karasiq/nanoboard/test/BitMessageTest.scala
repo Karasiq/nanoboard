@@ -8,7 +8,7 @@ class BitMessageTest extends FlatSpec with Matchers {
   "BitMessage transport" should "encode message" in {
     val message = NanoboardMessage("e062de33e103343281ececdd645f8632", "Test")
     val wrapped = BitMessageTransport.wrap(message)
-    wrapped shouldBe """[{"hash":"95a8c5c2ddec08a2eac00a24281bf5a2","message":"VGVzdA==","replyTo":"e062de33e103343281ececdd645f8632"}]"""
+    wrapped shouldBe """[{"hash":"95a8c5c2ddec08a2eac00a24281bf5a2","message":"VGVzdFtwb3c9MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMF1bc2lnbj0wMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMF0=","replyTo":"e062de33e103343281ececdd645f8632"}]"""
     BitMessageTransport.unwrap(wrapped) shouldBe Vector(message)
   }
 

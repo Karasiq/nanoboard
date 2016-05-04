@@ -67,16 +67,16 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
     .build()
 
   private val messageChannel = NanoboardMessageStream {
-    case NanoboardEvent.PostAdded(message, pending) ⇒
+    case NanoboardEvent.PostAdded(message) ⇒
       // Notifications.info(s"New message: ${message.text}", Layout.topRight)
-      thread.model.addPost(message)
-      if (pending) {
-        pngGenerationPanel.model.addPost(message)
-      }
+      addPost(message)
 
     case NanoboardEvent.PostDeleted(hash) ⇒
       // Notifications.warning(s"Post was deleted: $hash", Layout.topRight)
       deleteSingle(NanoboardMessageData(None, None, hash, "", 0))
+
+    case NanoboardEvent.PostVerified(message) ⇒
+      addPending(message)
   }
 
   def initialize(): Unit = {
@@ -117,7 +117,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
   }
 
   def addPost(post: NanoboardMessageData): Unit = {
-    Seq(thread.model, pngGenerationPanel.model).foreach(_.addPost(post))
+    thread.model.addPost(post)
   }
 
   def deleteSingle(post: NanoboardMessageData): Unit = {

@@ -13,10 +13,10 @@ trait PostQueries { self: Tables with ConfigQueries with ContainerQueries ⇒
     def addReply(m: NanoboardMessage)(implicit ec: ExecutionContext) = {
       for {
         container ← Container.forUrl(s"local://${LocalDate.now()}")
-        _ ← DBIO.seq(insertMessage(container, m), pendingPosts.forceInsertQuery {
+        _ ← DBIO.seq(insertMessage(container, m), /* pendingPosts.forceInsertQuery {
           val exists = (for (p <- pendingPosts if p.hash === m.hash) yield ()).exists
           for (message <- Query(m.hash) if !exists) yield message
-        }, deletedPosts.filter(_.hash === m.hash).delete)
+        }, */ deletedPosts.filter(_.hash === m.hash).delete)
       } yield MessageConversions.wrapMessage(m, Some(container))
     }
 

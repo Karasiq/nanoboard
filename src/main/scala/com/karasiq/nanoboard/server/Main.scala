@@ -12,10 +12,10 @@ import akka.stream._
 import akka.stream.scaladsl._
 import com.karasiq.nanoboard.dispatcher.NanoboardSlickDispatcher
 import com.karasiq.nanoboard.model.{Place, _}
+import com.karasiq.nanoboard.server.streaming.BitMessagePublisher
 import com.karasiq.nanoboard.server.utils.{CaptchaLoader, MessageValidator}
 import com.karasiq.nanoboard.sources.bitmessage.BitMessageTransport
 import com.karasiq.nanoboard.sources.png.UrlPngSource
-import com.karasiq.nanoboard.streaming.NanoboardEvent
 import com.karasiq.nanoboard.{NanoboardCategory, NanoboardLegacy, NanoboardMessage}
 import com.typesafe.config.ConfigFactory
 import slick.driver.H2Driver.api._
@@ -85,19 +85,8 @@ object Main extends App {
 
     // Initialize transport
     val bitMessage = BitMessageTransport(config)
-    val dispatcher = NanoboardSlickDispatcher(db, captcha, config, Sink.foreach { event ⇒
-      actorSystem.eventStream.publish(event)
-
-      event match {
-        case NanoboardEvent.PostAdded(message, true) ⇒
-          bitMessage.sendMessage(MessageConversions.unwrapToMessage(message)).foreach { response ⇒
-            actorSystem.log.info("Message was sent to BM transport: {}", response)
-          }
-
-        case _ ⇒
-        // Pass
-      }
-    })
+    val bitMessagePublisher = actorSystem.actorOf(BitMessagePublisher.props(bitMessage), "bitMessagePublisher")
+    val dispatcher = NanoboardSlickDispatcher(db, captcha, config, Sink.foreach(actorSystem.eventStream.publish))
 
     // Bitmessage
     if (config.getBoolean("nanoboard.bitmessage.receive")) {
