@@ -21,7 +21,6 @@ import scala.concurrent.{ExecutionContext, Future}
   * @note {{{
   *   UnsignedMessage = ReplyTo + Text + PowValue
   *   Signature = Sign(UnsignedMessage, PrivateKeyFromSeed(DecryptedSeed))
-  *   SignedMessage = UnsignedMessage + "[sign=$Hex(Signature)]"
   * }}}
   */
 case class NanoboardCaptcha(publicKey: ByteString, seed: ByteString, image: ByteString) {
@@ -44,7 +43,7 @@ case class NanoboardCaptcha(publicKey: ByteString, seed: ByteString, image: Byte
     * Calculates the signature for post
     * @param post Unsigned message
     * @param guess Captcha answer
-    * @return EdDSA digital signature (must be wrapped in `[sign]` tag)
+    * @return EdDSA digital signature
     */
   def signature(post: ByteString, guess: String): ByteString = {
     val privateKey = Ed25519.privateKey(decryptSeed(guess))
