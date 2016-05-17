@@ -10,7 +10,7 @@ lazy val commonSettings = Seq(
 lazy val librarySettings = Seq(
   name := "nanoboard",
   libraryDependencies ++= {
-    val akkaV = "2.4.2"
+    val akkaV = "2.4.5"
     Seq(
       "com.typesafe.akka" %% "akka-actor" % akkaV,
       "org.scalatest" %% "scalatest" % "2.2.4" % "test",

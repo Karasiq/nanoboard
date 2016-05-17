@@ -41,7 +41,7 @@ private[components] final class CaptchaDialog(implicit ctx: Ctx.Owner, ec: Execu
         def solveCaptcha(request: NanoboardCaptchaRequest): Unit = {
           val modal = Modal(locale.verify)
             .withBody(Form(
-              img(display.block, src := Blobs.asUrl(Blobs.fromBytes(request.captcha.image, "image/png"))),
+              img(display.block, height := 60.px, src := Blobs.asUrl(Blobs.fromBytes(request.captcha.image, "image/png"))),
               FormInput.text((), answer.reactiveInput),
               onsubmit := Bootstrap.jsSubmit(_ ⇒ ())
             ))
