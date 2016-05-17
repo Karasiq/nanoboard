@@ -32,4 +32,4 @@ Scala [nanoboard](https://github.com/nanoboard/nanoboard) implementation.
 * [Download latest release](https://github.com/Karasiq/nanoboard/releases)
   * Install and launch application using Windows installer 
   * Or extract zip package and enter `./bin/nanoboard` in console 
-* Open http://localhost:7347/ in your browser
+* Open <http://localhost:7347/> in your browser
