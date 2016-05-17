@@ -28,5 +28,8 @@ Scala [nanoboard](https://github.com/nanoboard/nanoboard) implementation.
 * SVG images support
 * Six themes
 
-# Links
-* [Downloads](https://github.com/Karasiq/nanoboard/releases)
+# How to use
+* [Download latest release](https://github.com/Karasiq/nanoboard/releases)
+  * Install and launch application using Windows installer 
+  * Or extract zip package and enter `./bin/nanoboard` in console 
+* Open <http://localhost:7347/> in your browser
