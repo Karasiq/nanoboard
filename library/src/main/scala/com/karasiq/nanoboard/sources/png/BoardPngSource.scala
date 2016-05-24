@@ -47,7 +47,7 @@ class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: 
   protected def getUrl(e: Element, attr: String): Option[String] = {
     Try(new URL(e.absUrl(attr)))
       .toOption
-      .filter(_.getPath.matches("([/\\w]+)?/src/([/\\w]+)?\\.(png|bmp)"))
+      .filter(_.getPath.matches("([^\\?\\s]+)?/src/([^\\?\\s]+)?\\.png"))
       .map(_.toString)
   }
 }

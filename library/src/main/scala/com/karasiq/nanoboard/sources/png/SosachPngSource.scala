@@ -11,7 +11,7 @@ import org.jsoup.nodes.Element
   * @param encoding PNG data decoder
   */
 final class SosachPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: ActorMaterializer) extends BoardPngSource(encoding) {
-  private val regex = """https?://2ch\.hk/(\w+/src/\d+/\d+\.(?:png|bmp))""".r
+  private val regex = """https?://2ch\.hk/(\w+/src/\d+/\d+\.png)""".r
 
   override protected def getUrl(e: Element, attr: String): Option[String] = {
     e.attr(attr) match {
