@@ -2,20 +2,25 @@ package com.karasiq.nanoboard.frontend.api.streaming
 
 import java.nio.ByteBuffer
 
+import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
+import scala.scalajs.js.typedarray.TypedArrayBufferOps._
+
 import boopickle.Default._
+import org.scalajs.dom.window
+import org.scalajs.dom.raw._
+
 import com.karasiq.nanoboard.frontend.NanoboardController
 import com.karasiq.nanoboard.frontend.api.BinaryMarshaller
 import com.karasiq.nanoboard.frontend.utils.Notifications
 import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
+import com.karasiq.nanoboard.streaming.{NanoboardEvent, NanoboardEventSeq, NanoboardSubscription}
 import com.karasiq.nanoboard.streaming.NanoboardSubscription.Unfiltered
-import com.karasiq.nanoboard.streaming.{NanoboardEvent, NanoboardSubscription}
-import org.scalajs.dom.raw._
-import org.scalajs.dom.window
-
-import scala.scalajs.js.typedarray.TypedArrayBufferOps._
-import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 
 object NanoboardMessageStream {
+  def apply(f: PartialFunction[NanoboardEvent, Unit])(implicit controller: NanoboardController): NanoboardMessageStream = {
+    new NanoboardMessageStream(f)
+  }
+
   private[api] def asArrayBuffer(data: ByteBuffer): ArrayBuffer = {
     if (data.hasTypedArray()) {
       data.typedArray().subarray(data.position, data.limit).asInstanceOf[ArrayBuffer]
@@ -28,12 +33,8 @@ object NanoboardMessageStream {
     }
   }
 
-  private[api] def asEvent(response: Any): NanoboardEvent = {
-    Unpickle[NanoboardEvent].fromBytes(TypedArrayBuffer.wrap(response.asInstanceOf[ArrayBuffer]))
-  }
-
-  def apply(f: PartialFunction[NanoboardEvent, Unit])(implicit controller: NanoboardController): NanoboardMessageStream = {
-    new NanoboardMessageStream(f)
+  private[api] def asEventSeq(response: Any): NanoboardEventSeq = {
+    Unpickle[NanoboardEventSeq].fromBytes(TypedArrayBuffer.wrap(response.asInstanceOf[ArrayBuffer]))
   }
 }
 
@@ -60,10 +61,10 @@ final class NanoboardMessageStream(f: PartialFunction[NanoboardEvent, Unit])(imp
     webSocket.binaryType = "arraybuffer"
 
     webSocket.onmessage = { (m: MessageEvent) ⇒
-      val message = NanoboardMessageStream.asEvent(m.data)
-      if (f.isDefinedAt(message)) {
-        f.apply(message)
-      }
+      val eventSeq = NanoboardMessageStream.asEventSeq(m.data)
+      eventSeq.events
+        .filter(f.isDefinedAt)
+        .foreach(f(_))
     }
 
     webSocket.onclose = { (e: CloseEvent) ⇒

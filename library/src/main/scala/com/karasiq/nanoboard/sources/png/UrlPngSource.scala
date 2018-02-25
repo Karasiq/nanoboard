@@ -3,9 +3,10 @@ package com.karasiq.nanoboard.sources.png
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
+import com.typesafe.config.Config
+
 import com.karasiq.nanoboard.NanoboardMessage
 import com.karasiq.nanoboard.encoding.{DataEncodingStage, NanoboardEncoding}
-import com.typesafe.config.{Config, ConfigFactory}
 
 /**
   * PNG downloader interface
@@ -36,10 +37,10 @@ object UrlPngSource {
   }
 
   def apply(encoding: DataEncodingStage)(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {
-    new DefaultUrlPngSource(encoding)
+    new BoardPngSource(encoding)
   }
 
   def apply()(implicit as: ActorSystem, am: ActorMaterializer): UrlPngSource = {
-    apply(ConfigFactory.load())
+    apply(as.settings.config)
   }
 }

@@ -3,14 +3,15 @@ package com.karasiq.nanoboard.captcha
 import java.awt.Color
 import java.awt.image.BufferedImage
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import akka.util.ByteString
+
 import com.karasiq.nanoboard.NanoboardMessage
 import com.karasiq.nanoboard.captcha.internal.{Constants, Ed25519}
 import com.karasiq.nanoboard.captcha.storage.NanoboardCaptchaSource
 import com.karasiq.nanoboard.encoding.NanoboardCrypto._
 import com.karasiq.nanoboard.utils._
-
-import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * Nanoboard captcha block
@@ -77,28 +78,6 @@ object NanoboardCaptcha {
   }
 
   /**
-    * Data to sign/verify with the EdDSA digital signature
-    * @param message Message
-    * @return ReplyTo + Text + PowValue
-    */
-  def dataToSign(message: NanoboardMessage): ByteString = {
-    ByteString(message.parent + message.text) ++ message.pow
-  }
-
-  /**
-    * Calculates captcha index
-    * @param message Unsigned message
-    * @param max Maximum captcha index
-    * @return Index of the captcha to be solved
-    */
-  def index(message: ByteString, max: Int): Int = {
-    sha256.digest(message).take(3).map(java.lang.Byte.toUnsignedInt) match {
-      case Seq(b0, b1, b2) ⇒
-        (b0 + b1 * 256 + b2 * 256 * 256) % max
-    }
-  }
-
-  /**
     * Verifies POW and signature of the message
     * @param message Signed message
     * @param pow Proof-of-work calculator
@@ -107,10 +86,9 @@ object NanoboardCaptcha {
     * @return Is message valid
     */
   def verify(message: NanoboardMessage, pow: NanoboardPow, captcha: NanoboardCaptchaSource)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val post = dataToSign(message)
     Future.reduce(Seq(
-      Future.successful(pow.verify(post)),
-      captcha(index(post, captcha.length)).map(_.verify(post, message.signature))
+      Future(pow.verify(message)),
+      captcha(pow.getCaptchaIndex(message, captcha.length)).map(_.verify(pow.getSignPayload(message), message.signature))
     ))(_ && _)
   }
 

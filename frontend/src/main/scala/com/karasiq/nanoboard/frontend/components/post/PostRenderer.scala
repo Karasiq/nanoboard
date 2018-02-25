@@ -1,17 +1,18 @@
 package com.karasiq.nanoboard.frontend.components.post
 
+import scala.concurrent.ExecutionContext
+import scala.scalajs.js
+
+import rx._
+import scalatags.JsDom.all._
+
 import com.karasiq.bootstrap.BootstrapImplicits._
 import com.karasiq.highlightjs.HighlightJS
 import com.karasiq.markedjs.{Marked, MarkedOptions, MarkedRenderer}
 import com.karasiq.nanoboard.frontend.NanoboardController
-import com.karasiq.nanoboard.frontend.utils.PostDomValue._
 import com.karasiq.nanoboard.frontend.utils._
+import com.karasiq.nanoboard.frontend.utils.PostDomValue._
 import com.karasiq.videojs.VideoSource
-import rx._
-
-import scala.concurrent.ExecutionContext
-import scala.scalajs.js
-import scalatags.JsDom.all._
 
 private[components] object PostRenderer {
   def apply()(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): PostRenderer = {
@@ -20,7 +21,7 @@ private[components] object PostRenderer {
 
   // Returns HTML string
   def formatCode(source: String, language: Option[String]): String = {
-    import scalatags.Text.all.{source => _, _}
+    import scalatags.Text.all.{source ⇒ _, _}
     val result = language.fold(HighlightJS.highlightAuto(source))(HighlightJS.highlight(_, source))
     span(whiteSpace.`pre-wrap`, code(`class` := s"hljs ${result.language}", raw(result.value))).render
   }
@@ -35,7 +36,7 @@ private[components] object PostRenderer {
         formatCode(source, if (js.isUndefined(language)) None else Some(language))
       },
       table = { (header: String, body: String) ⇒
-        import scalatags.Text.all.{body => _, header => _, _}
+        import scalatags.Text.all.{body ⇒ _, header ⇒ _, _}
         div(`class` := "table-responsive", table(`class` := "table", thead(raw(header)), tbody(raw(body)))).render
       }
     )
@@ -121,7 +122,7 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
     case BBCode("sp" | "spoiler", _, value) ⇒
       span(controller.style.spoiler, render(value))
 
-    case ShortBBCode("img", base64) ⇒
+    case ShortBBCode("img" | "xmg", base64) ⇒
       PostInlineImage(base64)
 
     case BBCode("img", parameters, value) ⇒

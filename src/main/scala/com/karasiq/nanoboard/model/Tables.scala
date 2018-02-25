@@ -1,11 +1,12 @@
 package com.karasiq.nanoboard.model
 
+import scala.language.postfixOps
+
 import akka.util.ByteString
-import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 import slick.driver.H2Driver.api._
 import slick.lifted.TableQuery
 
-import scala.language.postfixOps
+import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 
 trait Tables {
   implicit val byteStringColumnType = MappedColumnType.base[ByteString, Array[Byte]](_.toArray[Byte], ByteString.apply)
@@ -14,13 +15,13 @@ trait Tables {
 
   // TODO: Descending recent index: https://github.com/slick/slick/issues/1035
   class Post(tag: Tag) extends Table[DBPost](tag, "posts") {
-    def hash = column[String]("hash", O.SqlType(s"char(${NanoboardMessage.HASH_LENGTH})"), O.PrimaryKey)
-    def parent = column[String]("parent_hash", O.SqlType(s"char(${NanoboardMessage.HASH_LENGTH})"))
+    def hash = column[String]("hash", O.SqlType(s"char(${NanoboardMessage.HashLength})"), O.PrimaryKey)
+    def parent = column[String]("parent_hash", O.SqlType(s"char(${NanoboardMessage.HashLength})"))
     def text = column[String]("message")
     def firstSeen = column[Long]("first_seen")
     def containerId = column[Long]("container_id")
-    def pow = column[ByteString]("pow_value", O.SqlType(s"binary(${NanoboardMessage.POW_LENGTH})"))
-    def signature = column[ByteString]("signature", O.SqlType(s"binary(${NanoboardMessage.SIGNATURE_LENGTH})"))
+    def pow = column[ByteString]("pow_value", O.SqlType(s"binary(${NanoboardMessage.POWLength})"))
+    def signature = column[ByteString]("signature", O.SqlType(s"binary(${NanoboardMessage.SignatureLength})"))
 
     def container = foreignKey("post_container", containerId, containers)(_.id, ForeignKeyAction.Restrict, ForeignKeyAction.Cascade)
     def threadIdx = index("thread_index", (parent, firstSeen), unique = false)
@@ -32,14 +33,14 @@ trait Tables {
   val posts = TableQuery[Post]
 
   class DeletedPost(tag: Tag) extends Table[String](tag, "posts_deleted") {
-    def hash = column[String]("hash", O.SqlType(s"char(${NanoboardMessage.HASH_LENGTH})"), O.PrimaryKey)
+    def hash = column[String]("hash", O.SqlType(s"char(${NanoboardMessage.HashLength})"), O.PrimaryKey)
     def * = hash
   }
 
   val deletedPosts = TableQuery[DeletedPost]
 
   class PendingPost(tag: Tag) extends Table[String](tag, "pending_posts") {
-    def hash = column[String]("hash", O.SqlType(s"char(${NanoboardMessage.HASH_LENGTH})"), O.PrimaryKey)
+    def hash = column[String]("hash", O.SqlType(s"char(${NanoboardMessage.HashLength})"), O.PrimaryKey)
     def post = foreignKey("post_fk", hash, posts)(_.hash, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
     def * = hash
   }
@@ -54,7 +55,7 @@ trait Tables {
   val places = TableQuery[Place]
 
   class Category(tag: Tag) extends Table[NanoboardCategory](tag, "categories") {
-    def hash = column[String]("category_hash", O.SqlType(s"char(${NanoboardMessage.HASH_LENGTH})"), O.PrimaryKey)
+    def hash = column[String]("category_hash", O.SqlType(s"char(${NanoboardMessage.HashLength})"), O.PrimaryKey)
     def name = column[String]("category_name")
     def * = (hash, name) <> (NanoboardCategory.tupled, NanoboardCategory.unapply)
   }

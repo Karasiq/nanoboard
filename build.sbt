@@ -2,9 +2,9 @@ import sbtassembly.Plugin.AssemblyKeys._
 
 lazy val commonSettings = Seq(
   organization := "com.github.karasiq",
-  version := "1.2.0",
+  version := "1.3.0",
   isSnapshot := version.value.endsWith("SNAPSHOT"),
-  scalaVersion := "2.11.8"
+  scalaVersion := "2.11.8" // TODO: Scala 2.12
 )
 
 lazy val librarySettings = Seq(
@@ -145,8 +145,8 @@ lazy val frontendSettings = Seq(
   resolvers += Resolver.sonatypeRepo("snapshots"),
   libraryDependencies ++= Seq(
     "com.chuusai" %%% "shapeless" % "2.2.5",
-    "com.github.karasiq" %%% "parboiled" % "2.1.1-SNAPSHOT",
-    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.6-SNAPSHOT",
+    "org.parboiled" %%% "parboiled" % "2.1.4",
+    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.6",
     "com.github.karasiq" %%% "scalajs-videojs" % "1.0.2",
     "com.github.karasiq" %%% "scalajs-marked" % "1.0.1",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.4"

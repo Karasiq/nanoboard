@@ -1,15 +1,16 @@
 package com.karasiq.nanoboard.test
 
+import scala.util.Random
+
 import akka.util.ByteString
+import org.scalatest.{FlatSpec, Matchers}
+
 import com.karasiq.nanoboard.NanoboardMessage
 import com.karasiq.nanoboard.encoding.DataEncodingStage
 import com.karasiq.nanoboard.encoding.DataEncodingStage._
 import com.karasiq.nanoboard.encoding.formats.{CBORMessagePackFormat, TextMessagePackFormat}
 import com.karasiq.nanoboard.encoding.stages.{GzipCompression, PngEncoding, SalsaCipher}
 import com.karasiq.nanoboard.test.utils.TestFiles
-import org.scalatest.{FlatSpec, Matchers}
-
-import scala.util.Random
 
 //noinspection ScalaDeprecation
 class FileEncodingTest extends FlatSpec with Matchers {
@@ -53,14 +54,14 @@ class FileEncodingTest extends FlatSpec with Matchers {
     val encoded = stage.encode(decoded)
     assert(stage.decode(encoded) == decoded && decoded.utf8String.startsWith("0000270000aa000083006cc0000259003f3a0050ea0062150091cd000083003f8b0000800001170005ca00014500136000ea370000360000d8003b3c0034fd0000880000350032d500008c0000cb00007f002e4600005e00008e0000b70000d00000780000a100005e00008b00003700007100005e00226c9953dabbec38c625670087e8be5eca66[g]01/Mar/2016, 01:15:26 (UTC), client: nboard v1.7.13[/g]"))
 
-    NanoboardMessage.parseMessages(decoded).foreach(println)
+    NanoboardMessage.parseMessages(decoded) // .foreach(println)
   }
 
   "Message pack" should "be encoded in text format" in {
     val result = TextMessagePackFormat.writeMessages(testMessages)
     TextMessagePackFormat.parseMessages(result) shouldBe testMessages
-    result.hashCode() shouldBe -488225130
-    println(result.utf8String)
+    result.hashCode() shouldBe 2029017934
+    // println(result.utf8String)
     // TestFiles.saveToFile(result, "text-test.txt")
   }
 

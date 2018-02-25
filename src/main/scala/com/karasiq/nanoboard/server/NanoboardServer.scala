@@ -1,21 +1,22 @@
 package com.karasiq.nanoboard.server
 
+import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success}
+
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.MediaType.Compressible
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{CacheDirectives, `Cache-Control`}
+import akka.http.scaladsl.model.MediaType.Compressible
+import akka.http.scaladsl.model.headers.{`Cache-Control`, CacheDirectives}
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import boopickle.Default._
+
+import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
 import com.karasiq.nanoboard.api.{NanoboardCaptchaAnswer, NanoboardReply}
 import com.karasiq.nanoboard.dispatcher.NanoboardDispatcher
 import com.karasiq.nanoboard.server.streaming.NanoboardMessageStream
 import com.karasiq.nanoboard.server.utils.{AttachmentGenerator, FractalMusic}
-import com.karasiq.nanoboard.{NanoboardCategory, NanoboardMessage}
-
-import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
 
 object NanoboardServer {
   def apply(dispatcher: NanoboardDispatcher)(implicit actorSystem: ActorSystem, actorMaterializer: ActorMaterializer): NanoboardServer = {
@@ -31,12 +32,12 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
   val route = {
     get {
       // Single post
-      path("post" / NanoboardMessage.HASH_FORMAT) { hash ⇒
+      path("post" / NanoboardMessage.HashFormat) { hash ⇒
         complete(StatusCodes.OK, dispatcher.post(hash))
       } ~
       (pathPrefix("posts") & parameters('offset.as[Long].?(0), 'count.as[Long].?(100))) { (offset, count) ⇒
         // Thread
-        path(NanoboardMessage.HASH_FORMAT) { hash ⇒
+        path(NanoboardMessage.HashFormat) { hash ⇒
           complete(StatusCodes.OK, dispatcher.thread(hash, offset, count))
         } ~
         // Recent posts
@@ -65,7 +66,7 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
         complete(StatusCodes.OK, FractalMusic(formula).map(HttpEntity(ContentType(MediaType.audio("wav", Compressible)), _)))
       } ~
       // Verification data
-      (path("verify" / NanoboardMessage.HASH_FORMAT)) { hash ⇒
+      (path("verify" / NanoboardMessage.HashFormat)) { hash ⇒
         complete(StatusCodes.OK, dispatcher.requestVerification(hash))
       } ~
       // Static files
@@ -102,7 +103,7 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
     } ~
     delete {
       // Delete single post
-      path("post" / NanoboardMessage.HASH_FORMAT) { hash ⇒
+      path("post" / NanoboardMessage.HashFormat) { hash ⇒
         extractLog { log ⇒
           log.info("Post permanently deleted: {}", hash)
           complete(StatusCodes.OK, dispatcher.delete(hash))
@@ -113,7 +114,7 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
         complete(StatusCodes.OK, dispatcher.clearContainer(container))
       } ~
       // Delete post from pending list
-      path("pending" / NanoboardMessage.HASH_FORMAT) { hash ⇒
+      path("pending" / NanoboardMessage.HashFormat) { hash ⇒
         complete(StatusCodes.OK, dispatcher.markAsNotPending(hash))
       } ~
       // Batch delete recent posts
@@ -137,7 +138,7 @@ private[server] final class NanoboardServer(dispatcher: NanoboardDispatcher)(imp
         complete(StatusCodes.OK, dispatcher.updateCategories(categories))
       } ~
       // Add post to pending list
-      path("pending" / NanoboardMessage.HASH_FORMAT) { hash ⇒
+      path("pending" / NanoboardMessage.HashFormat) { hash ⇒
         complete(StatusCodes.OK, dispatcher.markAsPending(hash))
       }
     } ~

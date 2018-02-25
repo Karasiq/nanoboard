@@ -1,5 +1,8 @@
 package com.karasiq.nanoboard.server.streaming
 
+import scala.concurrent.duration._
+import scala.language.postfixOps
+
 import akka.actor.Props
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.stream._
@@ -7,8 +10,9 @@ import akka.stream.scaladsl.{Flow, GraphDSL, Source}
 import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
 import akka.util.ByteString
 import boopickle.Default._
+
+import com.karasiq.nanoboard.streaming.{NanoboardEvent, NanoboardEventSeq, NanoboardSubscription}
 import com.karasiq.nanoboard.streaming.NanoboardSubscription.{PostHashes, Unfiltered}
-import com.karasiq.nanoboard.streaming.{NanoboardEvent, NanoboardSubscription}
 
 private[server] final class NanoboardMessageStream extends GraphStage[FanInShape2[NanoboardSubscription, NanoboardEvent, NanoboardEvent]] {
   val input: Inlet[NanoboardSubscription] = Inlet("SubscriptionInput")
@@ -67,14 +71,13 @@ private[server] final class NanoboardMessageStream extends GraphStage[FanInShape
 }
 
 private[server] object NanoboardMessageStream {
-  import com.karasiq.nanoboard.streaming.NanoboardEvent._
   import com.karasiq.nanoboard.streaming.NanoboardSubscription._
 
   def flow = Flow.fromGraph(GraphDSL.create() { implicit b: GraphDSL.Builder[akka.NotUsed] ⇒
     import GraphDSL.Implicits._
     val in = b.add {
       Flow[Message]
-        .named("websocket-input")
+        .named("websocketInput")
         .flatMapConcat {
           case bm: BinaryMessage ⇒
             bm.dataStream.fold(ByteString.empty)(_ ++ _)
@@ -87,12 +90,13 @@ private[server] object NanoboardMessageStream {
 
     val out = b.add {
       Flow[NanoboardEvent]
-        .named("websocket-output")
-        .map(event ⇒ BinaryMessage(ByteString(Pickle.intoBytes(event))))
+        .groupedWithin(1000, 5 seconds)
+        .filter(_.nonEmpty)
+        .map(events ⇒ BinaryMessage(ByteString(Pickle.intoBytes(NanoboardEventSeq(events)))))
+        .named("websocketOutput")
     }
 
     val messages = b.add(Source.actorPublisher[NanoboardEvent](Props[NanoboardMessagePublisher]))
-
     val processor = b.add(new NanoboardMessageStream)
 
     in.out ~> processor.in0

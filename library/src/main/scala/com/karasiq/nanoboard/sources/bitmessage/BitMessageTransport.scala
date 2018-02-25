@@ -2,19 +2,19 @@ package com.karasiq.nanoboard.sources.bitmessage
 
 import java.nio.charset.StandardCharsets
 
+import scala.concurrent.Future
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
-import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, OverflowStrategy}
-import com.karasiq.nanoboard.NanoboardMessage
-import com.karasiq.nanoboard.encoding.formats.TextMessagePackFormat
+import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.codec.binary.Base64
 import upickle.default._
 
-import scala.concurrent.Future
+import com.karasiq.nanoboard.NanoboardMessage
 
 object BitMessageTransport {
   def fromConfig(bmConfig: Config)(implicit ac: ActorSystem, am: ActorMaterializer) = {
@@ -41,14 +41,14 @@ object BitMessageTransport {
   }
 
   def wrap(messages: NanoboardMessage*): String = {
-    write(messages.map(m ⇒ WrappedNanoboardMessage(m.hash, asBase64(TextMessagePackFormat.textWithSignatureTags(m)), m.parent)))
+    write(messages.map(m ⇒ WrappedNanoboardMessage(m.hash, asBase64(NanoboardMessage.textWithSignatureTags(m)), m.parent)))
   }
 
   def unwrap(bitMessage: String): Vector[NanoboardMessage] = {
     read[Vector[WrappedNanoboardMessage]](bitMessage)
       .map { wrapped ⇒
-        val (text, pow, signature) = TextMessagePackFormat.stripSignatureTags(fromBase64(wrapped.message))
-        NanoboardMessage(wrapped.replyTo, text, pow.getOrElse(NanoboardMessage.NO_POW), signature.getOrElse(NanoboardMessage.NO_SIGNATURE))
+        val (text, pow, signature) = NanoboardMessage.stripSignatureTags(fromBase64(wrapped.message))
+        NanoboardMessage(wrapped.replyTo, text, pow.getOrElse(NanoboardMessage.NoPOW), signature.getOrElse(NanoboardMessage.NoSignature))
       }
   }
 }
@@ -77,9 +77,9 @@ final class BitMessageTransport(chanAddress: String, apiAddress: String, apiPort
       .run()
 
     post {
-      (path("api" / "add" / NanoboardMessage.HASH_FORMAT) & entity(as[String])) { (parent, message) ⇒
-        val (text, pow, signature) = TextMessagePackFormat.stripSignatureTags(BitMessageTransport.fromBase64(message))
-        queue.offer(NanoboardMessage(parent, text, pow.getOrElse(NanoboardMessage.NO_POW), signature.getOrElse(NanoboardMessage.NO_SIGNATURE)))
+      (path("api" / "add" / NanoboardMessage.HashFormat) & entity(as[String])) { (parent, message) ⇒
+        val (text, pow, signature) = NanoboardMessage.stripSignatureTags(BitMessageTransport.fromBase64(message))
+        queue.offer(NanoboardMessage(parent, text, pow.getOrElse(NanoboardMessage.NoPOW), signature.getOrElse(NanoboardMessage.NoSignature)))
         complete(StatusCodes.OK)
       }
     }
