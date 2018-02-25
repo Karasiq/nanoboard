@@ -8,7 +8,10 @@ Scala [nanoboard](https://github.com/nanoboard/nanoboard) implementation.
 >
 >Nanoboard's goals are: speech of freedom, immortality and ownership of the imageboard. Nanoboard is able to use transport different from png-containers. One such alternative transport is: [BitMessage transport](https://github.com/nanoboard/nanoboard-bittransport).
 
-See also: https://wiki.1chan.ca/Наноборда
+See also: 
+* https://wiki.1chan.ca/Наноборда
+* https://github.com/RosinSmoke/nanoboard/blob/1a0d72cb155f8bee0e59cd16feb4c6a24d101436/README.md
+* http://blog.andersen.im/2014/11/hiding-your-bits-in-the-bytes/
 
 # Features
 * Accepted containers management
