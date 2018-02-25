@@ -33,7 +33,7 @@ Name: desktopicon; Description: {cm:CreateDesktopIcon}; GroupDescription: {cm:Ad
 
 [Files]
 Source: {#ProjectFolder}\target\universal\nanoboard.exe; DestDir: {app}; Flags: ignoreversion
-Source: G:\Temp\Java\jre1.8.0_74\*; DestDir: {app}\jre1.8.0_74; Flags: recursesubdirs ignoreversion
+Source: c:\Program Files\Java\jre1.8.0_102\*; DestDir: {app}\jre1.8.0_102; Flags: recursesubdirs ignoreversion
 Source: {#ProjectFolder}\setup\places.txt; DestDir: {app}; Flags: ignoreversion
 Source: {#ProjectFolder}\setup\categories.txt; DestDir: {app}; Flags: ignoreversion
 Source: {#ProjectFolder}\frontend\files\favicon.ico; DestDir: {app}; Flags: ignoreversion
