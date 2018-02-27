@@ -1,6 +1,6 @@
 package com.karasiq.nanoboard.sources.png
 
-import java.net.{InetSocketAddress, URI}
+import java.net.{InetSocketAddress, URL}
 
 import scala.collection.JavaConversions._
 import scala.util.Try
@@ -70,7 +70,7 @@ class BoardPngSource(encoding: DataEncodingStage)(implicit as: ActorSystem, am: 
   }
 
   protected def getUrl(e: Element, attr: String): Option[String] = {
-    Try(new URI(e.absUrl(attr)))
+    Try(new URL(e.absUrl(attr)))
       .toOption
       .filter(_.getPath.toLowerCase.endsWith(".png")) // .filter(_.getPath.matches("([^\\?\\s]+)?/src/([^\\?\\s]+)?\\.png"))
       .map(_.toString)

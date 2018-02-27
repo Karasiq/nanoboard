@@ -68,7 +68,7 @@ class FileEncodingTest extends FlatSpec with Matchers {
   it should "be encoded in CBOR format" in {
     val result = CBORMessagePackFormat.writeMessages(testMessages)
     CBORMessagePackFormat.parseMessages(result) shouldBe testMessages
-    result.hashCode() shouldBe 652261416
+    result.hashCode() shouldBe -1960199224
     // TestFiles.saveToFile(result, "cbor-test.bin")
   }
 }
