@@ -1,10 +1,12 @@
 package com.karasiq.nanoboard.frontend.styles
 
 import scalatags.Text.all._
-import scalatags.stylesheet.{Selector, StyleSheet}
+import scalatags.stylesheet._
 
-trait CommonStyles extends StyleSheet {
-  def flatScroll = cls(
+object CommonStyles extends StyleSheet {
+  initStyleSheet()
+
+  val flatScroll = cls(
     overflowX.hidden,
     overflowY.auto,
     whiteSpace.`pre-wrap`,

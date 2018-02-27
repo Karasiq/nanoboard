@@ -1,31 +1,31 @@
 package com.karasiq.nanoboard.frontend
 
-import com.karasiq.bootstrap.Bootstrap
-import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.form.FormInput
-import com.karasiq.bootstrap.grid.GridSystem
-import com.karasiq.bootstrap.navbar.{NavigationBar, NavigationBarStyle, NavigationTab}
+import scala.language.postfixOps
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
+import org.scalajs.dom._
+import rx._
+
+import com.karasiq.bootstrap.Bootstrap.default._
+import scalaTags.all._
+
+import com.karasiq.bootstrap.Bootstrap.default._
 import com.karasiq.nanoboard.api.NanoboardMessageData
 import com.karasiq.nanoboard.frontend.api.streaming.NanoboardMessageStream
 import com.karasiq.nanoboard.frontend.components._
 import com.karasiq.nanoboard.frontend.locales.BoardLocale
 import com.karasiq.nanoboard.frontend.styles.BoardStyle
 import com.karasiq.nanoboard.frontend.utils.Mouse
-import com.karasiq.nanoboard.streaming.NanoboardSubscription.{PostHashes, Unfiltered}
 import com.karasiq.nanoboard.streaming.{NanoboardEvent, NanoboardSubscription}
-import org.scalajs.dom._
-import rx._
-
-import scala.concurrent.ExecutionContext
-import scalatags.JsDom.all._
+import com.karasiq.nanoboard.streaming.NanoboardSubscription.{PostHashes, Unfiltered}
 
 object NanoboardController {
-  def apply()(implicit ec: ExecutionContext, ctx: Ctx.Owner): NanoboardController = {
+  def apply(): NanoboardController = {
     new NanoboardController()
   }
 }
 
-final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
+final class NanoboardController {
   private implicit def controller: NanoboardController = this
 
   private val styleSelector = BoardStyle.selector
@@ -42,7 +42,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
 
   private val title = ThreadPageTitle(thread.model)
 
-  private val styleField = FormInput.select(locale.style, BoardStyle.styles.map(_.toString):_*)
+  private val styleField = FormInput.simpleSelect(locale.style, BoardStyle.styles.map(_.toString):_*)
 
   styleField.selected() = Seq(style.toString)
 
@@ -51,7 +51,7 @@ final class NanoboardController(implicit ec: ExecutionContext, ctx: Ctx.Owner) {
   }
 
   private val navigationBar = NavigationBar()
-    .withBrand("Nanoboard", onclick := Bootstrap.jsClick { _ ⇒
+    .withBrand("Nanoboard", onclick := Callback.onClick { _ ⇒
       setContext(NanoboardContext.Categories)
     })
     .withTabs(

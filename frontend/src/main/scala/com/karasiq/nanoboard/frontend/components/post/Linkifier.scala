@@ -1,14 +1,15 @@
 package com.karasiq.nanoboard.frontend.components.post
 
-import com.karasiq.bootstrap.BootstrapImplicits._
+import scala.language.postfixOps
+import scala.util.matching.Regex
+
+import org.scalajs.dom.Element
+
+import com.karasiq.bootstrap.Bootstrap.default._
+import scalaTags.all._
+
 import com.karasiq.nanoboard.frontend.{Icons, NanoboardController}
 import com.karasiq.videojs.VideoSource
-import org.scalajs.dom.Element
-import rx._
-
-import scala.concurrent.ExecutionContext
-import scala.util.matching.Regex
-import scalatags.JsDom.all._
 
 sealed trait LinkifierNode extends Frag
 case class InlineDom(frag: Frag) extends LinkifierNode {
@@ -41,33 +42,33 @@ object Linkifier {
     }
   }
 
-  def inlineYoutube(text: String)(implicit ctx: Ctx.Owner): Seq[LinkifierNode] = {
+  def inlineYoutube(text: String): Seq[LinkifierNode] = {
     processText(text, youtubeRegex, url ⇒ PostExternalVideo.youtube(url))
   }
 
-  def inlineVideos(text: String)(implicit ctx: Ctx.Owner): Seq[LinkifierNode] = {
+  def inlineVideos(text: String): Seq[LinkifierNode] = {
     processText(text, videoRegex, {
       case url @ videoRegex(protocol, domain, file, ext, query) ⇒
         PostExternalVideo(url, VideoSource(s"video/$ext", url))
     })
   }
 
-  def linkify(text: String)(implicit ctx: Ctx.Owner): Seq[LinkifierNode] = {
+  def linkify(text: String): Seq[LinkifierNode] = {
     processText(text, urlRegex, url ⇒ a(href := url, url))
   }
 
-  def postLinks(text: String)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): Seq[LinkifierNode] = {
+  def postLinks(text: String)(implicit controller: NanoboardController): Seq[LinkifierNode] = {
     processText(text, postLinkRegex, {
       case postLinkRegex(hash) ⇒
         PostLink(hash).renderTag(Icons.link, hash)
     })
   }
 
-  def quotes(text: String)(implicit ctx: Ctx.Owner, controller: NanoboardController): Seq[LinkifierNode] = {
+  def quotes(text: String)(implicit controller: NanoboardController): Seq[LinkifierNode] = {
     processText(text, quoteRegex, quote ⇒ span(controller.style.greenText, quote))
   }
 
-  def apply(text: String)(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): Seq[LinkifierNode] = {
+  def apply(text: String)(implicit controller: NanoboardController): Seq[LinkifierNode] = {
     Seq(inlineYoutube _, inlineVideos _, linkify _, postLinks _, quotes _).foldLeft(Seq[LinkifierNode](InlineText(text))) {
       case (nodes, f) ⇒
         nodes.flatMap {

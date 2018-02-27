@@ -2,17 +2,15 @@ package com.karasiq.nanoboard.frontend.styles
 
 import scalatags.Text.all._
 
-trait Makaba extends BoardStyle {
-  override def toString: String = {
-    "Makaba"
-  }
+object Makaba extends BoardStyle {
+  initStyleSheet()
 
-  override def body = cls(
+  val body = cls(
     color := "#333333",
     backgroundColor := "#EEEEEE"
   )
 
-  override def post = cls(
+  val post = cls(
     minWidth := 40.pct,
     maxWidth := 100.pct,
     border := "solid 1px #CCCCCC",
@@ -25,18 +23,18 @@ trait Makaba extends BoardStyle {
     padding := "0.5em 1.5em"
   )
 
-  override def postInner = cls(
+  val postInner = cls(
     marginBottom := 0.5.em,
     fontSize := 0.9.em,
     fontFamily := "Verdana,sans-serif"
   )
 
-  override def postId = cls(
+  val postId = cls(
     color := "#789922",
     marginRight := 0.5.em
   )
 
-  override def postLink = cls(
+  val postLink = cls(
     color := "#FF6600",
     &.hover(
       color := "#0066FF"
@@ -45,17 +43,17 @@ trait Makaba extends BoardStyle {
     marginRight := 0.5.em
   )
 
-  override def input = cls()
+  val input = cls()
 
-  override def submit = cls()
+  val submit = cls()
 
-  override def greenText = cls(
+  val greenText = cls(
     color.green,
     fontSize := 90.pct,
     lineHeight := 2.em
   )
 
-  override def spoiler = cls(
+  val spoiler = cls(
     textDecoration.none,
     color := "#BBBBBB",
     background := "#BBBBBB",
@@ -63,4 +61,8 @@ trait Makaba extends BoardStyle {
       color := "#333333"
     )
   )
+
+  override def toString: String = {
+    "Makaba"
+  }
 }

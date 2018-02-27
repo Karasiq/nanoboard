@@ -1,9 +1,9 @@
 package com.karasiq.nanoboard.frontend.utils
 
+import scala.scalajs.js
+
 import org.scalajs.dom
 import org.scalajs.dom.{Element, MouseEvent}
-
-import scala.scalajs.js
 import scalatags.JsDom.all._
 
 object Mouse {

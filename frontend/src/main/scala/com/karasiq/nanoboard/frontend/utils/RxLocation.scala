@@ -1,11 +1,11 @@
 package com.karasiq.nanoboard.frontend.utils
 
+import scala.scalajs.js.UndefOr
+
 import org.scalajs.dom
 import org.scalajs.dom.window
 import org.scalajs.jquery.jQuery
 import rx._
-
-import scala.scalajs.js.UndefOr
 
 final class RxLocation(implicit ctx: Ctx.Owner) {
   private def readHash(hash: UndefOr[String]): Option[String] = {

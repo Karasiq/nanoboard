@@ -1,24 +1,22 @@
 package com.karasiq.nanoboard.frontend.components
 
-import com.karasiq.bootstrap.BootstrapHtmlComponent
-import com.karasiq.bootstrap.BootstrapImplicits._
+import rx._
+import scalatags.JsDom.tags2
+import scalatags.JsDom.all._
+
+import com.karasiq.bootstrap.Bootstrap.default._
+import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardController}
 import com.karasiq.nanoboard.frontend.components.post.PostRenderer
 import com.karasiq.nanoboard.frontend.model.ThreadModel
 import com.karasiq.nanoboard.frontend.utils.PostParser
-import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardController}
-import org.scalajs.dom
-import rx._
-
-import scalatags.JsDom.all._
-import scalatags.JsDom.tags2
 
 object ThreadPageTitle {
-  def apply(thread: ThreadModel)(implicit ctx: Ctx.Owner, controller: NanoboardController): ThreadPageTitle = {
+  def apply(thread: ThreadModel)(implicit controller: NanoboardController): ThreadPageTitle = {
     new ThreadPageTitle(thread)
   }
 }
 
-private[components] final class ThreadPageTitle(thread: ThreadModel)(implicit ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Title] {
+private[components] final class ThreadPageTitle(thread: ThreadModel)(implicit controller: NanoboardController) extends BootstrapHtmlComponent {
   import controller.locale
 
   val title = Rx[String] {

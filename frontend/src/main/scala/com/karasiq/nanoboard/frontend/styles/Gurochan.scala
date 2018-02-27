@@ -2,17 +2,15 @@ package com.karasiq.nanoboard.frontend.styles
 
 import scalatags.Text.all._
 
-trait Gurochan extends BoardStyle {
-  override def toString: String = {
-    "Gurochan"
-  }
-
-  override def body = cls(
+object Gurochan extends BoardStyle {
+  initStyleSheet()
+  
+  val body = cls(
     color := "#000000",
     backgroundColor := "#EDDAD2"
   )
 
-  override def post = cls(
+  val post = cls(
     minWidth := 40.pct,
     maxWidth := 100.pct,
     border := "1px solid #CA927B",
@@ -24,18 +22,18 @@ trait Gurochan extends BoardStyle {
     padding := "0.5em 1.5em"
   )
 
-  override def postInner = cls(
+  val postInner = cls(
     marginBottom := 0.5.em,
     fontSize := 0.9.em,
     fontFamily := "Trebuchet MS, Verdana, sans-serif"
   )
 
-  override def postId = cls(
+  val postId = cls(
     color := "#789922",
     marginRight := 0.5.em
   )
 
-  override def postLink = cls(
+  val postLink = cls(
     color := "#34345C",
     &.hover(
       color := "#DD0000"
@@ -44,17 +42,17 @@ trait Gurochan extends BoardStyle {
     marginRight := 0.5.em
   )
 
-  override def input = cls()
+  val input = cls()
 
-  override def submit = cls()
+  val submit = cls()
 
-  override def greenText = cls(
+  val greenText = cls(
     color := "#AF0A0F",
     fontSize := 90.pct,
     lineHeight := 2.em
   )
 
-  override def spoiler = cls(
+  val spoiler = cls(
     textDecoration.none,
     color := "#CA927B",
     background := "#CA927B",
@@ -62,4 +60,8 @@ trait Gurochan extends BoardStyle {
       color := "#34345C"
     )
   )
+
+  override def toString: String = {
+    "Gurochan"
+  }
 }

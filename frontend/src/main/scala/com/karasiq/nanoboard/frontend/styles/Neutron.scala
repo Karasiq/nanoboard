@@ -1,18 +1,17 @@
 package com.karasiq.nanoboard.frontend.styles
 
 import scalatags.Text.all._
+import scalatags.generic.Style
 
-trait Neutron extends BoardStyle {
-  override def toString: String = {
-    "Neutron"
-  }
-
-  override def body = cls(
+object Neutron extends BoardStyle {
+  initStyleSheet()
+  
+  val body = cls(
     color := "#698CC0",
     backgroundColor := "#212121"
   )
 
-  override def post = cls(
+  val post = cls(
     minWidth := 40.pct,
     maxWidth := 100.pct,
     border := "solid 1px #575757",
@@ -25,18 +24,18 @@ trait Neutron extends BoardStyle {
     padding := "0.5em 1.5em"
   )
 
-  override def postInner = cls(
+  val postInner = cls(
     fontFamily := "Trebuchet MS,Trebuchet,tahoma,serif",
     marginBottom := 0.5.em,
     fontSize := 1.em
   )
 
-  override def postId = cls(
+  val postId = cls(
     color := "#789922",
     marginRight := 0.5.em
   )
 
-  override def postLink = cls(
+  val postLink = cls(
     color := "#C9BE89",
     &.hover(
       color := "#EEFEBB"
@@ -45,14 +44,14 @@ trait Neutron extends BoardStyle {
     marginRight := 0.5.em
   )
 
-  override def input = cls(
+  val input = cls(
     backgroundColor := "#111111 !important",
     color := "#CCCCCC",
     border := "2px solid #545454!important"
   )
 
-  override def submit = cls(
-    "-webkit-appearance".style := "none!important",
+  val submit = cls(
+    Style("webkitAppearance", "-webkit-appearance") := "none!important",
     backgroundColor := "#333333!important",
     backgroundImage := "-webkit-gradient(linear,center top,center bottom,from(#4A4A4A),color-stop(25%,#313131),color-stop(50%,#292929),color-stop(75%,#313131),to(#4A4A4A))!important",
     borderRadius := "5px!important",
@@ -64,13 +63,13 @@ trait Neutron extends BoardStyle {
     fontWeight := "bold!important"
   )
 
-  override def greenText = cls(
+  val greenText = cls(
     color.green,
     fontSize := 90.pct,
     lineHeight := 2.em
   )
 
-  override def spoiler = cls(
+  val spoiler = cls(
     textDecoration.none,
     color := "#575757",
     background := "#575757",
@@ -78,4 +77,8 @@ trait Neutron extends BoardStyle {
       color := "#C9BE89"
     )
   )
+
+  override def toString: String = {
+    "Neutron"
+  }
 }

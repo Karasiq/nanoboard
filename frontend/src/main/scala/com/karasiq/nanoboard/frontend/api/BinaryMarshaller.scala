@@ -2,9 +2,9 @@ package com.karasiq.nanoboard.frontend.api
 
 import java.nio.ByteBuffer
 
-import boopickle.Default._
-
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
+
+import boopickle.Default._
 
 private[api] object BinaryMarshaller {
   def responseType: String = "arraybuffer"

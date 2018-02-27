@@ -1,7 +1,8 @@
 package com.karasiq.nanoboard.frontend.utils
 
-import com.karasiq.nanoboard.frontend.utils.PostDomValue._
 import org.parboiled2._
+
+import com.karasiq.nanoboard.frontend.utils.PostDomValue._
 
 sealed trait PostDomValue
 object PostDomValue {

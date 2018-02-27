@@ -1,7 +1,8 @@
 package com.karasiq.nanoboard.frontend
 
-import com.karasiq.nanoboard.frontend.utils.RxLocation
 import rx._
+
+import com.karasiq.nanoboard.frontend.utils.RxLocation
 
 sealed trait NanoboardContext
 sealed trait NanoboardContextWithOffset extends NanoboardContext {
@@ -20,6 +21,7 @@ object NanoboardContext {
     def withOffset(newOffset: Int) = copy(offset = newOffset)
   }
 
+  //noinspection VariablePatternShadow
   // Simple single page app router
   def fromLocation()(implicit ctx: Ctx.Owner): Var[NanoboardContext] = {
     val location = RxLocation()
@@ -49,6 +51,7 @@ object NanoboardContext {
           NanoboardContext.Categories
       }
     }
+
     result.triggerLater {
       location.hash() = result.now match {
         case NanoboardContext.Categories ⇒

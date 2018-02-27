@@ -3,8 +3,8 @@ package com.karasiq.nanoboard.captcha.internal
 import java.util.function.Supplier
 
 import akka.util.ByteString
-import net.i2p.crypto.eddsa.spec.{EdDSANamedCurveTable, EdDSAPrivateKeySpec, EdDSAPublicKeySpec}
 import net.i2p.crypto.eddsa.{EdDSAEngine, EdDSAPrivateKey, EdDSAPublicKey}
+import net.i2p.crypto.eddsa.spec.{EdDSANamedCurveTable, EdDSAPrivateKeySpec, EdDSAPublicKeySpec}
 
 /**
   * Ed25519 digital signature utility
@@ -13,8 +13,9 @@ private[captcha] object Ed25519 {
   /**
     * Default curve specification
     */
-  private val curve25519 = EdDSANamedCurveTable.getByName(EdDSANamedCurveTable.CURVE_ED25519_SHA512)
+  private val curve25519 = EdDSANamedCurveTable.getByName("Ed25519")
 
+  //noinspection ConvertExpressionToSAM
   private val tlEngine = ThreadLocal.withInitial(new Supplier[EdDSAEngine] {
     override def get(): EdDSAEngine = new EdDSAEngine()
   })

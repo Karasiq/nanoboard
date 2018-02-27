@@ -1,12 +1,10 @@
 package com.karasiq.nanoboard.frontend.components.post
 
-import scala.concurrent.ExecutionContext
 import scala.scalajs.js
 
-import rx._
 import scalatags.JsDom.all._
 
-import com.karasiq.bootstrap.BootstrapImplicits._
+import com.karasiq.bootstrap.Bootstrap.default._
 import com.karasiq.highlightjs.HighlightJS
 import com.karasiq.markedjs.{Marked, MarkedOptions, MarkedRenderer}
 import com.karasiq.nanoboard.frontend.NanoboardController
@@ -15,7 +13,7 @@ import com.karasiq.nanoboard.frontend.utils.PostDomValue._
 import com.karasiq.videojs.VideoSource
 
 private[components] object PostRenderer {
-  def apply()(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController): PostRenderer = {
+  def apply()(implicit controller: NanoboardController): PostRenderer = {
     new PostRenderer
   }
 
@@ -79,7 +77,7 @@ private[components] object PostRenderer {
     case PostDomValues(values) ⇒
       values.map(strip).mkString
 
-    case BBCode("md" | "img" | "file" | "g" | "sp" | "spoiler", _, _) ⇒
+    case BBCode("md" | "img" | "xmg" | "file" | "g" | "sp" | "spoiler", _, _) ⇒
       ""
 
     case BBCode(_, _, value) ⇒
@@ -93,7 +91,7 @@ private[components] object PostRenderer {
   }
 }
 
-private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: ExecutionContext, controller: NanoboardController) {
+private[components] final class PostRenderer(implicit controller: NanoboardController) {
   def render(parsed: PostDomValue): Frag = parsed match {
     case PlainText(value) ⇒
       Linkifier(value)
@@ -154,11 +152,11 @@ private[components] final class PostRenderer(implicit ctx: Ctx.Owner, ec: Execut
       small(render(value))
 
     case BBCode("abbr", parameters, value) ⇒
-      val abbr = "abbr".tag
+      val abbr = tag("abbr")
       abbr(title := parameters.getOrElse("title", ""), render(value))
 
     case BBCode("mark", _, value) ⇒
-      val mark = "mark".tag
+      val mark = tag("mark")
       mark(render(value))
 
     case BBCode("quote", parameters, value) ⇒

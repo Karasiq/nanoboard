@@ -2,17 +2,15 @@ package com.karasiq.nanoboard.frontend.styles
 
 import scalatags.Text.all._
 
-trait Futaba extends BoardStyle {
-  override def toString: String = {
-    "Futaba"
-  }
+object Futaba extends BoardStyle {
+  initStyleSheet()
 
-  override def body = cls(
+  val body = cls(
     color := "#800000",
     backgroundColor := "#FFFFEE"
   )
 
-  override def post = cls(
+  val post = cls(
     minWidth := 40.pct,
     maxWidth := 100.pct,
     border := "solid 1px #F0D0B6",
@@ -25,18 +23,18 @@ trait Futaba extends BoardStyle {
     padding := "0.5em 1.5em"
   )
 
-  override def postInner = cls(
+  val postInner = cls(
     marginBottom := 0.5.em,
     fontSize := 0.9.em,
     fontFamily := "Verdana,sans-serif"
   )
 
-  override def postId = cls(
+  val postId = cls(
     color := "#789922",
     marginRight := 0.5.em
   )
 
-  override def postLink = cls(
+  val postLink = cls(
     color := "#0000EE",
     &.hover(
       color.red
@@ -45,17 +43,17 @@ trait Futaba extends BoardStyle {
     marginRight := 0.5.em
   )
 
-  override def input = cls()
+  val input = cls()
 
-  override def submit = cls()
+  val submit = cls()
 
-  override def greenText = cls(
+  val greenText = cls(
     color.green,
     fontSize := 90.pct,
     lineHeight := 2.em
   )
 
-  override def spoiler = cls(
+  val spoiler = cls(
     textDecoration.none,
     color := "#F0D0B6",
     background := "#F0D0B6",
@@ -63,4 +61,8 @@ trait Futaba extends BoardStyle {
       color := "#0000EE"
     )
   )
+
+  override def toString: String = {
+    "Futaba"
+  }
 }

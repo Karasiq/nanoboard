@@ -1,32 +1,29 @@
 package com.karasiq.nanoboard.frontend.components
 
-import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.form.{Form, FormInput}
-import com.karasiq.bootstrap.grid.GridSystem
-import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
-import com.karasiq.nanoboard.frontend.api.NanoboardApi
-import com.karasiq.nanoboard.frontend.components.post.NanoboardPost
-import com.karasiq.nanoboard.frontend.model.ThreadModel
-import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
-import com.karasiq.nanoboard.frontend.utils.{Blobs, Notifications}
-import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardController}
-import org.scalajs.dom
-import org.scalajs.dom.Blob
-import org.scalajs.dom.html.Input
-import rx._
-
 import scala.concurrent.ExecutionContext
 import scala.scalajs.js
 import scala.util.{Failure, Success}
+
+import org.scalajs.dom.Blob
+import org.scalajs.dom.html.Input
+import rx._
 import scalatags.JsDom.all._
 
+import com.karasiq.bootstrap.Bootstrap.default._
+import com.karasiq.nanoboard.frontend.{NanoboardContext, NanoboardController}
+import com.karasiq.nanoboard.frontend.api.NanoboardApi
+import com.karasiq.nanoboard.frontend.components.post.NanoboardPost
+import com.karasiq.nanoboard.frontend.model.ThreadModel
+import com.karasiq.nanoboard.frontend.utils.{Blobs, Notifications}
+import com.karasiq.nanoboard.frontend.utils.Notifications.Layout
+
 object PngGenerationPanel {
-  def apply()(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController): PngGenerationPanel = {
+  def apply()(implicit ec: ExecutionContext, controller: NanoboardController): PngGenerationPanel = {
     new PngGenerationPanel
   }
 }
 
-final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
+final class PngGenerationPanel(implicit ec: ExecutionContext, controller: NanoboardController) extends BootstrapHtmlComponent {
   import controller.{locale, style}
 
   val model = ThreadModel(Var(NanoboardContext.Pending()), 100)
@@ -48,7 +45,7 @@ final class PngGenerationPanel(implicit ec: ExecutionContext, ctx: Ctx.Owner, co
     // FormInput.text(locale.imageFormat, style.input, name := "format", value := "png"),
     FormInput.file(locale.dataContainer, style.input, name := "container"),
     Form.submit(locale.generateContainer)(style.submit, "disabled".classIf(loading), "btn-block".addClass),
-    onsubmit := Bootstrap.jsSubmit { frm ⇒
+    onsubmit := Callback.onSubmit { frm ⇒
       if (!loading.now) {
         loading() = true
         def input(name: String) = frm(name).asInstanceOf[Input]

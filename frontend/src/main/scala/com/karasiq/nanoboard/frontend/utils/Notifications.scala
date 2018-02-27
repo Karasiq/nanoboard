@@ -6,8 +6,8 @@ import org.scalajs.dom.console
 
 // From proxychecker frontend
 object Notifications {
-  import scala.scalajs.js.Dynamic.{global => js, literal => lt}
-  import scala.scalajs.js.{Array => JsArray}
+  import scala.scalajs.js.{Array ⇒ JsArray}
+  import scala.scalajs.js.Dynamic.{global ⇒ js, literal ⇒ lt}
 
   private def defaultTimeout: Int = {
     1800

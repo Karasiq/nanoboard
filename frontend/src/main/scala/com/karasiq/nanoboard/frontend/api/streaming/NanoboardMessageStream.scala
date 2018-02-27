@@ -70,7 +70,7 @@ final class NanoboardMessageStream(f: PartialFunction[NanoboardEvent, Unit])(imp
     webSocket.onclose = { (e: CloseEvent) ⇒
       this.webSocket = None
       Notifications.warning(s"${controller.locale.webSocketError}: ${e.code} ${e.reason}", Layout.topRight)
-      window.setTimeout(initWebSocket _, 3000)
+      window.setTimeout(() ⇒ initWebSocket(), 3000)
     }
 
     webSocket.onopen = { (e: Event) ⇒

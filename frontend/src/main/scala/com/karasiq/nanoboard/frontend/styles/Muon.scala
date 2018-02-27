@@ -1,18 +1,17 @@
 package com.karasiq.nanoboard.frontend.styles
 
 import scalatags.Text.all._
+import scalatags.generic.Style
 
-trait Muon extends BoardStyle {
-  override def toString: String = {
-    "Muon"
-  }
+object Muon extends BoardStyle {
+  initStyleSheet()
 
-  override def body = cls(
+  val body = cls(
     color := "#9B8165",
     background := "scroll #211F1A url('/img/muon_bg.jpg') repeat"
   )
 
-  override def post = cls(
+  val post = cls(
     minWidth := 40.pct,
     maxWidth := 100.pct,
     border := "solid 1px #34352D",
@@ -25,18 +24,18 @@ trait Muon extends BoardStyle {
     padding := "0.5em 1.5em"
   )
 
-  override def postInner = cls(
+  val postInner = cls(
     fontFamily := "Verdana,sans-serif",
     marginBottom := 0.5.em,
     fontSize := 1.em
   )
 
-  override def postId = cls(
+  val postId = cls(
     color := "#789922",
     marginRight := 0.5.em
   )
 
-  override def postLink = cls(
+  val postLink = cls(
     color := "#FFD97A",
     &.hover(
       color := "#FCE236"
@@ -45,14 +44,14 @@ trait Muon extends BoardStyle {
     marginRight := 0.5.em
   )
 
-  override def input = cls(
+  val input = cls(
     background := "#3E3C38 url('/img/muon_inputs.jpg') !important",
     color := "#FEC77D!important",
     border := "1px solid #44453D"
   )
 
-  override def submit = cls(
-    "-webkit-appearance".style := "none!important",
+  val submit = cls(
+    Style("webkitAppearance", "-webkit-appearance") := "none!important",
     backgroundImage := "-webkit-gradient(linear,center top,center bottom,from(#4A4A4A),color-stop(25%,#313131),color-stop(50%,#292929),color-stop(75%,#313131),to(#4A4A4A))!important",
     backgroundColor := "#333333!important",
     borderRadius := "5px!important",
@@ -63,13 +62,13 @@ trait Muon extends BoardStyle {
     color := "#AAAAAA!important"
   )
 
-  override def greenText = cls(
+  val greenText = cls(
     color.green,
     fontSize := 90.pct,
     lineHeight := 2.em
   )
 
-  override def spoiler = cls(
+  val spoiler = cls(
     textDecoration.none,
     color := "#454545",
     background := "#454545",
@@ -78,4 +77,8 @@ trait Muon extends BoardStyle {
       color := "#FFD97A"
     )
   )
+
+  override def toString: String = {
+    "Muon"
+  }
 }

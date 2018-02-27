@@ -1,10 +1,10 @@
 package com.karasiq.nanoboard.frontend.utils
 
-import org.scalajs.dom.{Blob, ErrorEvent}
-
 import scala.concurrent.{Future, Promise}
 import scala.scalajs.js
-import scala.scalajs.js.annotation.JSName
+import scala.scalajs.js.annotation.JSGlobal
+
+import org.scalajs.dom.{Blob, ErrorEvent}
 
 @js.native
 private[utils] trait ImageUtil extends js.Object {
@@ -14,7 +14,7 @@ private[utils] trait ImageUtil extends js.Object {
 
 object Images {
   @js.native
-  @JSName("img2base64")
+  @JSGlobal("img2base64")
   private object ImageUtil extends ImageUtil
 
   def compress(data: Blob, format: String = "image/jpeg", scale: Int = 100, quality: Int = 100, sharpness: Int = 100): Future[String] = {

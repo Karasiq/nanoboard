@@ -1,24 +1,25 @@
 package com.karasiq.nanoboard.frontend.components.post
 
-import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
-import com.karasiq.nanoboard.frontend.Icons
-import org.scalajs.dom
+import scala.language.postfixOps
+
 import rx._
 
-import scalatags.JsDom.all._
+import com.karasiq.bootstrap.Bootstrap.default._
+import scalaTags.all._
+
+import com.karasiq.nanoboard.frontend.Icons
 
 private[components] object PostExternalImage {
-  def apply(url: String)(implicit ctx: Ctx.Owner): PostExternalImage = {
+  def apply(url: String): PostExternalImage = {
     new PostExternalImage(url)
   }
 }
 
-private[components] final class PostExternalImage(url: String)(implicit ctx: Ctx.Owner) extends BootstrapHtmlComponent[dom.html.Span] {
+private[components] final class PostExternalImage(url: String) extends BootstrapHtmlComponent {
   val opened = Var(false)
   val expanded = Var(false)
 
-  private val imageStyleMod = Rx[AutoModifier] {
+  private val imageStyleMod = Rx {
     val modifier: Modifier = if (expanded()) {
       Seq[Modifier](maxWidth := 100.pct, maxHeight := 100.pct)
     } else {
@@ -29,7 +30,7 @@ private[components] final class PostExternalImage(url: String)(implicit ctx: Ctx
 
   private val image = Rx[Frag] {
     if (opened()) {
-      img(display.block, src := url, imageStyleMod, onclick := Bootstrap.jsClick(_ ⇒ expanded() = !expanded.now))
+      img(display.block, src := url, imageStyleMod.auto, onclick := Callback.onClick(_ ⇒ expanded() = !expanded.now))
     } else {
       ""
     }
@@ -37,7 +38,7 @@ private[components] final class PostExternalImage(url: String)(implicit ctx: Ctx
 
   override def renderTag(md: Modifier*) = {
     span(
-      a(href := url, fontWeight.bold, Icons.image, url, onclick := Bootstrap.jsClick(_ ⇒ opened() = !opened.now)),
+      a(href := url, fontWeight.bold, Icons.image, url, onclick := Callback.onClick(_ ⇒ opened() = !opened.now)),
       image,
       md
     )

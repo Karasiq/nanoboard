@@ -1,27 +1,25 @@
 package com.karasiq.nanoboard.frontend.components.post
 
-import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
+import rx._
+import scalatags.JsDom.all._
+
+import com.karasiq.bootstrap.Bootstrap.default._
 import com.karasiq.nanoboard.frontend.Icons
 import com.karasiq.videojs.{VideoJSBuilder, VideoSource}
-import org.scalajs.dom
-import rx._
-
-import scalatags.JsDom.all._
 
 private[components] object PostExternalVideo {
   def defaultType = "webm"
 
-  def apply(url: String, sources: VideoSource*)(implicit ctx: Ctx.Owner): PostExternalVideo = {
+  def apply(url: String, sources: VideoSource*): PostExternalVideo = {
     new PostExternalVideo(url, sources)
   }
 
-  def youtube(url: String)(implicit ctx: Ctx.Owner): PostExternalVideo = {
+  def youtube(url: String): PostExternalVideo = {
     new PostExternalVideo(url, Seq(VideoSource("video/youtube", url)), Seq("youtube"))
   }
 }
 
-private[components] final class PostExternalVideo(url: String, sources: Seq[VideoSource], techOrder: Seq[String] = Nil)(implicit ctx: Ctx.Owner) extends BootstrapHtmlComponent[dom.html.Span] {
+private[components] final class PostExternalVideo(url: String, sources: Seq[VideoSource], techOrder: Seq[String] = Nil) extends BootstrapHtmlComponent {
   val expanded = Var(false)
 
   private val videoPlayer = Rx[Frag] {
@@ -43,7 +41,7 @@ private[components] final class PostExternalVideo(url: String, sources: Seq[Vide
 
   override def renderTag(md: Modifier*) = {
     span(
-      a(href := url, fontWeight.bold, Icons.video, url, onclick := Bootstrap.jsClick(_ ⇒ expanded() = !expanded.now)),
+      a(href := url, fontWeight.bold, Icons.video, url, onclick := Callback.onClick(_ ⇒ expanded() = !expanded.now)),
       videoPlayer,
       md
     )

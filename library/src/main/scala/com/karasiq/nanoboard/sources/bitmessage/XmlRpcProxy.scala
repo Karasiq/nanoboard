@@ -1,15 +1,16 @@
 package com.karasiq.nanoboard.sources.bitmessage
 
+import scala.concurrent.Future
+import scala.language.{dynamics, implicitConversions}
+
 import akka.http.scaladsl.HttpExt
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.stream.ActorMaterializer
-import com.karasiq.nanoboard.sources.bitmessage.XmlRpcProxy.{XmlRpcParameter, XmlRpcTags}
-
-import scala.concurrent.Future
-import scala.language.{dynamics, implicitConversions}
 import scalatags.Text.all._
 import scalatags.text.Builder
+
+import com.karasiq.nanoboard.sources.bitmessage.XmlRpcProxy.{XmlRpcParameter, XmlRpcTags}
 
 /**
   * Simple XML-RPC wrapper, based on `akka-http`
@@ -31,12 +32,12 @@ private[bitmessage] final class XmlRpcProxy(http: HttpExt, apiAddress: String, a
 
 private[bitmessage] object XmlRpcProxy {
   object XmlRpcTags {
-    val methodCall = "methodCall".tag
-    val methodName = "methodName".tag
-    val params = "params".tag
-    val param = "param".tag
-    val value = "value".tag
-    val int = "int".tag
+    val methodCall = tag("methodCall")
+    val methodName = tag("methodName")
+    val params = tag("params")
+    val param = tag("param")
+    val value = tag("value")
+    val int = tag("int")
   }
 
   sealed trait XmlDataWrapper[T] {

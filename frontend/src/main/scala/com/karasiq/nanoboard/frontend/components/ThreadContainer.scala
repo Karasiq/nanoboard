@@ -1,27 +1,27 @@
 package com.karasiq.nanoboard.frontend.components
 
-import com.karasiq.bootstrap.BootstrapImplicits._
-import com.karasiq.bootstrap.buttons._
-import com.karasiq.bootstrap.grid.GridSystem
-import com.karasiq.bootstrap.{Bootstrap, BootstrapHtmlComponent}
+import scala.language.postfixOps
+
+import rx._
+
+import com.karasiq.bootstrap.Bootstrap.default._
+import scalaTags.all._
+
 import com.karasiq.nanoboard.api.NanoboardMessageData
+import com.karasiq.nanoboard.frontend.{Icons, NanoboardContext, NanoboardContextWithOffset, NanoboardController}
 import com.karasiq.nanoboard.frontend.components.post.{NanoboardPost, PostRenderer}
 import com.karasiq.nanoboard.frontend.model.ThreadModel
 import com.karasiq.nanoboard.frontend.utils.PostParser
-import com.karasiq.nanoboard.frontend.{Icons, NanoboardContext, NanoboardContextWithOffset, NanoboardController}
-import org.scalajs.dom
-import rx._
-
-import scala.concurrent.ExecutionContext
-import scalatags.JsDom.all._
 
 object ThreadContainer {
-  def apply(context: Var[NanoboardContext], postsPerPage: Int)(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController): ThreadContainer = {
+  def apply(context: Var[NanoboardContext], postsPerPage: Int)
+           (implicit controller: NanoboardController): ThreadContainer = {
     new ThreadContainer(context, postsPerPage)
   }
 }
 
-final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: Int)(implicit ec: ExecutionContext, ctx: Ctx.Owner, controller: NanoboardController) extends BootstrapHtmlComponent[dom.html.Div] {
+final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: Int)
+                           (implicit controller: NanoboardController) extends BootstrapHtmlComponent {
   import controller.locale
 
   val model = ThreadModel(context, postsPerPage)
@@ -51,7 +51,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
       Button(ButtonStyle.danger)(
         Icons.previous,
         locale.fromTo(prevOffset, prevOffset + postsPerPage),
-        onclick := Bootstrap.jsClick { _ ⇒
+        onclick := Callback.onClick { _ ⇒
           context() = ofs.withOffset(prevOffset)
         })
     }
@@ -60,7 +60,7 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
       Button(ButtonStyle.success)(
         locale.fromTo(newOffset, newOffset + postsPerPage),
         Icons.next,
-        onclick := Bootstrap.jsClick { _ ⇒
+        onclick := Callback.onClick { _ ⇒
           context() = ofs.withOffset(math.max(0, newOffset))
         })
     }
@@ -85,14 +85,14 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
     }
   }
 
-  override def renderTag(md: Modifier*): RenderedTag = {
+  override def renderTag(md: Modifier*): TagT = {
     val categories = Rx[Frag] {
       span(
         model.categories().map[Frag, Seq[Frag]] {
           case m @ NanoboardMessageData(_, _, hash, _, answers, _, _) ⇒
             val plainText = PostRenderer.strip(PostParser.parse(m.text))
             val answersSpan = span(marginLeft := 0.25.em, Icons.answers, answers)
-            a(href := s"#$hash", margin := 0.25.em, "[", span(fontWeight.bold, plainText), answersSpan, "]", onclick := Bootstrap.jsClick { _ ⇒
+            a(href := s"#$hash", margin := 0.25.em, "[", span(fontWeight.bold, plainText), answersSpan, "]", onclick := Callback.onClick { _ ⇒
               controller.setContext(NanoboardContext.Thread(hash))
             })
         }
@@ -100,10 +100,10 @@ final class ThreadContainer(val context: Var[NanoboardContext], postsPerPage: In
     }
 
     val navigation = Seq(
-      a(href := "#0", margin := 0.25.em, Icons.recent, locale.recentPosts, onclick := Bootstrap.jsClick { _ ⇒
+      a(href := "#0", margin := 0.25.em, Icons.recent, locale.recentPosts, onclick := Callback.onClick { _ ⇒
         controller.setContext(NanoboardContext.Recent())
       }),
-      a(href := "#", margin := 0.25.em, Icons.categories, locale.categories, onclick := Bootstrap.jsClick { _ ⇒
+      a(href := "#", margin := 0.25.em, Icons.categories, locale.categories, onclick := Callback.onClick { _ ⇒
         controller.setContext(NanoboardContext.Categories)
       })
     )

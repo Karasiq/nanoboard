@@ -1,15 +1,14 @@
 package com.karasiq.nanoboard.frontend.styles
 
-import com.karasiq.bootstrap.BootstrapHtmlComponent
-import com.karasiq.bootstrap.BootstrapImplicits._
-import org.scalajs.dom
+import scala.scalajs.js.UndefOr
+
 import org.scalajs.dom._
 import rx._
-
-import scala.scalajs.js.UndefOr
-import scalatags.JsDom.all._
 import scalatags.JsDom.tags2
+import scalatags.JsDom.all._
 import scalatags.stylesheet.{StyleSheet, _}
+
+import com.karasiq.bootstrap.Bootstrap.default._
 
 trait BoardStyle extends StyleSheet {
   override final def customSheetName: Option[String] = Some("nanoboard")
@@ -27,23 +26,19 @@ trait BoardStyle extends StyleSheet {
 }
 
 object BoardStyle {
-  val Common = Sheet[CommonStyles]
-  val Makaba = Sheet[Makaba]
-  val Futaba = Sheet[Futaba]
-  val Burichan = Sheet[Burichan]
-  val Muon = Sheet[Muon]
-  val Neutron = Sheet[Neutron]
-  val Gurochan = Sheet[Gurochan]
+  lazy val styles: Seq[BoardStyle] = {
+    Vector(Makaba, Futaba, Burichan, Muon, Neutron, Gurochan)
+  }
 
-  def styles: Seq[BoardStyle] = Vector(Makaba, Futaba, Burichan, Muon, Neutron, Gurochan)
+  def fromString(style: String): BoardStyle = {
+    styles.find(_.toString == style).getOrElse(Makaba)
+  }
 
-  def fromString(style: String): BoardStyle = styles.find(_.toString == style).getOrElse(Makaba)
-
-  def selector(implicit ctx: Ctx.Owner): Selector = {
+  def selector: Selector = {
     new Selector()
   }
 
-  final class Selector(implicit ctx: Ctx.Owner) extends BootstrapHtmlComponent[dom.html.Style] {
+  final class Selector extends BootstrapHtmlComponent {
     val style: Var[BoardStyle] = Var {
       val styleName: UndefOr[String] = window.localStorage.getItem("nanoboard-style")
       styleName.map(fromString).getOrElse(Makaba)
@@ -54,7 +49,7 @@ object BoardStyle {
     }
 
     override def renderTag(md: Modifier*) = {
-      tags2.style(style.map(_.styleSheetText), Common.styleSheetText, md)
+      tags2.style(style.map(_.styleSheetText), CommonStyles.styleSheetText, md)
     }
   }
 }

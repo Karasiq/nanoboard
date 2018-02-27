@@ -12,7 +12,7 @@ import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.codec.binary.Base64
-import upickle.default._
+import play.api.libs.json._
 
 import com.karasiq.nanoboard.NanoboardMessage
 
@@ -30,6 +30,19 @@ object BitMessageTransport {
     fromConfig(config.getConfig("nanoboard.bitmessage"))
   }
 
+  def wrap(messages: NanoboardMessage*): String = {
+    val wrappedMessages = messages.map(m ⇒ WrappedNanoboardMessage(m.hash, asBase64(NanoboardMessage.textWithSignatureTags(m)), m.parent))
+    Json.toJson(wrappedMessages).toString()
+  }
+
+  def unwrap(bitMessage: String): Vector[NanoboardMessage] = {
+    val messages = Json.parse(bitMessage).as[Vector[WrappedNanoboardMessage]]
+    messages.map { wrapped ⇒
+      val (text, pow, signature) = NanoboardMessage.stripSignatureTags(fromBase64(wrapped.message))
+      NanoboardMessage(wrapped.replyTo, text, pow.getOrElse(NanoboardMessage.NoPOW), signature.getOrElse(NanoboardMessage.NoSignature))
+    }
+  }
+
   @inline
   private[bitmessage] def asBase64(string: String): String = {
     Base64.encodeBase64String(string.getBytes(StandardCharsets.UTF_8))
@@ -38,18 +51,6 @@ object BitMessageTransport {
   @inline
   private[bitmessage] def fromBase64(string: String): String = {
     new String(Base64.decodeBase64(string), StandardCharsets.UTF_8)
-  }
-
-  def wrap(messages: NanoboardMessage*): String = {
-    write(messages.map(m ⇒ WrappedNanoboardMessage(m.hash, asBase64(NanoboardMessage.textWithSignatureTags(m)), m.parent)))
-  }
-
-  def unwrap(bitMessage: String): Vector[NanoboardMessage] = {
-    read[Vector[WrappedNanoboardMessage]](bitMessage)
-      .map { wrapped ⇒
-        val (text, pow, signature) = NanoboardMessage.stripSignatureTags(fromBase64(wrapped.message))
-        NanoboardMessage(wrapped.replyTo, text, pow.getOrElse(NanoboardMessage.NoPOW), signature.getOrElse(NanoboardMessage.NoSignature))
-      }
   }
 }
 

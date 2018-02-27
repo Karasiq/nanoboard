@@ -4,26 +4,26 @@ lazy val commonSettings = Seq(
   organization := "com.github.karasiq",
   version := "1.3.0",
   isSnapshot := version.value.endsWith("SNAPSHOT"),
-  scalaVersion := "2.11.8" // TODO: Scala 2.12
+  scalaVersion := "2.12.4"
 )
 
 lazy val librarySettings = Seq(
   name := "nanoboard",
   libraryDependencies ++= {
-    val akkaV = "2.4.5"
+    val akkaV = "2.5.10"
     Seq(
       "com.typesafe.akka" %% "akka-actor" % akkaV,
-      "org.scalatest" %% "scalatest" % "2.2.4" % "test",
+      "org.scalatest" %% "scalatest" % "3.0.5" % "test",
       "com.typesafe.akka" %% "akka-stream" % akkaV,
-      "com.typesafe.akka" %% "akka-http-experimental" % akkaV,
-      "commons-codec" % "commons-codec" % "1.8",
-      "commons-io" % "commons-io" % "2.4",
-      "org.bouncycastle" % "bcprov-jdk15on" % "1.52",
-      "net.i2p.crypto" % "eddsa" % "0.1.0",
-      "org.jsoup" % "jsoup" % "1.8.3",
-      "com.lihaoyi" %% "upickle" % "0.3.8",
-      "com.lihaoyi" %% "scalatags" % "0.5.4",
-      "com.upokecenter" % "cbor" % "2.4.1"
+      "com.typesafe.akka" %% "akka-http" % "10.0.11",
+      "commons-codec" % "commons-codec" % "1.11",
+      "commons-io" % "commons-io" % "2.6",
+      "org.bouncycastle" % "bcprov-jdk15on" % "1.59",
+      "net.i2p.crypto" % "eddsa" % "0.2.0",
+      "org.jsoup" % "jsoup" % "1.11.2",
+      "com.typesafe.play" %% "play-json" % "2.6.7",
+      "com.lihaoyi" %% "scalatags" % "0.6.7",
+      "com.upokecenter" % "cbor" % "3.0.3"
     )
   },
   publishMavenStyle := true,
@@ -54,10 +54,10 @@ lazy val librarySettings = Seq(
 lazy val backendSettings = Seq(
   name := "nanoboard-server",
   libraryDependencies ++= Seq(
-    "com.typesafe.slick" %% "slick" % "3.1.1",
-    "com.h2database" % "h2" % "1.4.191",
-    "org.slf4j" % "slf4j-nop" % "1.6.4",
-    "org.scalatest" %% "scalatest" % "2.2.4" % "test"
+    "com.typesafe.slick" %% "slick" % "3.2.1",
+    "com.h2database" % "h2" % "1.4.196",
+    "org.slf4j" % "slf4j-nop" % "1.7.25",
+    "org.scalatest" %% "scalatest" % "3.0.5" % "test"
   ),
   mainClass in Compile := Some("com.karasiq.nanoboard.server.Main"),
   mainClass in assembly := (mainClass in Compile).value,
@@ -66,9 +66,7 @@ lazy val backendSettings = Seq(
   mappings in Universal := {
     val universalMappings = (mappings in Universal).value
     val fatJar = (assembly in Compile).value
-    val filtered = universalMappings filter {
-      case (file, name) ⇒ !name.endsWith(".jar")
-    }
+    val filtered = universalMappings.filterNot(_._2.endsWith(".jar"))
     filtered :+ (fatJar → ("lib/" + fatJar.getName))
   },
   scriptClasspath := Seq((jarName in assembly).value),
@@ -135,38 +133,30 @@ lazy val backendSettings = Seq(
       (fontAwesome / "fonts" / "fontawesome-webfont").fonts() ++
       (videoJs / "font" / "VideoJS").fonts(dir = "font", extensions = Seq("eot", "svg", "ttf", "woff"))
 
-    Bundle("index", jsDeps, highlightJsLanguages, staticFiles, fonts, scalaJsApplication(frontend).value)
+    Bundle("index", jsDeps, highlightJsLanguages, staticFiles, fonts, scalaJsApplication(frontend, launcher = false).value)
   }
 )
 
 lazy val frontendSettings = Seq(
-  persistLauncher in Compile := true,
+  scalaJSUseMainModuleInitializer := true,
   name := "nanoboard-frontend",
   resolvers += Resolver.sonatypeRepo("snapshots"),
   libraryDependencies ++= Seq(
-    "com.chuusai" %%% "shapeless" % "2.2.5",
+    "com.chuusai" %%% "shapeless" % "2.3.3",
     "org.parboiled" %%% "parboiled" % "2.1.4",
-    "com.github.karasiq" %%% "scalajs-bootstrap" % "1.0.6",
-    "com.github.karasiq" %%% "scalajs-videojs" % "1.0.2",
-    "com.github.karasiq" %%% "scalajs-marked" % "1.0.1",
-    "io.github.widok" %%% "scala-js-momentjs" % "0.1.4"
+    "com.github.karasiq" %%% "scalajs-bootstrap" % "2.3.1",
+    "com.github.karasiq" %%% "scalajs-videojs" % "1.0.5",
+    "com.github.karasiq" %%% "scalajs-marked" % "1.0.2",
+    "ru.pavkin" %%% "scala-js-momentjs" % "0.9.1",
+    "com.lihaoyi" %%% "scalatags" % "0.6.7"
   )
 )
 
 lazy val shared = crossProject.in(file("shared"))
   .settings(commonSettings:_*)
   .settings(
-    name := "nanoboard-shared"
-  )
-  .jvmSettings(
-    libraryDependencies ++= Seq(
-      "me.chrons" %% "boopickle" % "1.1.2"
-    )
-  )
-  .jsSettings(
-    libraryDependencies ++= Seq(
-      "me.chrons" %%% "boopickle" % "1.1.2"
-    )
+    name := "nanoboard-shared",
+    libraryDependencies += "io.suzaku" %%% "boopickle" % "1.2.6"
   )
 
 lazy val sharedJVM = shared.jvm
