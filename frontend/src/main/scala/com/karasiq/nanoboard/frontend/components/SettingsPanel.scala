@@ -40,9 +40,11 @@ final class SettingsPanel(implicit controller: NanoboardController) extends Boot
   val categories = Rx {
     Try {
       val lines = categoriesText().lines.toVector
-      assert(lines.length % 2 == 0)
+      require(lines.length % 2 == 0)
+
       val categories = lines.grouped(2).map(seq ⇒ NanoboardCategory(seq.head, seq.last)).toVector
-      assert(categories.forall(c ⇒ c.hash.matches("[a-fA-F0-9]{32}") && c.name.nonEmpty))
+      require(categories.forall(c ⇒ c.hash.matches("[a-fA-F0-9]{32}") && c.name.nonEmpty))
+
       categories
     }.getOrElse(Vector.empty)
   }
