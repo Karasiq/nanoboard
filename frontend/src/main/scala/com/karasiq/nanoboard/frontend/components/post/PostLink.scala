@@ -5,7 +5,6 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import rx._
 import rx.async._
-import scalaTags.all._
 import scalatags.JsDom.all._
 
 import com.karasiq.bootstrap.Bootstrap.default._
