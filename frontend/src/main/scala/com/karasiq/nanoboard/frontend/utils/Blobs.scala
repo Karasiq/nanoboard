@@ -29,7 +29,15 @@ object Blobs {
   }
 
   def fromBase64(base64: String, contentType: String = ""): Blob = {
-    fromString(dom.window.atob(base64), contentType)
+    fromString(
+        () ⇒ {
+               try{
+                  return dom.window.atob(base64);    //return base if base64
+               }catch{
+                  return "NOT_BASE_PLACEHOLDER_TEXT";//and do not stop JavaScript, after throw error.
+               }
+        }
+       , contentType)
   }
 
   def saveBlob(blob: Blob, fileName: String): Unit = {
