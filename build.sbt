@@ -2,7 +2,7 @@ import sbtassembly.Plugin.AssemblyKeys._
 
 lazy val commonSettings = Seq(
   organization := "com.github.karasiq",
-  version := "1.3.2",
+  version := "1.3.3",
   isSnapshot := version.value.endsWith("SNAPSHOT"),
   scalaVersion := "2.12.4"
 )
