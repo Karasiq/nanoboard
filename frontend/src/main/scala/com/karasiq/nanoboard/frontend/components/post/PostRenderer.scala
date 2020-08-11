@@ -1,6 +1,7 @@
 package com.karasiq.nanoboard.frontend.components.post
 
 import scala.scalajs.js
+import scala.util.{Failure, Success, Try}
 
 import scalatags.JsDom.all._
 
@@ -68,6 +69,8 @@ private[components] object PostRenderer {
 
     case ShortBBCode(name, value) ⇒
       s"[$name=$value]"
+
+    case v ⇒ s"Error rendering value: $v"
   }
 
   def strip(parsed: PostDomValue): String = parsed match {
@@ -92,82 +95,88 @@ private[components] object PostRenderer {
 }
 
 private[components] final class PostRenderer(implicit controller: NanoboardController) {
-  def render(parsed: PostDomValue): Frag = parsed match {
-    case PlainText(value) ⇒
-      Linkifier(value)
+  def render(parsed: PostDomValue): Frag = {
+    val result = Try[Frag](parsed match {
+      case PlainText(value) ⇒
+        Linkifier(value)
 
-    case PostDomValues(values) ⇒
-      values.map(render)
+      case PostDomValues(values) ⇒
+        values.map(render)
 
-    case BBCode("md", _, value) ⇒
-      PostRenderer.renderMarkdown(PostRenderer.asText(value))
+      case BBCode("md", _, value) ⇒
+        PostRenderer.renderMarkdown(PostRenderer.asText(value))
 
-    case BBCode("b", _, value) ⇒
-      strong(render(value))
+      case BBCode("b", _, value) ⇒
+        strong(render(value))
 
-    case BBCode("i", _, value) ⇒
-      em(render(value))
+      case BBCode("i", _, value) ⇒
+        em(render(value))
 
-    case BBCode("u", _, value) ⇒
-      u(render(value))
+      case BBCode("u", _, value) ⇒
+        u(render(value))
 
-    case BBCode("s", _, value) ⇒
-      s(render(value))
+      case BBCode("s", _, value) ⇒
+        s(render(value))
 
-    case BBCode("g", _, value) ⇒
-      span(controller.style.greenText, render(value))
+      case BBCode("g", _, value) ⇒
+        span(controller.style.greenText, render(value))
 
-    case BBCode("sp" | "spoiler", _, value) ⇒
-      span(controller.style.spoiler, render(value))
+      case BBCode("sp" | "spoiler", _, value) ⇒
+        span(controller.style.spoiler, render(value))
 
-    case ShortBBCode("img" | "xmg", base64) ⇒
-      PostInlineImage(base64)
+      case ShortBBCode("img" | "xmg", base64) ⇒
+        PostInlineImage(base64)
 
-    case BBCode("img", parameters, value) ⇒
-      PostInlineImage(PostRenderer.asText(value), parameters.getOrElse("type", PostInlineImage.defaultType))
+      case BBCode("img", parameters, value) ⇒
+        PostInlineImage(PostRenderer.asText(value), parameters.getOrElse("type", PostInlineImage.defaultType))
 
-    case ShortBBCode("simg", url) ⇒
-      PostExternalImage(url)
+      case ShortBBCode("simg", url) ⇒
+        PostExternalImage(url)
 
-    case BBCode("video", parameters, value) ⇒
-      val url = PostRenderer.asText(value)
-      PostExternalVideo(url, VideoSource(s"video/${parameters.getOrElse("type", PostExternalVideo.defaultType)}", url))
+      case BBCode("video", parameters, value) ⇒
+        val url = PostRenderer.asText(value)
+        PostExternalVideo(url, VideoSource(s"video/${parameters.getOrElse("type", PostExternalVideo.defaultType)}", url))
 
-    case ShortBBCode("svid", url) ⇒
-      PostExternalVideo(url, VideoSource(s"video/${PostExternalVideo.defaultType}", url))
+      case ShortBBCode("svid", url) ⇒
+        PostExternalVideo(url, VideoSource(s"video/${PostExternalVideo.defaultType}", url))
 
-    case ShortBBCode("fm", music) ⇒
-      PostFractalMusic(music)
+      case ShortBBCode("fm", music) ⇒
+        PostFractalMusic(music)
 
-    case BBCode("code", parameters, source) ⇒
-      span(raw(PostRenderer.formatCode(PostRenderer.asText(source), parameters.get("lang"))))
+      case BBCode("code", parameters, source) ⇒
+        span(raw(PostRenderer.formatCode(PostRenderer.asText(source), parameters.get("lang"))))
 
-    case BBCode("file", parameters, value) ⇒
-      PostInlineFile(parameters.getOrElse("name", controller.locale.file), PostRenderer.asText(value), parameters.getOrElse("type", ""))
+      case BBCode("file", parameters, value) ⇒
+        PostInlineFile(parameters.getOrElse("name", controller.locale.file), PostRenderer.asText(value), parameters.getOrElse("type", ""))
 
-    case BBCode("link", parameters, value) ⇒
-      a(target := "_blank", href := parameters.getOrElse("url", PostRenderer.asText(value)), render(value))
+      case BBCode("link", parameters, value) ⇒
+        a(target := "_blank", href := parameters.getOrElse("url", PostRenderer.asText(value)), render(value))
 
-    case BBCode("small", _, value) ⇒
-      small(render(value))
+      case BBCode("small", _, value) ⇒
+        small(render(value))
 
-    case BBCode("abbr", parameters, value) ⇒
-      val abbr = tag("abbr")
-      abbr(title := parameters.getOrElse("title", ""), render(value))
+      case BBCode("abbr", parameters, value) ⇒
+        val abbr = tag("abbr")
+        abbr(title := parameters.getOrElse("title", ""), render(value))
 
-    case BBCode("mark", _, value) ⇒
-      val mark = tag("mark")
-      mark(render(value))
+      case BBCode("mark", _, value) ⇒
+        val mark = tag("mark")
+        mark(render(value))
 
-    case BBCode("quote", parameters, value) ⇒
-      blockquote(
-        if (parameters.contains("reverse")) "blockquote-reverse".addClass else (),
-        p(render(value)),
-        parameters.get("title").map(footer(_))
-      )
+      case BBCode("quote", parameters, value) ⇒
+        blockquote(
+          if (parameters.contains("reverse")) "blockquote-reverse".addClass else (),
+          p(render(value)),
+          parameters.get("title").map(footer(_))
+        )
+    })
 
-    // Unknown
-    case value ⇒
-      PostRenderer.asText(value)
+    result match {
+      case Success(frag) ⇒ frag
+
+      case Failure(exception) ⇒
+        exception.printStackTrace()
+        PostRenderer.asText(parsed)
+    }
   }
 }

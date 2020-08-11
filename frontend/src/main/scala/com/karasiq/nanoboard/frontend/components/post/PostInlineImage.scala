@@ -18,6 +18,7 @@ private[components] object PostInlineImage {
 private[components] final class PostInlineImage(val base64: String, val imageType: String)(implicit controller: NanoboardController)
   extends BootstrapHtmlComponent {
 
+  val blobUrl = Blobs.asUrl(Blobs.fromBase64(base64, s"image/$imageType")) // s"data:image/jpeg;base64,$base64"
   val expanded = Var(false)
 
   private val styleMod = Rx {
@@ -30,7 +31,6 @@ private[components] final class PostInlineImage(val base64: String, val imageTyp
   }
 
   override def renderTag(md: Modifier*) = {
-    val blobUrl = Blobs.asUrl(Blobs.fromBase64(base64, s"image/$imageType")) // s"data:image/jpeg;base64,$base64"
     img(alt := controller.locale.embeddedImage, src := blobUrl, styleMod.auto, onclick := Callback.onClick(_ ⇒ expanded() = !expanded.now), md)
   }
 }
